@@ -96,6 +96,7 @@ func _initialize() -> void:
 	_icon_bottle("icon_ramuan_angin", ["c8fff0", "5fd0c0", "3aa69a", "277a72"], 4.0, true)
 	_icon_bag("icon_tas")
 	_status_icons()
+	_logo()
 
 	_monster_jamur()
 	_monster_kelelawar()
@@ -898,6 +899,61 @@ func _icon_bottle(sprite_name: String, liquid_hex: Array, radius: float, band: b
 	_px(img, int(8.0 - radius * 0.5), int(cy), Color.WHITE)
 	_outline(img, Color("2a1f2e"))
 	_save(img, sprite_name)
+
+
+# ---------------------------------------------------------------- logo game
+
+## Huruf piksel 5x7 untuk tulisan AVELORIA di layar pembuka.
+const LOGO_FONT := {
+	"A": [".###.", "#...#", "#...#", "#####", "#...#", "#...#", "#...#"],
+	"V": ["#...#", "#...#", "#...#", "#...#", "#...#", ".#.#.", "..#.."],
+	"E": ["#####", "#....", "#....", "####.", "#....", "#....", "#####"],
+	"L": ["#....", "#....", "#....", "#....", "#....", "#....", "#####"],
+	"O": [".###.", "#...#", "#...#", "#...#", "#...#", "#...#", ".###."],
+	"R": ["####.", "#...#", "#...#", "####.", "#.#..", "#..#.", "#...#"],
+	"I": ["#####", "..#..", "..#..", "..#..", "..#..", "..#..", "#####"],
+}
+
+
+## Lambang Aveloria (32x32): perisai biru berpinggir emas dengan huruf A.
+func _emblem() -> Image:
+	var img := _new(32, 32)
+	_flat(img, [Vector2(4, 3), Vector2(28, 3), Vector2(28, 15), Vector2(25, 23), Vector2(16, 30), Vector2(7, 23), Vector2(4, 15)], Color("e8b84a"))
+	_fill_poly(img, [Vector2(6, 5), Vector2(26, 5), Vector2(26, 15), Vector2(23, 22), Vector2(16, 27.5), Vector2(9, 22), Vector2(6, 15)],
+		func(x: int, y: int) -> Color:
+			var c := Color("4a7ad8") if x < 16 else Color("2f56a8")
+			return c.lightened(0.18) if y < 8 else c)
+	for x in range(4, 28):  # kilau di pinggir atas
+		_px(img, x, 3, Color("ffe9a0"))
+	_line(img, Vector2(15, 9), Vector2(10, 22), Color("fff2c0"), 2)  # huruf A
+	_line(img, Vector2(16, 9), Vector2(20, 22), Color("fff2c0"), 2)
+	_rect(img, 12, 17, 20, 18, Color("fff2c0"))
+	_rect(img, 15, 8, 17, 9, Color("fff2c0"))
+	_outline(img, Color("1a1420"))
+	return img
+
+
+## Ikon aplikasi (res://icon.png, 256x256) dan gambar layar pembuka (res://assets/logo.png).
+## Ikon dipakai untuk jendela, taskbar, dan file .exe; layar pembuka menggantikan logo Godot.
+func _logo() -> void:
+	var emblem := _emblem()
+	var icon := emblem.duplicate() as Image
+	icon.resize(256, 256, Image.INTERPOLATE_NEAREST)
+	icon.save_png("res://icon.png")
+
+	var splash := _new(64, 50)
+	splash.blend_rect(emblem, Rect2i(0, 0, 32, 32), Vector2i(16, 0))
+	var text := "AVELORIA"
+	for i in text.length():
+		var glyph: Array = LOGO_FONT[text[i]]
+		for y in 7:
+			for x in 5:
+				if (glyph[y] as String)[x] == "#":
+					_px(splash, 9 + i * 6 + x, 40 + y, Color("1a1420"))  # bayangan
+					_px(splash, 8 + i * 6 + x, 39 + y, Color("ffd866"))
+	splash.resize(64 * 6, 50 * 6, Image.INTERPOLATE_NEAREST)
+	splash.save_png("res://assets/logo.png")
+	_made["logo_emblem"] = emblem
 
 
 # ---------------------------------------------------------------- ikon efek status (12x12, tampil 2x)
