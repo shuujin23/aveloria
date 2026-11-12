@@ -25,7 +25,7 @@ const TILE_HALF := Vector2(48, 24)  # setengah ukuran petak di layar
 const FX_SOUND := {"attack": "swing", "heavy_slash": "swing", "spin": "swing", "bite": "bite", "fire": "fire",
 	"ice_storm": "ice", "light": "magic", "arrow": "arrow", "arrow_rain": "arrow", "heal": "heal", "heal_all": "heal",
 	"bless": "buff", "rally": "buff", "debuff": "debuff", "spore": "slime", "quake": "quake", "guard": "guard",
-	"lava": "fire"}
+	"lava": "fire", "dark": "magic"}
 
 const STATUS_ICON_SIZE := Vector2(24, 24)  # ikon efek status 12x12 ditampilkan 2x
 const COLOR_PANEL := Color("0f1622")
@@ -36,7 +36,7 @@ const COLOR_DOWN := Color("d0655a")
 # Posisi berdiri dalam koordinat petak arena (0,0 = tengah). Urutan = urutan anggota party.
 const PARTY_SLOTS := [Vector2(0, 1), Vector2(0, 4), Vector2(-3, 4), Vector2(-3, 1)]
 const ENEMY_SLOTS := {
-	1: [Vector2(1.5, -2.5)],
+	1: [Vector2(2.5, -1.5)],  # agak ke depan supaya bos yang tinggi tidak terpotong di atas layar
 	2: [Vector2(0, -2.5), Vector2(3, -2.5)],
 	3: [Vector2(0, -1.5), Vector2(3, -1.5), Vector2(1.5, -4)],
 	4: [Vector2(0, -1), Vector2(3, -1), Vector2(0, -4), Vector2(3, -4)],
@@ -48,6 +48,7 @@ const MONSTER_ANCHOR := {
 	"goblin": Vector2(18, 40), "ogre": Vector2(34, 66),
 	"laba_laba": Vector2(24, 29), "roh_kabut": Vector2(16, 36), "ratu": Vector2(40, 55),
 	"kadal_bara": Vector2(26, 26), "elang_abu": Vector2(26, 34), "golem_batu": Vector2(22, 44), "lahar": Vector2(36, 73),
+	"ksatria_kelam": Vector2(22, 44), "bayangan": Vector2(16, 36), "gargoyle": Vector2(26, 34), "raja": Vector2(34, 78),
 }
 # Per latar: bahan tanah, jumlah variannya, hiasan di belakang arena, dan kerapatannya.
 const ARENAS := {
@@ -57,6 +58,8 @@ const ARENAS := {
 	"gua": {"ground": "rock", "variants": 2, "decor": ["hill_0", "hill_1"], "rate": 0.7},
 	"abu": {"ground": "ash", "variants": 3, "decor": ["dead_tree_0", "hill_0", "dead_tree_1", "hill_1"], "rate": 0.5},
 	"kawah": {"ground": "cinder", "variants": 2, "decor": ["hill_0", "hill_1", "dead_tree_0"], "rate": 0.6},
+	"kastil": {"ground": "floor", "variants": 3, "decor": ["wall_block"], "rate": 1.0},
+	"takhta": {"ground": "carpet", "variants": 2, "decor": ["wall_block"], "rate": 1.0},
 }
 
 var engine: BattleEngine
@@ -244,7 +247,11 @@ func _new_battle() -> void:
 	var ids: Array = Game.encounter if not Game.encounter.is_empty() else Db.random_group("lembah_padang")
 	engine = BattleEngine.new(Game.party, BattleEngine.make_encounter(ids))
 	engine.items = Game.items
-	Audio.play_music("battle" if engine.can_flee() else "boss")
+	var music := "battle" if engine.can_flee() else "boss"
+	for e: Battler in engine.enemies:
+		if e.id == "raja":
+			music = "raja"
+	Audio.play_music(music)
 	_cmd_index = -1
 	_log.clear()
 	_build_units()
@@ -524,7 +531,10 @@ func _show_results(reward: Dictionary, before: Array, was_boss: bool) -> void:
 	_results.add_child(column)
 
 	var title := Label.new()
-	title.text = "Semi-bos tumbang!" if was_boss else "Menang!"
+	title.text = "Menang!"
+	for e: Battler in engine.enemies:
+		if was_boss and e.is_boss:
+			title.text = "%s tumbang!" % e.display_name
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 30)
 	title.add_theme_color_override("font_color", COLOR_ACTIVE)
@@ -782,6 +792,16 @@ func _play_fx(cmd: Dictionary, targets: Array) -> void:
 				_burst(_center(t), Color("ffd23a"), 6, 110.0, 5.0)
 			_shake(8.0, 0.3)
 			await _wait(0.25)
+		"dark":  # badai kegelapan: arena menggelap, bayangan menghantam seluruh party
+			_tint_to(Color(0.18, 0.05, 0.3, 0.5))
+			await _hop(actor, 30.0)
+			_stream(area + Vector2(-60, -220), Vector2(280, 20), Color("b08ae0"), 90, Vector2(0.35, 1), 460.0, 6.0, 0.6, 0.7)
+			await _wait(0.5)
+			for t: Battler in targets:
+				_burst(_center(t), Color("7a4ab8"), 16, 200.0, 7.0)
+				_ring(_home(t), Color("b08ae0"), 50.0)
+			_shake(10.0, 0.35)
+			await _wait(0.3)
 		"quake":  # hantaman yang mengguncang seluruh layar
 			_tint_to(Color(0.5, 0.3, 0.1, 0.3))
 			await _hop(actor, 46.0)
@@ -1321,7 +1341,7 @@ func _build_ground() -> Sprite2D:
 		var names: Array = arena.decor
 		var sprite_name: String = names[posmod(hash(key), names.size())]
 		var prop := _image(sprite_name)
-		var anchor := Vector2i(16, 31) if sprite_name.begins_with("hill") else Vector2i(14, 32)
+		var anchor := Vector2i(16, 31) if (sprite_name.begins_with("hill") or sprite_name.begins_with("wall")) else Vector2i(14, 32)
 		img.blend_rect(prop, Rect2i(Vector2i.ZERO, prop.get_size()), center + Vector2i((key.x - key.y) * 16, (key.x + key.y) * 8) - anchor)
 
 	var ground := Sprite2D.new()

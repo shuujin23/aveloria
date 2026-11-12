@@ -13,6 +13,9 @@ extends RefCounted
 # Peta Pegunungan Abu ("abu"):
 #   a padang abu   c lereng berbatu   L lahar (tak bisa dilewati)   W jalan kembali ke Hutan Kabut
 #   K Pos Pemburu  N kawah Raksasa Lahar   R jalan lahar (terbuka setelah Raksasa kalah)   Z ujung jalan (bersambung)
+# Peta Kastil Kelam ("kastil"):
+#   C karpet (aman)   o aula   d ruang dalam   w tembok   V gerbang (kembali ke Pegunungan Abu)
+#   A Altar Cahaya (memulihkan party)   M takhta Raja Monster
 # Peta desa/dusun/pos:
 #   g tanah lapang (aman)  h rumah    I penginapan   Y pohon   X jalan keluar (ke peta "exit")
 const MAPS := {
@@ -57,6 +60,27 @@ const MAPS := {
 			"^^^acccaaaaaaaaaaaaccccccaaaaaa^^^^^",
 			"^^^^^aaaaaaaa^^^^aaaccccaaaa^^^^^^^^",
 			"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+		],
+	},
+	"kastil": {
+		"name": "Kastil Kelam", "outside": "w", "theme": "castle",
+		"rows": [
+			"wwwwwwwwwwwwwwwwwwwwwwwwwwwwww",
+			"wwwwwwwwwwwwMwwwwwwwwwwwwwwwww",
+			"wwwwwwwwwdddCdddwwwwwwwwwwwwww",
+			"wwwwwwwwwdddCdddwwwwwwwwwwwwww",
+			"wwwwwwwwwwwwCwwwwwwwwwwwwwwwww",
+			"wwwwddddddddCddddddddwwwwwwwww",
+			"wwwwdddwwdddCdddwwdddwwwwwwwww",
+			"wwwwdddwwdddCdddwwdddwwwwwwwww",
+			"wwwwddddddddCddddddddwwwwwwwww",
+			"wwwwwwwwwwwwCwwwwwwwwwwwwwwwww",
+			"wwwwwwwoooooCooooowwwwwwwwwwww",
+			"wwwwwwwooAooCooooowwwwwwwwwwww",
+			"wwwwwwwoooooCooooowwwwwwwwwwww",
+			"wwwwwwwwwwwwCwwwwwwwwwwwwwwwww",
+			"wwwwwwwwwwwwVwwwwwwwwwwwwwwwww",
+			"wwwwwwwwwwwwwwwwwwwwwwwwwwwwww",
 		],
 	},
 	"desa": {
@@ -138,7 +162,14 @@ const TILES := {
 	"N": {"walk": true, "zone": "Kawah Lahar", "boss": "lahar"},
 	"R": {"walk": true, "zone": "Jalan Lahar", "gate": "lahar",
 		"locked": "Aliran lahar menutup jalan ke timur. Mustahil diseberangi."},
-	"Z": {"walk": true, "zone": "Jalan ke Kastil Kelam", "scene": "kastil_bersambung"},
+	"Z": {"walk": true, "zone": "Jalan ke Kastil Kelam", "portal": "kastil"},
+	"V": {"walk": true, "zone": "Gerbang Kastil", "portal": "abu"},
+	"C": {"walk": true, "zone": "Kastil Kelam"},
+	"o": {"walk": true, "zone": "Kastil Kelam - aula", "rate": 0.10, "table": "kastil_aula"},
+	"d": {"walk": true, "zone": "Kastil Kelam - ruang dalam", "rate": 0.15, "table": "kastil_dalam"},
+	"w": {"walk": false, "zone": ""},
+	"A": {"walk": true, "zone": "Altar Cahaya", "scene": "altar"},
+	"M": {"walk": true, "zone": "Ruang Takhta", "boss": "raja"},
 	"g": {"walk": true, "zone": ""},
 	"h": {"walk": false, "zone": ""},
 	"I": {"walk": false, "zone": ""},

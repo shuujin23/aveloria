@@ -33,11 +33,12 @@ const MOUNTAIN_ANCHOR := Vector2(16, 31)
 const HOUSE_ANCHOR := Vector2(20, 38)
 const PERSON_ANCHOR := Vector2(12, 30)
 const BACKDROPS := {"grass": "lembah", "forest_floor": "hutan", "mist_grass": "kabut", "mist_floor": "kabut",
-	"ash": "abu", "cinder": "abu"}
+	"ash": "abu", "cinder": "abu", "floor": "kastil", "floor_dark": "kastil"}
 const GROUND_VARIANTS := {"grass": 3, "forest_floor": 2, "mist_grass": 3, "mist_floor": 2, "water": 3, "rock": 2, "path": 3,
-	"ash": 3, "cinder": 2, "lava": 3}
-const GROUND_PRIORITY := {"water": 0, "lava": 0, "path": 1, "rock": 2, "grass": 3, "mist_grass": 3, "ash": 3,
-	"forest_floor": 4, "mist_floor": 4, "cinder": 4}
+	"ash": 3, "cinder": 2, "lava": 3, "floor": 3, "floor_dark": 2, "carpet": 2}
+# Bahan berprioritas lebih tinggi merambat ke tetangganya. Lantai kastil setara satu sama lain (tepinya lurus).
+const GROUND_PRIORITY := {"water": 0, "lava": 0, "path": 1, "floor": 1, "floor_dark": 1, "carpet": 1, "rock": 2,
+	"grass": 3, "mist_grass": 3, "ash": 3, "forest_floor": 4, "mist_floor": 4, "cinder": 4}
 const EDGE_SIDES := {"ne": Vector2i(0, -1), "se": Vector2i(1, 0), "sw": Vector2i(0, 1), "nw": Vector2i(-1, 0)}
 
 var _tile := Vector2i.ZERO
@@ -102,7 +103,7 @@ func _ready() -> void:
 	elif Game.world_message != "":
 		_show_message(Game.world_message)
 	Game.world_message = ""
-	Audio.play_music("desa" if WorldMap.is_settlement(Game.map_id) else "dunia")
+	Audio.play_music("desa" if WorldMap.is_settlement(Game.map_id) else ("kastil" if Game.map_id == "kastil" else "dunia"))
 
 
 ## Posisi layar dari titik tengah sebuah petak.
@@ -333,7 +334,7 @@ func _on_step() -> void:
 	elif tile.has("boss"):
 		var rule: Dictionary = Db.BOSS_RULES[tile.boss]
 		if Game.flags.has(tile.boss):
-			_show_message("Sarang ini sudah kosong.")
+			_show_message("Tidak ada apa-apa lagi di sini.")
 		elif not Game.flags.has(rule.need):  # belum punya rekan yang dibutuhkan
 			_run_scene(Story.scene(rule.blocked))
 		else:
@@ -501,6 +502,10 @@ func _run_steps(steps: Array) -> bool:
 					Game.save_game()
 					Audio.play_jingle("inn")
 					_update_hud()
+				"credits":  # tamat: simpan, lalu buka layar penutup
+					Game.save_game()
+					get_tree().change_scene_to_file(Game.ENDING_SCENE)
+					return false
 				"battle":
 					_dialog_panel.visible = false
 					_dialog_open = false
@@ -696,7 +701,7 @@ func _variant(t: Vector2i, count: int) -> int:
 func _draw() -> void:
 	var backing := Color("4b473d")
 	if WorldMap.outside() != "^":
-		backing = {"mist": Color("2a5450"), "ash": Color("4a4540")}.get(WorldMap.theme(), Color("2f5a34"))
+		backing = {"mist": Color("2a5450"), "ash": Color("4a4540"), "castle": Color("1c1a24")}.get(WorldMap.theme(), Color("2f5a34"))
 	draw_rect(_bounds.grow(400), backing)
 	var w := WorldMap.width()
 	var h := WorldMap.height()
@@ -725,6 +730,8 @@ func _far_prop(t: Vector2i) -> Dictionary:
 	if WorldMap.outside() == "^":
 		var sprite_name := _mountain_name(t, 1, 5)
 		return {} if sprite_name == "" else {"name": sprite_name, "anchor": MOUNTAIN_ANCHOR}
+	if WorldMap.theme() == "castle":  # kastil dikelilingi tembok rapat
+		return {"name": "wall_block", "anchor": MOUNTAIN_ANCHOR}
 	if _variant(t + Vector2i(7, 3), 10) < 8:
 		return {"name": _tree_name(t), "anchor": TREE_ANCHOR}
 	return {}
@@ -755,6 +762,12 @@ func _material(t: Vector2i) -> String:
 			return {"mist": "mist_grass", "ash": "ash"}.get(WorldMap.theme(), "grass")
 		"f", "Y":
 			return {"mist": "mist_floor", "ash": "cinder"}.get(WorldMap.theme(), "forest_floor")
+		"C":
+			return "carpet"
+		"o", "A", "V":
+			return "floor"
+		"d", "M", "w":
+			return "floor_dark"
 		"a":
 			return "ash"
 		"c":
@@ -806,6 +819,14 @@ func _build_objects() -> void:
 					sprite = _sprite("house", HOUSE_ANCHOR)
 				"c":
 					sprite = _sprite("dead_tree_%d" % _variant(t, 2), TREE_ANCHOR)
+				"w":
+					sprite = _sprite("wall_block", MOUNTAIN_ANCHOR)
+				"M":
+					sprite = _sprite("throne", Vector2(16, 34))
+				"A":
+					sprite = _sprite("altar", Vector2(16, 30))
+				"V":
+					sprite = _sprite("gate_open", Vector2(20, 30))
 				"N":  # kawah Raksasa Lahar: gua yang sama, bernuansa bara
 					sprite = _sprite("lair_empty" if Game.flags.has(WorldMap.tile_at(t).boss) else "lair_occupied", Vector2(18, 30))
 					sprite.modulate = Color(1.0, 0.62, 0.42)

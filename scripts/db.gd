@@ -110,6 +110,20 @@ const SKILLS := {
 	"kulit_batu": {"name": "Kulit Batu", "mp": 3, "target": "self", "kind": "status", "status": "defense_up", "desc": ""},
 	"semburan_lahar": {"name": "Semburan Lahar", "mp": 6, "target": "all_enemies", "kind": "magic", "power": 14,
 		"inflict": {"status": "burn", "chance": 0.5}, "desc": ""},
+	# --- Monster Kastil Kelam ---
+	"tebasan_gelap": {"name": "Tebasan Gelap", "mp": 3, "target": "enemy", "kind": "phys", "power": 1.5, "desc": ""},
+	"sumpah_perang": {"name": "Sumpah Perang", "mp": 3, "target": "self", "kind": "status", "status": "attack_up", "desc": ""},
+	"kutukan": {"name": "Kutukan", "mp": 3, "target": "enemy", "kind": "status", "status": "attack_break", "desc": ""},
+	"api_hitam": {"name": "Api Hitam", "mp": 4, "target": "enemy", "kind": "magic", "power": 16, "desc": ""},
+	"cakar_batu": {"name": "Cakar Batu", "mp": 2, "target": "enemy", "kind": "phys", "power": 1.3,
+		"inflict": {"status": "defense_break", "chance": 0.35}, "desc": ""},
+	# --- Raja Monster ---
+	"tebasan_kegelapan": {"name": "Tebasan Kegelapan", "mp": 4, "target": "enemy", "kind": "phys", "power": 1.7,
+		"inflict": {"status": "defense_break", "chance": 0.4}, "desc": ""},
+	"badai_kegelapan": {"name": "Badai Kegelapan", "mp": 8, "target": "all_enemies", "kind": "magic", "power": 22,
+		"inflict": {"status": "attack_break", "chance": 0.35}, "desc": ""},
+	"auman_raja": {"name": "Auman Raja", "mp": 4, "target": "self", "kind": "status", "status": "attack_up", "desc": ""},
+	"rantai_bayangan": {"name": "Rantai Bayangan", "mp": 5, "target": "all_enemies", "kind": "status", "status": "slow", "desc": ""},
 }
 
 ## Barang habis pakai. Dipakai dari menu Barang di battle; yang berjenis heal/mp juga bisa dari menu peta.
@@ -157,6 +171,8 @@ const SKILL_FX := {
 	"hantaman_bumi": "quake",
 	"gigitan_racun": "bite", "jaring": "debuff", "lidah_api": "fire", "jaring_raksasa": "debuff", "semburan_racun": "spore",
 	"gigitan_bara": "bite", "cakar_tajam": "bite", "hantaman_batu": "heavy_slash", "kulit_batu": "buff_self", "semburan_lahar": "lava",
+	"tebasan_gelap": "heavy_slash", "sumpah_perang": "buff_self", "kutukan": "debuff", "api_hitam": "fire", "cakar_batu": "bite",
+	"tebasan_kegelapan": "heavy_slash", "badai_kegelapan": "dark", "auman_raja": "buff_self", "rantai_bayangan": "debuff",
 }
 
 # base = stat di level 1, growth = tambahan per level, learn = level -> jurus baru
@@ -215,6 +231,16 @@ const ENEMIES := {
 	"lahar": {"name": "Raksasa Lahar", "hp": 640, "mp": 80, "atk": 38, "defense": 17, "mag": 18, "agi": 7,
 		"xp": 340, "gold": 420, "skills": ["semburan_lahar", "hantaman_bumi", "kulit_batu"], "immune": ["burn", "slow"],
 		"boss": true},
+	# --- Kastil Kelam ---
+	"ksatria_kelam": {"name": "Ksatria Kelam", "hp": 140, "mp": 12, "atk": 40, "defense": 22, "mag": 0, "agi": 12,
+		"xp": 48, "gold": 30, "skills": ["tebasan_gelap", "sumpah_perang"], "immune": []},
+	"bayangan": {"name": "Arwah Bayangan", "hp": 86, "mp": 30, "atk": 14, "defense": 16, "mag": 26, "agi": 17,
+		"xp": 44, "gold": 28, "skills": ["api_hitam", "kutukan"], "immune": ["poison"], "voice": "soft"},
+	"gargoyle": {"name": "Gargoyle", "hp": 112, "mp": 10, "atk": 37, "defense": 26, "mag": 0, "agi": 15,
+		"xp": 46, "gold": 30, "skills": ["cakar_batu", "kulit_batu"], "immune": ["poison"]},
+	"raja": {"name": "Raja Monster", "hp": 1400, "mp": 200, "atk": 50, "defense": 21, "mag": 28, "agi": 12,
+		"xp": 600, "gold": 0, "skills": ["tebasan_kegelapan", "badai_kegelapan", "auman_raja", "rantai_bayangan"], "immune": ["slow"],
+		"boss": true},
 }
 
 # Tabel pertemuan acak; tiap jenis medan di peta menunjuk ke salah satu tabel ini.
@@ -233,6 +259,11 @@ const ENCOUNTER_TABLES := {
 		["kadal_bara", "kadal_bara", "elang_abu"]],
 	"abu_lereng": [
 		["golem_batu", "elang_abu", "kadal_bara"], ["golem_batu", "golem_batu"], ["kadal_bara", "elang_abu", "golem_batu", "elang_abu"]],
+	"kastil_aula": [
+		["ksatria_kelam", "bayangan"], ["gargoyle", "gargoyle"], ["ksatria_kelam", "gargoyle", "bayangan"]],
+	"kastil_dalam": [
+		["ksatria_kelam", "ksatria_kelam", "bayangan"], ["gargoyle", "bayangan", "gargoyle", "ksatria_kelam"],
+		["bayangan", "bayangan", "ksatria_kelam"]],
 }
 
 ## Semi-bos di peta: id penanda (flag) -> kelompok musuh.
@@ -240,6 +271,7 @@ const BOSSES := {
 	"ogre": ["ogre"],
 	"ratu": ["laba_laba", "ratu", "laba_laba"],
 	"lahar": ["kadal_bara", "lahar", "kadal_bara"],
+	"raja": ["raja"],  # bos utama, sendirian
 }
 
 ## Aturan tiap sarang semi-bos di peta:
@@ -251,6 +283,7 @@ const BOSS_RULES := {
 	"ogre": {"need": "mira_joined", "blocked": "lair_alone", "after": "ogre_defeated", "backdrop": "gua"},
 	"ratu": {"need": "selene_joined", "blocked": "nest_sealed", "after": "ratu_defeated", "backdrop": "kabut"},
 	"lahar": {"need": "kael_joined", "blocked": "lahar_blocked", "after": "lahar_defeated", "backdrop": "kawah"},
+	"raja": {"need": "kael_joined", "blocked": "lahar_blocked", "after": "ending", "backdrop": "takhta"},
 }
 
 

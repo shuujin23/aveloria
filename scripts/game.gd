@@ -5,6 +5,7 @@ extends Node
 const TITLE_SCENE := "res://scenes/title.tscn"
 const WORLD_SCENE := "res://scenes/world.tscn"
 const BATTLE_SCENE := "res://scenes/battle.tscn"
+const ENDING_SCENE := "res://scenes/ending.tscn"
 const START_MAP := "desa"
 const START_TILE := Vector2i(7, 10)  # di depan penginapan; juga titik kembali setelah kalah
 const SAVE_VERSION := 1

@@ -29,6 +29,13 @@ func _initialize() -> void:
 	_ground("lava", "e0622a", "ffb040", "b03a1c", 3, "water")
 	_dead_tree("dead_tree_0", false)
 	_dead_tree("dead_tree_1", true)
+	# Kastil Kelam
+	_ground("floor", "5a5866", "68667a", "4a4856", 3, "path")
+	_ground("floor_dark", "44424e", "525060", "36343e", 2, "path")
+	_ground("carpet", "8a2a34", "a03a44", "6e1e28", 2, "path")
+	_wall_block()
+	_throne()
+	_altar()
 
 	var green := ["8fd06a", "5fae4e", "3d8a40", "2a6a38", "1c4a2e"]
 	var teal := ["7cc4b0", "4e9c8c", "33766e", "235a58", "173f42"]
@@ -98,12 +105,17 @@ func _initialize() -> void:
 	# Hutan Kabut
 	_spider("monster_laba_laba", 1.0, ["8a7ab8", "5e4e8c", "44386a", "2c2448"], false)
 	_spider("monster_ratu", 1.75, ["a05a9a", "7a3a78", "5a2a5c", "3a1a40"], true)
-	_monster_roh_kabut()
+	_wisp("monster_roh_kabut", ["f0ffff", "b0ecf8", "6cc0e8", "4a8ad0"], ["ffffff", "f0ffff", "d0f4fc", "b0ecf8"], "244a8a", "244a8a")
 	# Pegunungan Abu
 	_monster_kadal_bara()
-	_monster_elang_abu()
+	_bird("monster_elang_abu", ["e0dcd4", "b0aaa0", "807a72", "565048"], ["5e5850", "c8c2b8", "948e84"], "ffe14a")
 	_golem("monster_golem_batu", 1.0, ["a8a296", "847e72", "625c52", "443f38"], "2c2824", "7fe0f0")
 	_golem("monster_lahar", 1.7, ["8a6258", "5e4038", "44302a", "2c1e1a"], "ff8a2a", "ffd23a")
+	# Kastil Kelam
+	_golem("monster_ksatria_kelam", 1.0, ["8a8aa8", "5e5e7c", "42425c", "2a2a40"], "c8503f", "ff4a3a", 0, false, true)
+	_wisp("monster_bayangan", ["b08ae0", "7a4ab8", "56308a", "341c5c"], ["e8d8ff", "c8a8f0", "a880e0", "8a5ac8"], "ffe14a", "1c1030")
+	_bird("monster_gargoyle", ["9a94a8", "726c84", "524c62", "363246"], ["363246", "8a84a0", "625c78"], "ff4a3a")
+	_golem("monster_raja", 1.6, ["7a5a9a", "523a72", "3a2854", "241a38"], "ff4a5a", "ffe14a", 9, true, true)
 
 	_backdrop("bg_lembah", ["6fb4e8", "a8d8f0"], "7fb08a", "5a9e58", ["5a9e4f", "6db35c", "4a8a44"], "")
 	_backdrop("bg_hutan", ["4f8fb8", "86bcc8"], "3f7a50", "2f6a40", ["4a8546", "5a9a52", "3c7340"], "trees")
@@ -1245,6 +1257,60 @@ func _spider(sprite_name: String, s: float, body_hex: Array, queen: bool) -> voi
 	_finish(img, sprite_name, "1c1630", [22 * s, 27 * s + top, 19 * s, 2.5 * s])
 
 
+## Balok tembok kastil: kubus isometrik rendah (32x40, jangkar 16,31). Sengaja lebih pendek dari
+## satu petak dan lebih gelap dari lantai, supaya ruangan di belakangnya tetap terlihat.
+func _wall_block() -> void:
+	var img := _new(32, 40)
+	var rise := 11  # tinggi tembok dalam piksel
+	var top := 31 - rise
+	_fill_poly(img, [Vector2(16, top - 8), Vector2(32, top), Vector2(16, top + 8), Vector2(0, top)], func(x: int, y: int) -> Color:
+		return Color("3e3c48") if _n(x / 3, y / 2, 5) > 0.2 else Color("36343f"))
+	_fill_poly(img, [Vector2(0, top), Vector2(16, top + 8), Vector2(16, 39), Vector2(0, 31)], func(x: int, y: int) -> Color:
+		var course := int(y - x * 0.5)
+		var joint := posmod(course, 5) == 0 or posmod(x + (course / 5) * 4, 8) == 0
+		return Color("24222c") if joint else Color("302e38"))
+	_fill_poly(img, [Vector2(16, top + 8), Vector2(32, top), Vector2(32, 31), Vector2(16, 39)], func(x: int, y: int) -> Color:
+		var course := int(y + x * 0.5)
+		var joint := posmod(course, 5) == 0 or posmod(x + (course / 5) * 4, 8) == 0
+		return Color("1c1a22") if joint else Color("26242e"))
+	_save(img, "wall_block")
+
+## Takhta Raja Monster (32x40, jangkar 16,34).
+func _throne() -> void:
+	var img := _new(32, 40)
+	_rect(img, 10, 3, 21, 30, Color("3a2a54"))  # sandaran
+	_rect(img, 18, 3, 21, 30, Color("2a1c40"))
+	_rect(img, 12, 7, 19, 25, Color("8a2a34"))  # bantalan merah
+	_rect(img, 10, 3, 21, 4, Color("d9a441"))
+	for spike: Array in [[10, 3, 11, -1, 13, 3], [14, 3, 16, -2, 18, 3], [19, 3, 21, -1, 22, 3]]:
+		_flat(img, [Vector2(spike[0], spike[1]), Vector2(spike[2], spike[3] + 2), Vector2(spike[4], spike[5])], Color("d9a441"))
+	_rect(img, 7, 24, 24, 33, Color("4a3a64"))  # dudukan
+	_rect(img, 20, 24, 24, 33, Color("362a4c"))
+	_rect(img, 7, 20, 9, 26, Color("5a4a78"))  # sandaran tangan
+	_rect(img, 22, 20, 24, 26, Color("3a2a54"))
+	_outline(img, Color("140c20"))
+	_shadow(img, 16, 34, 13, 4)
+	_save(img, "throne")
+
+
+## Altar Cahaya: tumpuan batu dengan kristal biru bercahaya (32x34, jangkar 16,30).
+func _altar() -> void:
+	var img := _new(32, 34)
+	_rect(img, 11, 19, 20, 29, Color("8a8894"))
+	_rect(img, 17, 19, 20, 29, Color("68667a"))
+	_rect(img, 9, 16, 22, 18, Color("a8a6b4"))
+	_rect(img, 9, 29, 22, 30, Color("68667a"))
+	_fill_poly(img, [Vector2(16, 2), Vector2(21, 9), Vector2(16, 16), Vector2(11, 9)], func(x: int, _y: int) -> Color:
+		return Color("bff4ff") if x < 16 else Color("6cc0e8"))
+	_px(img, 14, 7, Color.WHITE)
+	_px(img, 14, 8, Color.WHITE)
+	_outline(img, Color("1c2840"))
+	for p: Vector2i in [Vector2i(7, 6), Vector2i(25, 4), Vector2i(24, 13), Vector2i(8, 12)]:  # kilau
+		_px(img, p.x, p.y, Color("e8fbff"))
+	_shadow(img, 16, 30, 10, 3)
+	_save(img, "altar")
+
+
 ## Pohon mati di lereng Pegunungan Abu (28x36, jangkar 14,32). mirror membalik arah dahan.
 func _dead_tree(sprite_name: String, mirror: bool) -> void:
 	var img := _new(28, 36)
@@ -1288,64 +1354,76 @@ func _monster_kadal_bara() -> void:
 	_finish(img, "monster_kadal_bara", "3a1810", [24, 24, 17, 2.2])
 
 
-## Elang Abu: elang kelabu dengan sayap terbentang, melayang.
-func _monster_elang_abu() -> void:
+## Makhluk bersayap terbentang yang melayang (Elang Abu kelabu, Gargoyle batu gelap).
+## wing_hex = [warna garis bulu, bagian atas sayap, bagian bawah sayap].
+func _bird(sprite_name: String, body_hex: Array, wing_hex: Array, eye_hex: String) -> void:
 	var img := _new(48, 34)
-	var body := _pal(["e0dcd4", "b0aaa0", "807a72", "565048"])
+	var body := _pal(body_hex)
 	var wing: Array = [Vector2(20, 14), Vector2(12, 6), Vector2(2, 3), Vector2(0, 8), Vector2(4, 9), Vector2(2, 13),
 		Vector2(7, 13), Vector2(6, 17), Vector2(12, 16), Vector2(16, 19), Vector2(20, 17)]
 	var feathers := func(x: int, y: int) -> Color:
 		if x % 5 == 0:
-			return Color("5e5850")
-		return Color("c8c2b8") if y < 9 else Color("948e84")
+			return Color(String(wing_hex[0]))
+		return Color(String(wing_hex[1])) if y < 9 else Color(String(wing_hex[2]))
 	_fill_poly(img, wing, feathers)
 	_fill_poly(img, _mirror(wing, 48), feathers)
 	_flat(img, [Vector2(21, 22), Vector2(27, 22), Vector2(28, 29), Vector2(20, 29)], body[2])
 	_blob(img, 24, 17, 5, 7, body)
 	_blob(img, 24, 9.5, 4.2, 4, body)
 	_flat(img, [Vector2(22, 11), Vector2(26, 11), Vector2(24, 15)], Color("e0b040"))
-	_rect(img, 21, 8, 22, 9, Color("ffe14a"))
-	_rect(img, 26, 8, 27, 9, Color("ffe14a"))
+	_rect(img, 21, 8, 22, 9, Color(eye_hex))
+	_rect(img, 26, 8, 27, 9, Color(eye_hex))
 	_px(img, 22, 9, Color("2a2420"))
 	_px(img, 26, 9, Color("2a2420"))
 	_rect(img, 21, 24, 22, 25, Color("e0b040"))
 	_rect(img, 26, 24, 27, 25, Color("e0b040"))
-	_finish(img, "monster_elang_abu", "2a2420", [24, 32, 9, 1.8])
+	_finish(img, sprite_name, "2a2420", [24, 32, 9, 1.8])
 
 
-## Golem: tumpukan bongkah batu berbentuk raksasa. s = skala; crack_hex = warna retakan
-## (jingga menyala untuk Raksasa Lahar); eye_hex = warna mata.
-## Titik kaki setelah pinggiran: (20*s + 2, 42*s + 2).
-func _golem(sprite_name: String, s: float, body_hex: Array, crack_hex: String, eye_hex: String) -> void:
-	var img := _new(int(40 * s) + 1, int(44 * s) + 1)
+## Golem: tumpukan bongkah berbentuk raksasa. s = skala; crack_hex = warna retakan/hiasan;
+## eye_hex = warna mata; top = ruang kosong di atas (untuk mahkota); crown = mahkota bertanduk;
+## sword = pedang besar di tangan kanan. Dipakai untuk Golem Batu, Raksasa Lahar, Ksatria Kelam, dan Raja Monster.
+## Titik kaki setelah pinggiran: (20*s + 2, 42*s + top + 2).
+func _golem(sprite_name: String, s: float, body_hex: Array, crack_hex: String, eye_hex: String,
+		top: int = 0, crown: bool = false, sword: bool = false) -> void:
+	var img := _new(int(40 * s) + 1, int(44 * s) + top + 1)
 	var rock := _pal(body_hex)
 	var thick: int = max(1, int(round(s)))
+	var at := func(x: float, y: float) -> Vector2: return Vector2(x * s, y * s + top)
+	if sword:  # di belakang kepalan tangan kanan
+		_flat(img, [at.call(33.5, 33), at.call(36.5, 33), at.call(38.5, 5), at.call(37, 1), at.call(35, 5)], Color("c9d1dc"))
+		_flat(img, [at.call(36, 33), at.call(36.5, 33), at.call(38.5, 5), at.call(37, 1)], Color("7a8494"))
 	for part: Array in [[13, 36, 5, 6], [27, 36, 5, 6], [13, 41, 6, 2.2], [27, 41, 6, 2.2],  # kaki
 			[5, 26, 4, 8], [35, 26, 4, 8], [5, 34, 4.6, 4], [35, 34, 4.6, 4],  # lengan dan kepalan
 			[20, 22, 12, 11], [7, 16, 5.5, 5], [33, 16, 5.5, 5], [20, 8, 6.2, 5.6]]:  # badan, bahu, kepala
-		_blob(img, part[0] * s, part[1] * s, part[2] * s, part[3] * s, rock)
+		_blob(img, part[0] * s, part[1] * s + top, part[2] * s, part[3] * s, rock)
 	var crack := Color(crack_hex)
 	for seg: Array in [[14, 17, 19, 23], [19, 23, 16, 30], [25, 15, 27, 23], [27, 23, 24, 28], [5, 22, 6, 30], [34, 21, 35, 29]]:
-		_line(img, Vector2(seg[0], seg[1]) * s, Vector2(seg[2], seg[3]) * s, crack, thick)
+		_line(img, at.call(seg[0], seg[1]), at.call(seg[2], seg[3]), crack, thick)
+	if sword:
+		_rect(img, int(32 * s), int(32 * s) + top, int(38.5 * s), int(32 * s) + top + thick, Color("d9a441"))
+	if crown:
+		for spike: Array in [[14.5, 5, 15.5, -3.5, 17.5, 3.5], [18.5, 3, 20, -4.5, 21.5, 3], [22.5, 3.5, 24.5, -3.5, 25.5, 5]]:
+			_flat(img, [at.call(spike[0], spike[1]), at.call(spike[2], spike[3]), at.call(spike[4], spike[5])], Color("ffd866"))
+		_rect(img, int(15 * s), int(3.5 * s) + top, int(25 * s), int(3.5 * s) + top + thick - 1, Color("d9a441"))
 	for eye: Array in [[17, 7], [22, 7]]:
-		_rect(img, int(eye[0] * s), int(eye[1] * s), int(eye[0] * s) + thick, int(eye[1] * s) + thick, Color(eye_hex))
-	_finish(img, sprite_name, "1c1814", [20 * s, 42 * s, 14 * s, 2.5 * s])
+		_rect(img, int(eye[0] * s), int(eye[1] * s) + top, int(eye[0] * s) + thick, int(eye[1] * s) + top + thick, Color(eye_hex))
+	_finish(img, sprite_name, "1c1814", [20 * s, 42 * s + top, 14 * s, 2.5 * s])
 
-
-## Roh Kabut: nyala api biru pucat yang melayang.
-func _monster_roh_kabut() -> void:
+## Roh melayang berbentuk nyala api (Roh Kabut biru pucat, Arwah Bayangan ungu gelap).
+func _wisp(sprite_name: String, flame_hex: Array, core_hex: Array, eye_hex: String, outline_hex: String) -> void:
 	var img := _new(28, 36)
-	var flame := _pal(["f0ffff", "b0ecf8", "6cc0e8", "4a8ad0"])
-	var core := _pal(["ffffff", "f0ffff", "d0f4fc", "b0ecf8"])
+	var flame := _pal(flame_hex)
+	var core := _pal(core_hex)
 	_flat(img, [Vector2(15, 1), Vector2(20, 12), Vector2(8, 12)], flame[1])
 	_flat(img, [Vector2(15, 1), Vector2(17, 9), Vector2(12, 10)], flame[0])
 	_blob(img, 14, 17, 8.5, 9, flame)
 	_blob(img, 13.5, 18, 4.8, 5.2, core)
 	_blob(img, 9, 27, 2.2, 2.2, flame)
 	_blob(img, 18, 29, 1.6, 1.6, flame)
-	_rect(img, 10, 15, 11, 17, Color("244a8a"))
-	_rect(img, 16, 15, 17, 17, Color("244a8a"))
-	_finish(img, "monster_roh_kabut", "244a8a", [14, 33.5, 7, 1.8])
+	_rect(img, 10, 15, 11, 17, Color(eye_hex))
+	_rect(img, 16, 15, 17, 17, Color(eye_hex))
+	_finish(img, sprite_name, outline_hex, [14, 33.5, 7, 1.8])
 
 
 # ---------------------------------------------------------------- latar battle (320x180, tampil 4x)
@@ -1410,7 +1488,7 @@ func _preview(path: String) -> void:
 	var y := 2
 	var row_h := 0
 	for sprite_name: String in _made:
-		if not sprite_name.begins_with("status_"):
+		if not (sprite_name in ["monster_ksatria_kelam", "monster_bayangan", "monster_gargoyle", "monster_raja", "wall_block", "throne", "altar", "floor_0", "floor_dark_0", "carpet_0"]):
 			continue
 		var img: Image = _made[sprite_name]
 		if x + img.get_width() > sheet.get_width() - 2:
@@ -1420,6 +1498,6 @@ func _preview(path: String) -> void:
 		sheet.blend_rect(img, Rect2i(Vector2i.ZERO, img.get_size()), Vector2i(x, y))
 		x += img.get_width() + 2
 		row_h = max(row_h, img.get_height())
-	sheet = sheet.get_region(Rect2i(0, 0, 130, 16))
+	sheet = sheet.get_region(Rect2i(0, 0, 240, 140))
 	sheet.resize(sheet.get_width() * 5, sheet.get_height() * 5, Image.INTERPOLATE_NEAREST)
 	sheet.save_png(path)

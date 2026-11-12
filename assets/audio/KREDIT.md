@@ -16,6 +16,9 @@ File tidak diubah, hanya diganti namanya:
 | town.ogg | 07 - Town |
 | overworld.ogg | 08 - Overworld |
 | danger.ogg | 13 - Danger |
+| dungeon.ogg | 15 - Dungeon |
+| enter_the_emperor.ogg | 16 - Enter the Emperor |
+| finale.ogg | 25 - Finale |
 | barbarian_king.ogg | 14 - Barbarian King |
 | victory.ogg | 17 - Victory |
 | game_over.ogg | 20 - Game Over |

@@ -397,9 +397,8 @@ func _initialize() -> void:
 	_expect(WorldMap.is_walkable(lava_gate, _game.flags), "jalan lahar terbuka setelah Raksasa kalah")
 	await _open_world("abu", lava_gate + Vector2i(-1, 0))
 	current_scene.call("_walk_to", WorldMap.find("Z"))
-	await _wait_until(func() -> bool: return current_scene.get("_dialog_open"))
-	_expect(current_scene.get("_dialog_open") and _game.player_tile == WorldMap.find("Z"), "ujung jalan menampilkan adegan bersambung")
-	await _skip_dialog()
+	await _wait_until(func() -> bool: return _game.map_id == "kastil" and not current_scene.get("_busy"))
+	_expect(_game.map_id == "kastil" and _game.player_tile == WorldMap.find_in("kastil", "V"), "jalan lahar -> tiba di gerbang Kastil Kelam")
 
 	# --- Kalah di Wilayah 3: kembali ke Pos Pemburu ---
 	_set_levels(1)
@@ -408,6 +407,57 @@ func _initialize() -> void:
 	current_scene.call("_start_battle", ["golem_batu", "golem_batu", "golem_batu", "golem_batu"])
 	await _play_battle()
 	_expect(_game.map_id == "pos" and _game.gold == 30, "kalah setelah menginap di pos -> siuman di pos (peta=%s, emas=%d)" % [_game.map_id, _game.gold])
+
+	# ================= Wilayah 4: Kastil Kelam =================
+	_set_levels(20)
+	var castle_gate := WorldMap.find_in("kastil", "V")
+	await _open_world("kastil", castle_gate)
+	await _shot("kastil.png")
+	current_scene.call("_walk_to", castle_gate + Vector2i(0, -1))
+	await _wait_until(func() -> bool: return current_scene.get("_dialog_open"))
+	_expect(current_scene.get("_dialog_open"), "adegan pembuka Kastil Kelam tampil")
+	await _skip_dialog()
+	_expect(_game.flags.has("kastil_intro"), "adegan Kastil Kelam hanya sekali")
+	current_scene.call("_walk_to", castle_gate)
+	await _wait_until(func() -> bool: return _game.map_id == "abu" and not current_scene.get("_busy"))
+	_expect(_game.map_id == "abu" and _game.player_tile == WorldMap.find_in("abu", "Z"), "gerbang kastil kembali ke Pegunungan Abu")
+
+	# --- Altar Cahaya ---
+	var altar := WorldMap.find_in("kastil", "A")
+	await _open_world("kastil", altar + Vector2i(1, 0))
+	(_game.party[0] as Battler).hp = 4
+	current_scene.call("_walk_to", altar)
+	await _wait_until(func() -> bool: return current_scene.get("_dialog_open"))
+	await _shot("altar.png")
+	await _skip_dialog()
+	_expect((_game.party[0] as Battler).hp == (_game.party[0] as Battler).max_hp and _game.respawn_map == "kastil", "berdoa di altar memulihkan party dan menjadi titik kembali")
+
+	# --- Raja Monster, adegan penutup, layar tamat ---
+	_set_levels(45)
+	var throne := WorldMap.find_in("kastil", "M")
+	await _open_world("kastil", throne + Vector2i(0, 1))
+	current_scene.call("_walk_to", throne)
+	await _wait_until(func() -> bool: return current_scene != null and current_scene.name == "Battle")
+	await _shot("battle_raja.png")
+	await _play_battle()
+	_expect(_game.flags.has("raja"), "penanda Raja Monster tercatat")
+	if not _game.flags.has("raja"):
+		_print_battle_log()
+	_expect(current_scene.name == "World" and current_scene.get("_dialog_open"), "adegan penutup tampil setelah Raja Monster kalah")
+	await _skip_dialog()
+	await _wait_until(func() -> bool: return current_scene != null and current_scene.name == "Ending", 100)
+	_expect(current_scene.name == "Ending", "setelah adegan penutup, layar tamat terbuka")
+	await create_timer(0.3).timeout
+	await _shot("tamat.png")
+	_expect(_game.has_save(), "permainan disimpan saat tamat")
+	(root.gui_get_focus_owner() as Button).pressed.emit()
+	await _wait_until(func() -> bool: return current_scene != null and current_scene.name == "Title", 100)
+	_expect(current_scene.name == "Title" and not (current_scene.get("_continue") as Button).disabled, "dari layar tamat kembali ke judul, Lanjutkan aktif")
+	current_scene.call("_on_continue")
+	await create_timer(0.5).timeout
+	_expect(current_scene.name == "World" and _game.map_id == "kastil" and _game.flags.has("raja") and not current_scene.get("_busy"),
+		"Lanjutkan setelah tamat: kembali di kastil, Raja sudah kalah, tanpa adegan terulang")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(_game.save_path))
 
 	# --- Kalah: kembali ke penginapan desa, emas tinggal setengah ---
 	_game.new_game()
@@ -632,6 +682,16 @@ func _check_maps() -> void:
 	_expect(ash.has(WorldMap.find("K")) and ash.has(Vector2i(19, 4)) and ash.has(WorldMap.find("N")), "pos, tempat Kael, dan kawah terjangkau dari jalan masuk Pegunungan Abu")
 	_expect(not ash.has(WorldMap.find("Z")), "jalan ke Kastil Kelam tertutup sebelum Raksasa kalah")
 	_expect(_reachable(WorldMap.find("W"), {"lahar": true}).has(WorldMap.find("Z")), "jalan ke Kastil Kelam terjangkau setelah Raksasa kalah")
+
+	WorldMap.current = "kastil"
+	var castle := _reachable(WorldMap.find("V"), {})
+	_expect(castle.has(WorldMap.find("A")) and castle.has(WorldMap.find("M")), "altar dan takhta terjangkau dari gerbang kastil")
+	var sealed := 0
+	for y in WorldMap.height():
+		for x in WorldMap.width():
+			if WorldMap.char_at(Vector2i(x, y)) in ["o", "d", "C"] and not castle.has(Vector2i(x, y)):
+				sealed += 1
+	_expect(sealed == 0, "semua ruang kastil terjangkau (terisolasi: %d petak)" % sealed)
 
 	WorldMap.current = "dunia"
 	var start := WorldMap.find("T")

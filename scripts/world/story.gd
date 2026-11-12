@@ -11,13 +11,14 @@ extends RefCounted
 ##   {"do": "rest"}                          pulihkan party, simpan permainan, jadikan tempat ini titik kembali
 ##   {"do": "shop", "stock": [id barang], "name": "Nama toko"}   buka toko dengan daftar barang itu
 ##   {"do": "battle", "ids": [...], "backdrop": "hutan", "after": "kunci_adegan"}
+##   {"do": "credits"}                       simpan permainan lalu buka layar penutup
 
 const INN_PRICE := 10
 const DUSUN_INN_PRICE := 20
 const POS_INN_PRICE := 30
 
 ## Adegan pembuka tiap wilayah: awalan nama zona -> adegan (dimainkan sekali; penandanya = nama adegan).
-const ZONE_INTROS := {"Hutan Kabut": "kabut_intro", "Pegunungan Abu": "abu_intro"}
+const ZONE_INTROS := {"Hutan Kabut": "kabut_intro", "Pegunungan Abu": "abu_intro", "Kastil Kelam": "kastil_intro"}
 
 # hide_flag: NPC menghilang dari peta setelah penanda itu tercatat.
 const NPCS := {
@@ -110,9 +111,32 @@ const SCENES := {
 		{"who": "Kael", "text": "Jalan ke timur terbuka. Di ujungnya, Kastil Kelam."},
 		{"who": "Arlen", "text": "Tinggal satu langkah lagi."},
 	],
-	"kastil_bersambung": [
-		{"text": "Di balik asap, menara-menara Kastil Kelam menjulang. Di sanalah Raja Monster menunggu."},
-		{"text": "(Bersambung: wilayah terakhir belum dibuat.)"},
+	"kastil_intro": [
+		{"text": "Gerbang Kastil Kelam terbuka sendiri. Di dalam, obor-obor biru menyala tanpa minyak."},
+		{"who": "Kael", "text": "Sepi. Aku tidak suka tempat yang terlalu sepi."},
+		{"who": "Selene", "text": "Karpet merah ini langsung menuju ruang takhta. Dia tidak merasa perlu bersembunyi."},
+		{"who": "Mira", "text": "Aku merasakan cahaya di aula depan. Mungkin ada altar. Kita pulihkan diri dulu sebelum naik."},
+		{"do": "flag", "flag": "kastil_intro"},
+	],
+	"altar": [
+		{"text": "Sebuah altar tua memancarkan cahaya biru lembut. Entah bagaimana, kegelapan kastil tidak menyentuhnya."},
+		{"choice": [
+			{"text": "Berdoa di altar", "steps": [
+				{"do": "rest"},
+				{"text": "Cahaya menyelimuti party. HP dan MP pulih sepenuhnya. Permainan disimpan."},
+			]},
+			{"text": "Lewat saja", "steps": []},
+		]},
+	],
+	"ending": [
+		{"text": "Raja Monster roboh. Kegelapan yang menyelimuti Kastil Kelam luruh seperti kabut pagi."},
+		{"who": "Arlen", "text": "Sudah selesai."},
+		{"who": "Mira", "text": "Tetua Bram pasti tidak percaya waktu kita ceritakan semua ini."},
+		{"who": "Selene", "text": "Aku akan menuliskannya. Harus ada yang mencatat betapa cerobohnya kalian bertarung."},
+		{"who": "Kael", "text": "Catat juga siapa yang paling sering mengenai sasaran."},
+		{"text": "Monster-monster menghilang dari padang dan hutan. Jalan-jalan Aveloria kembali ramai."},
+		{"text": "Dan empat sahabat itu pulang, melewati gunung, hutan, dan lembah yang kini damai."},
+		{"do": "credits"},
 	],
 }
 

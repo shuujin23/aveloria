@@ -14,6 +14,9 @@ const MUSIC := {
 	"dunia": "music/overworld.ogg",
 	"battle": "music/danger.ogg",
 	"boss": "music/barbarian_king.ogg",
+	"kastil": "music/dungeon.ogg",
+	"raja": "music/enter_the_emperor.ogg",
+	"ending": "music/finale.ogg",
 }
 
 ## Lagu pendek sekali putar; musik latar berhenti selama jingle berbunyi.

@@ -5,6 +5,7 @@ extends SceneTree
 ## Wilayah 1: Arlen sendirian di padang -> menolong Mira -> berdua berlatih -> Ogre Penjaga.
 ## Wilayah 2: berdua di Hutan Kabut -> menolong Selene -> bertiga berlatih -> Ratu Laba-laba.
 ## Wilayah 3: bertiga di Pegunungan Abu -> menolong Kael -> berempat berlatih -> Raksasa Lahar.
+## Wilayah 4: berempat di Kastil Kelam -> Raja Monster.
 
 const RUNS := 400
 # Tiap tahap: tabel pertemuan, "event:mira" (Mira bergabung lalu battle cerita), atau "boss:<id>".
@@ -21,6 +22,8 @@ const ROUTE := [
 	"event:kael",
 	"abu_padang", "abu_padang", "abu_lereng", "abu_lereng", "abu_lereng", "abu_lereng",
 	"boss:lahar",
+	"kastil_aula", "kastil_aula", "kastil_aula", "kastil_dalam", "kastil_dalam", "kastil_dalam", "kastil_dalam",
+	"boss:raja",
 ]
 # Battle cerita: tokoh yang bergabung dan kelompok musuhnya.
 const EVENTS := {
@@ -85,7 +88,7 @@ func _run(rest_every: int) -> void:
 			cleared += 1
 
 	print("=== Menginap tiap %d battle ===" % rest_every)
-	print("  tamat sampai Raksasa Lahar: %.0f%%" % (100.0 * cleared / RUNS))
+	print("  tamat sampai Raja Monster : %.0f%%" % (100.0 * cleared / RUNS))
 	print("  rata-rata ronde per battle: %.1f" % (float(rounds_sum) / battles))
 	print("  rata-rata kalah per permainan: %.1f" % (float(defeats) / RUNS))
 	for stage: String in tries:

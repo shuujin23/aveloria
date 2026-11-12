@@ -29,7 +29,7 @@ wilayah sebelumnya kalah.
 1. **Lembah Hijau** — desa awal. Semi-bos: Ogre Penjaga.
 2. **Hutan Kabut** — Dusun Embun; Selene bergabung di altar tua. Semi-bos: Ratu Laba-laba.
 3. **Pegunungan Abu** — Pos Pemburu; Kael bergabung di punggung bukit utara. Semi-bos: Raksasa Lahar.
-4. **Kastil Kelam** — Bos utama: Raja Monster.
+4. **Kastil Kelam** — Altar Cahaya untuk memulihkan diri; bos utama Raja Monster, lalu adegan penutup dan layar tamat.
 
 ## Sistem battle
 
@@ -51,7 +51,7 @@ wilayah sebelumnya kalah.
 2. [x] Peta yang bisa dijelajahi + pertemuan acak + perpindahan ke layar battle
 3. [x] Vertical slice Wilayah 1: desa, NPC/dialog, Mira bergabung, Ogre Penjaga
 4. [ ] Perlengkapan senjata/zirah (sudah ada: penginapan, efek status, save/load, layar judul, barang habis pakai, toko)
-5. [ ] Wilayah 4: Kastil Kelam dan Raja Monster (Wilayah 2 dan 3 sudah selesai; party lengkap berempat)
+5. [x] Wilayah 2, 3, dan 4: cerita bisa dimainkan dari awal sampai tamat
 6. [ ] Aset final (sprite, tileset, musik, efek suara), balancing, build .exe
 
 ## Struktur proyek
