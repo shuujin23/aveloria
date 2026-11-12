@@ -32,9 +32,12 @@ const TREE_ANCHOR := Vector2(14, 32)
 const MOUNTAIN_ANCHOR := Vector2(16, 31)
 const HOUSE_ANCHOR := Vector2(20, 38)
 const PERSON_ANCHOR := Vector2(12, 30)
-const BACKDROPS := {"grass": "lembah", "forest_floor": "hutan", "mist_grass": "kabut", "mist_floor": "kabut"}
-const GROUND_VARIANTS := {"grass": 3, "forest_floor": 2, "mist_grass": 3, "mist_floor": 2, "water": 3, "rock": 2, "path": 3}
-const GROUND_PRIORITY := {"water": 0, "path": 1, "rock": 2, "grass": 3, "mist_grass": 3, "forest_floor": 4, "mist_floor": 4}
+const BACKDROPS := {"grass": "lembah", "forest_floor": "hutan", "mist_grass": "kabut", "mist_floor": "kabut",
+	"ash": "abu", "cinder": "abu"}
+const GROUND_VARIANTS := {"grass": 3, "forest_floor": 2, "mist_grass": 3, "mist_floor": 2, "water": 3, "rock": 2, "path": 3,
+	"ash": 3, "cinder": 2, "lava": 3}
+const GROUND_PRIORITY := {"water": 0, "lava": 0, "path": 1, "rock": 2, "grass": 3, "mist_grass": 3, "ash": 3,
+	"forest_floor": 4, "mist_floor": 4, "cinder": 4}
 const EDGE_SIDES := {"ne": Vector2i(0, -1), "se": Vector2i(1, 0), "sw": Vector2i(0, 1), "nw": Vector2i(-1, 0)}
 
 var _tile := Vector2i.ZERO
@@ -99,7 +102,7 @@ func _ready() -> void:
 	elif Game.world_message != "":
 		_show_message(Game.world_message)
 	Game.world_message = ""
-	Audio.play_music("dunia" if Game.map_id == "dunia" else "desa")
+	Audio.play_music("desa" if WorldMap.is_settlement(Game.map_id) else "dunia")
 
 
 ## Posisi layar dari titik tengah sebuah petak.
@@ -326,7 +329,7 @@ func _on_step() -> void:
 	var tile := WorldMap.tile_at(_tile)
 
 	if tile.has("portal"):
-		_travel(tile.portal)
+		_travel(WorldMap.portal_target(tile))
 	elif tile.has("boss"):
 		var rule: Dictionary = Db.BOSS_RULES[tile.boss]
 		if Game.flags.has(tile.boss):
@@ -337,8 +340,8 @@ func _on_step() -> void:
 			_start_battle(Db.BOSSES[tile.boss], rule.backdrop, rule.after)
 	elif tile.has("scene"):
 		_run_scene(Story.scene(tile.scene))
-	elif String(tile.zone).begins_with("Hutan Kabut") and not Game.flags.has("kabut_intro"):
-		_run_scene(Story.scene("kabut_intro"))
+	elif _zone_intro(tile.zone) != "":
+		_run_scene(Story.scene(_zone_intro(tile.zone)))
 	elif tile.has("rate") and _steps > GRACE_STEPS and randf() < float(tile.rate):
 		# Jumlah monster menyesuaikan besar party, supaya awal permainan (Arlen sendirian) tetap adil.
 		var group: Array = Db.random_group(tile.table)
@@ -347,6 +350,15 @@ func _on_step() -> void:
 		var npc_id := _talk_after
 		_cancel_path()
 		_talk(npc_id)
+
+
+## Adegan pembuka wilayah untuk zona ini, kalau belum pernah dimainkan; kosong kalau tidak ada.
+func _zone_intro(zone: String) -> String:
+	for prefix: String in Story.ZONE_INTROS:
+		var key: String = Story.ZONE_INTROS[prefix]
+		if zone.begins_with(prefix) and not Game.flags.has(key):
+			return key
+	return ""
 
 
 func _start_battle(enemy_ids: Array, backdrop: String = "lembah", after_scene: String = "") -> void:
@@ -660,7 +672,7 @@ func _show_message(text: String) -> void:
 func _update_hud() -> void:
 	var zone: String = WorldMap.tile_at(_tile).zone
 	if zone == "":
-		zone = WorldMap.map_name() if Game.map_id != "dunia" else "Jalan"
+		zone = WorldMap.map_name() if WorldMap.is_settlement(Game.map_id) else "Jalan"
 	_zone_label.text = "%s\nEmas: %d\nEsc: menu   I: tas" % [zone, Game.gold]
 	var lines: Array = []
 	for m: Battler in Game.party:
@@ -682,7 +694,10 @@ func _variant(t: Vector2i, count: int) -> int:
 
 
 func _draw() -> void:
-	draw_rect(_bounds.grow(400), Color("4b473d") if WorldMap.outside() == "^" else (Color("2a5450") if WorldMap.is_mist() else Color("2f5a34")))
+	var backing := Color("4b473d")
+	if WorldMap.outside() != "^":
+		backing = {"mist": Color("2a5450"), "ash": Color("4a4540")}.get(WorldMap.theme(), Color("2f5a34"))
+	draw_rect(_bounds.grow(400), backing)
 	var w := WorldMap.width()
 	var h := WorldMap.height()
 	var view := _bounds.grow(HALF_W * 2)
@@ -726,17 +741,28 @@ func _mountain_name(t: Vector2i, snowy: int, hills: int) -> String:
 
 
 func _tree_name(t: Vector2i) -> String:
-	if WorldMap.is_mist():
-		return "mist_pine" if _variant(t, 10) < 5 else "mist_round"
+	match WorldMap.theme():
+		"mist":
+			return "mist_pine" if _variant(t, 10) < 5 else "mist_round"
+		"ash":
+			return "dead_tree_%d" % _variant(t, 2)
 	return "tree_pine" if _variant(t, 10) < 3 else "tree_round"
 
 
 func _material(t: Vector2i) -> String:
 	match WorldMap.char_at(t):
 		".", "g", "h", "I":
-			return "mist_grass" if WorldMap.is_mist() else "grass"
+			return {"mist": "mist_grass", "ash": "ash"}.get(WorldMap.theme(), "grass")
 		"f", "Y":
-			return "mist_floor" if WorldMap.is_mist() else "forest_floor"
+			return {"mist": "mist_floor", "ash": "cinder"}.get(WorldMap.theme(), "forest_floor")
+		"a":
+			return "ash"
+		"c":
+			return "cinder"
+		"L":
+			return "lava"
+		"N":
+			return "rock"
 		",":
 			return "mist_grass"
 		"F", "Q":
@@ -776,8 +802,15 @@ func _build_objects() -> void:
 					sprite = _sprite(_tree_name(t), TREE_ANCHOR)
 				"F":
 					sprite = _sprite("mist_pine" if _variant(t, 10) < 5 else "mist_round", TREE_ANCHOR)
-				"T", "h", "D":
+				"T", "h", "D", "K":
 					sprite = _sprite("house", HOUSE_ANCHOR)
+				"c":
+					sprite = _sprite("dead_tree_%d" % _variant(t, 2), TREE_ANCHOR)
+				"N":  # kawah Raksasa Lahar: gua yang sama, bernuansa bara
+					sprite = _sprite("lair_empty" if Game.flags.has(WorldMap.tile_at(t).boss) else "lair_occupied", Vector2(18, 30))
+					sprite.modulate = Color(1.0, 0.62, 0.42)
+				"R":
+					sprite = _sprite("gate_open" if Game.flags.has(WorldMap.tile_at(t).gate) else "gate_closed", Vector2(20, 30))
 				"Q":  # sarang Ratu Laba-laba: gua yang sama, bernuansa ungu
 					sprite = _sprite("lair_empty" if Game.flags.has(WorldMap.tile_at(t).boss) else "lair_occupied", Vector2(18, 30))
 					sprite.modulate = Color(0.78, 0.66, 1.0)

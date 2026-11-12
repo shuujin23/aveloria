@@ -9,9 +9,12 @@ extends RefCounted
 #   , padang   F hutan    (Hutan Kabut)
 #   T Desa Rindu          D Dusun Embun       (pintu masuk ke peta desa/dusun)
 #   B sarang Ogre         G gerbang timur (terbuka setelah Ogre kalah)
-#   Q sarang Ratu Laba-laba   P Celah Abu (terbuka setelah Ratu kalah)   E ujung jalan (bersambung)
-# Peta desa/dusun:
-#   g rumput (aman)  h rumah    I penginapan   Y pohon   X jalan keluar ke peta dunia
+#   Q sarang Ratu Laba-laba   P Celah Abu (terbuka setelah Ratu kalah)   E jalan ke Pegunungan Abu
+# Peta Pegunungan Abu ("abu"):
+#   a padang abu   c lereng berbatu   L lahar (tak bisa dilewati)   W jalan kembali ke Hutan Kabut
+#   K Pos Pemburu  N kawah Raksasa Lahar   R jalan lahar (terbuka setelah Raksasa kalah)   Z ujung jalan (bersambung)
+# Peta desa/dusun/pos:
+#   g tanah lapang (aman)  h rumah    I penginapan   Y pohon   X jalan keluar (ke peta "exit")
 const MAPS := {
 	"dunia": {
 		"name": "Aveloria", "outside": "^",
@@ -37,8 +40,27 @@ const MAPS := {
 			"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
 		],
 	},
+	"abu": {
+		"name": "Pegunungan Abu", "outside": "^",
+		"rows": [
+			"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+			"^^^aaaacccc^^^^aaaaaaa^^^^LLLL^^^^^^",
+			"^^aaaaccccccaaaaaaaaaaaa^^LLLLLaaa^^",
+			"^aaaaaaccccaaaaaaccccaaaaaLLLaaaaaa^",
+			"^aaaaaaaaaaaaaaaccccccaaaaaLaaaaNaa^",
+			"W===aaaaaaaaaaaaaccccaaaaaaaaaaaaaa^",
+			"^aa=aaaaaLLaaaaaaaaaaaaaaaccccaaaaa^",
+			"^aa=====LLLLaaaaaaaaaaaaaccccccaaaRZ",
+			"^aaaaaa=aLLaaaaaKaaaaaaaaaccccaaaaa^",
+			"^aaaccc=aaaaaaa==aaaaaaaaaaaaaaaaa^^",
+			"^^accccc========aaaaaccccaaaaaaaa^^^",
+			"^^^acccaaaaaaaaaaaaccccccaaaaaa^^^^^",
+			"^^^^^aaaaaaaa^^^^aaaccccaaaa^^^^^^^^",
+			"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+		],
+	},
 	"desa": {
-		"name": "Desa Rindu", "outside": "Y", "spawn": Vector2i(7, 11),
+		"name": "Desa Rindu", "outside": "Y", "spawn": Vector2i(7, 11), "exit": "dunia",
 		"rows": [
 			"YYYYYYYYYYYYYYYYYY",
 			"YgggggggggggggggYY",
@@ -55,9 +77,22 @@ const MAPS := {
 			"YYYYYYYXYYYYYYYYYY",
 		],
 	},
-	# mist = true: rumput dan pepohonan memakai warna Hutan Kabut.
+	# theme: "mist" = warna Hutan Kabut; "ash" = tanah abu dan pohon mati.
 	"dusun": {
-		"name": "Dusun Embun", "outside": "Y", "spawn": Vector2i(7, 6), "mist": true,
+		"name": "Dusun Embun", "outside": "Y", "spawn": Vector2i(7, 6), "exit": "dunia", "theme": "mist",
+		"rows": [
+			"YYYYYYYYYYYYYY",
+			"YggggggggggggY",
+			"YghggggggIgggY",
+			"Ygg=======gggY",
+			"Ygggggg=gggghY",
+			"YgYgggg=gggggY",
+			"Ygggggg=gggggY",
+			"YYYYYggXggYYYY",
+		],
+	},
+	"pos": {
+		"name": "Pos Pemburu", "outside": "Y", "spawn": Vector2i(7, 6), "exit": "abu", "theme": "ash",
 		"rows": [
 			"YYYYYYYYYYYYYY",
 			"YggggggggggggY",
@@ -94,12 +129,21 @@ const TILES := {
 	"Q": {"walk": true, "zone": "Sarang Ratu Laba-laba", "boss": "ratu"},
 	"P": {"walk": true, "zone": "Celah Abu", "gate": "ratu",
 		"locked": "Kabut pekat menutup celah gunung ini. Mustahil melihat jalan di depan."},
-	"E": {"walk": true, "zone": "Jalan ke Pegunungan Abu", "scene": "abu_bersambung"},
+	"E": {"walk": true, "zone": "Jalan ke Pegunungan Abu", "portal": "abu"},
+	"W": {"walk": true, "zone": "Celah Abu", "portal": "dunia"},
+	"a": {"walk": true, "zone": "Pegunungan Abu", "rate": 0.09, "table": "abu_padang"},
+	"c": {"walk": true, "zone": "Pegunungan Abu - lereng", "rate": 0.17, "table": "abu_lereng"},
+	"L": {"walk": false, "zone": ""},
+	"K": {"walk": true, "zone": "Pos Pemburu", "portal": "pos"},
+	"N": {"walk": true, "zone": "Kawah Lahar", "boss": "lahar"},
+	"R": {"walk": true, "zone": "Jalan Lahar", "gate": "lahar",
+		"locked": "Aliran lahar menutup jalan ke timur. Mustahil diseberangi."},
+	"Z": {"walk": true, "zone": "Jalan ke Kastil Kelam", "scene": "kastil_bersambung"},
 	"g": {"walk": true, "zone": ""},
 	"h": {"walk": false, "zone": ""},
 	"I": {"walk": false, "zone": ""},
 	"Y": {"walk": false, "zone": ""},
-	"X": {"walk": true, "zone": "", "portal": "dunia"},
+	"X": {"walk": true, "zone": "", "portal": "@exit"},  # tujuan = "exit" milik peta ini
 }
 
 ## Peta yang sedang aktif; diatur scene peta dari Game.map_id.
@@ -118,9 +162,20 @@ static func outside() -> String:
 	return MAPS[current].outside
 
 
-## Peta bernuansa Hutan Kabut (warna rumput dan pohon berbeda).
-static func is_mist() -> bool:
-	return MAPS[current].get("mist", false)
+## Nuansa peta: "" biasa, "mist" Hutan Kabut, "ash" Pegunungan Abu (warna tanah dan pohon berbeda).
+static func theme() -> String:
+	return MAPS[current].get("theme", "")
+
+
+## Peta permukiman (desa, dusun, pos): aman dari monster dan punya jalan keluar.
+static func is_settlement(map_id: String) -> bool:
+	return MAPS[map_id].has("exit")
+
+
+## Peta tujuan sebuah petak portal.
+static func portal_target(tile: Dictionary) -> String:
+	var target: String = tile.portal
+	return MAPS[current].get("exit", "dunia") if target == "@exit" else target
 
 
 static func width() -> int:

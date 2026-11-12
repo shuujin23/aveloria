@@ -311,9 +311,8 @@ func _initialize() -> void:
 	_expect(WorldMap.is_walkable(pass_tile, _game.flags), "Celah Abu terbuka setelah Ratu kalah")
 	await _open_world("dunia", pass_tile + Vector2i(-1, 0))
 	current_scene.call("_walk_to", WorldMap.find("E"))
-	await _wait_until(func() -> bool: return current_scene.get("_dialog_open"))
-	_expect(current_scene.get("_dialog_open") and _game.player_tile == WorldMap.find("E"), "ujung jalan menampilkan adegan bersambung")
-	await _skip_dialog()
+	await _wait_until(func() -> bool: return _game.map_id == "abu" and not current_scene.get("_busy"))
+	_expect(_game.map_id == "abu" and _game.player_tile == WorldMap.find_in("abu", "W"), "melewati Celah Abu -> tiba di Pegunungan Abu")
 
 	# --- Kalah di Wilayah 2: kembali ke penginapan dusun ---
 	_set_levels(1)
@@ -322,6 +321,89 @@ func _initialize() -> void:
 	current_scene.call("_start_battle", ["goblin", "goblin", "goblin", "goblin"])
 	await _play_battle()
 	_expect(_game.map_id == "dusun" and _game.gold == 20, "kalah setelah menginap di dusun -> siuman di dusun (peta=%s, emas=%d)" % [_game.map_id, _game.gold])
+
+	# ================= Wilayah 3: Pegunungan Abu =================
+	_set_levels(12)
+	var west := WorldMap.find_in("abu", "W")
+	await _open_world("abu", west + Vector2i(3, 0))
+	await _shot("abu.png")
+	current_scene.call("_walk_to", west + Vector2i(4, 0))
+	await _wait_until(func() -> bool: return current_scene.get("_dialog_open"))
+	_expect(current_scene.get("_dialog_open"), "adegan pembuka Pegunungan Abu tampil")
+	await _skip_dialog()
+	_expect(_game.flags.has("abu_intro"), "adegan Pegunungan Abu hanya sekali")
+	current_scene.call("_walk_to", west)
+	await _wait_until(func() -> bool: return _game.map_id == "dunia" and not current_scene.get("_busy"))
+	_expect(_game.map_id == "dunia" and _game.player_tile == WorldMap.find_in("dunia", "E"), "jalan barat Pegunungan Abu kembali ke Celah Abu")
+
+	# --- Pos Pemburu ---
+	var camp := WorldMap.find_in("abu", "K")
+	await _open_world("abu", camp + Vector2i(0, 1))
+	current_scene.call("_walk_to", camp)
+	await _wait_until(func() -> bool: return _game.map_id == "pos" and not current_scene.get("_busy"))
+	_expect(_game.map_id == "pos" and _game.player_tile == WorldMap.MAPS["pos"].spawn, "masuk Pos Pemburu dari Pegunungan Abu")
+	await _shot("pos.png")
+	current_scene.call("_talk", "darma")
+	await _skip_dialog()
+	_expect(_game.flags.has("quest_kael"), "Ki Darma memberi tugas mencari Kael")
+	_game.gold = 100
+	current_scene.call("_talk", "ningsih")
+	await _skip_dialog()
+	_expect(_game.gold == 70 and _game.respawn_map == "pos", "pondok singgah: 30 emas dan menjadi titik kembali (emas=%d)" % _game.gold)
+	current_scene.call("_talk", "sabar")
+	await _skip_dialog()
+	_expect(current_scene.get("_shop_open"), "lapak Pak Sabar terbuka")
+	current_scene.emit_signal("shop_closed")
+	await _skip_dialog()
+	current_scene.call("_walk_to", WorldMap.find("X"))
+	await _wait_until(func() -> bool: return _game.map_id == "abu" and not current_scene.get("_busy"))
+	_expect(_game.map_id == "abu" and _game.player_tile == camp, "keluar pos -> kembali ke Pegunungan Abu, bukan ke peta dunia")
+
+	# --- Kawah tertutup sebelum ada Kael ---
+	var crater := WorldMap.find_in("abu", "N")
+	await _open_world("abu", crater + Vector2i(-1, 0))
+	current_scene.call("_walk_to", crater)
+	await _wait_until(func() -> bool: return current_scene.name == "Battle" or current_scene.get("_dialog_open"))
+	_expect(current_scene.name == "World" and not _game.flags.has("lahar"), "tanpa Kael: kawah hanya memunculkan dialog")
+	await _skip_dialog()
+
+	# --- Menolong Kael ---
+	await _open_world("abu", Vector2i(19, 4))
+	await _shot("peta_kael.png")
+	current_scene.call("_talk", "kael")
+	await _skip_dialog()
+	await _play_battle()
+	_expect(current_scene.name == "World" and current_scene.get("_dialog_open"), "setelah menang, adegan lanjutan Kael tampil")
+	await _skip_dialog()
+	_expect(_game.party.size() == 4 and (_game.party[3] as Battler).id == "kael", "Kael masuk party: lengkap berempat")
+	_expect((current_scene.get("_npc_at") as Dictionary).is_empty(), "Kael hilang dari peta setelah bergabung")
+
+	# --- Raksasa Lahar dan jalan ke Kastil Kelam ---
+	_set_levels(18)
+	var lava_gate := WorldMap.find_in("abu", "R")
+	await _open_world("abu", crater + Vector2i(-1, 0))
+	_expect(not WorldMap.is_walkable(lava_gate, _game.flags), "jalan lahar tertutup sebelum Raksasa kalah")
+	current_scene.call("_walk_to", crater)
+	await _wait_until(func() -> bool: return current_scene != null and current_scene.name == "Battle")
+	await _shot("battle_lahar.png")
+	await _play_battle()
+	_expect(_game.flags.has("lahar"), "penanda Raksasa Lahar tercatat")
+	_expect(current_scene.get("_dialog_open"), "adegan kemenangan atas Raksasa Lahar tampil")
+	await _skip_dialog()
+	_expect(WorldMap.is_walkable(lava_gate, _game.flags), "jalan lahar terbuka setelah Raksasa kalah")
+	await _open_world("abu", lava_gate + Vector2i(-1, 0))
+	current_scene.call("_walk_to", WorldMap.find("Z"))
+	await _wait_until(func() -> bool: return current_scene.get("_dialog_open"))
+	_expect(current_scene.get("_dialog_open") and _game.player_tile == WorldMap.find("Z"), "ujung jalan menampilkan adegan bersambung")
+	await _skip_dialog()
+
+	# --- Kalah di Wilayah 3: kembali ke Pos Pemburu ---
+	_set_levels(1)
+	_game.gold = 60
+	await _open_world("abu", Vector2i(10, 4))
+	current_scene.call("_start_battle", ["golem_batu", "golem_batu", "golem_batu", "golem_batu"])
+	await _play_battle()
+	_expect(_game.map_id == "pos" and _game.gold == 30, "kalah setelah menginap di pos -> siuman di pos (peta=%s, emas=%d)" % [_game.map_id, _game.gold])
 
 	# --- Kalah: kembali ke penginapan desa, emas tinggal setengah ---
 	_game.new_game()
@@ -477,6 +559,21 @@ func _check_maps() -> void:
 		for d: Vector2i in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
 			near = near or hamlet.has(npc.tile + d)
 		_expect(near and WorldMap.is_walkable(npc.tile, {}), "%s berdiri di petak yang bisa dihampiri" % npc.name)
+
+	WorldMap.current = "pos"
+	var camp_tiles := _reachable(WorldMap.MAPS["pos"].spawn, {})
+	_expect(camp_tiles.has(WorldMap.find("X")), "jalan keluar pos terjangkau dari titik masuk")
+	for npc: Dictionary in Story.NPCS["pos"]:
+		var near := false
+		for d: Vector2i in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+			near = near or camp_tiles.has(npc.tile + d)
+		_expect(near and WorldMap.is_walkable(npc.tile, {}), "%s berdiri di petak yang bisa dihampiri" % npc.name)
+
+	WorldMap.current = "abu"
+	var ash := _reachable(WorldMap.find("W"), {})
+	_expect(ash.has(WorldMap.find("K")) and ash.has(Vector2i(19, 4)) and ash.has(WorldMap.find("N")), "pos, tempat Kael, dan kawah terjangkau dari jalan masuk Pegunungan Abu")
+	_expect(not ash.has(WorldMap.find("Z")), "jalan ke Kastil Kelam tertutup sebelum Raksasa kalah")
+	_expect(_reachable(WorldMap.find("W"), {"lahar": true}).has(WorldMap.find("Z")), "jalan ke Kastil Kelam terjangkau setelah Raksasa kalah")
 
 	WorldMap.current = "dunia"
 	var start := WorldMap.find("T")

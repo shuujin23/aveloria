@@ -22,7 +22,8 @@ const TILE_HALF := Vector2(48, 24)  # setengah ukuran petak di layar
 # Jenis animasi -> efek suara saat aksi dimulai (kunci di Audio.SFX).
 const FX_SOUND := {"attack": "swing", "heavy_slash": "swing", "spin": "swing", "bite": "bite", "fire": "fire",
 	"ice_storm": "ice", "light": "magic", "arrow": "arrow", "arrow_rain": "arrow", "heal": "heal", "heal_all": "heal",
-	"bless": "buff", "rally": "buff", "debuff": "debuff", "spore": "slime", "quake": "quake", "guard": "guard"}
+	"bless": "buff", "rally": "buff", "debuff": "debuff", "spore": "slime", "quake": "quake", "guard": "guard",
+	"lava": "fire"}
 
 const COLOR_PANEL := Color("0f1622")
 const COLOR_BORDER := Color("c9a85c")
@@ -43,6 +44,7 @@ const MONSTER_ANCHOR := {
 	"jamur": Vector2(18, 32), "kelelawar": Vector2(22, 34), "serigala": Vector2(26, 32),
 	"goblin": Vector2(18, 40), "ogre": Vector2(34, 66),
 	"laba_laba": Vector2(24, 29), "roh_kabut": Vector2(16, 36), "ratu": Vector2(40, 55),
+	"kadal_bara": Vector2(26, 26), "elang_abu": Vector2(26, 34), "golem_batu": Vector2(22, 44), "lahar": Vector2(36, 73),
 }
 # Per latar: bahan tanah, jumlah variannya, hiasan di belakang arena, dan kerapatannya.
 const ARENAS := {
@@ -50,6 +52,8 @@ const ARENAS := {
 	"hutan": {"ground": "forest_floor", "variants": 2, "decor": ["tree_round", "tree_pine", "tree_round"], "rate": 0.75},
 	"kabut": {"ground": "mist_grass", "variants": 3, "decor": ["mist_round", "mist_pine"], "rate": 0.6},
 	"gua": {"ground": "rock", "variants": 2, "decor": ["hill_0", "hill_1"], "rate": 0.7},
+	"abu": {"ground": "ash", "variants": 3, "decor": ["dead_tree_0", "hill_0", "dead_tree_1", "hill_1"], "rate": 0.5},
+	"kawah": {"ground": "cinder", "variants": 2, "decor": ["hill_0", "hill_1", "dead_tree_0"], "rate": 0.6},
 }
 
 var engine: BattleEngine
@@ -460,6 +464,16 @@ func _play_fx(cmd: Dictionary, targets: Array) -> void:
 				_beam(_home(t), Color("fff2a0"))
 				_rise(_home(t), Color("8ff0a0"))
 			await _wait(0.5)
+		"lava":  # semburan lahar: arena memerah, bara menghujani seluruh party
+			_tint_to(Color(1.0, 0.32, 0.08, 0.34))
+			await _hop(actor, 30.0)
+			_stream(_center(actor), Vector2(24, 24), Color("ff8a2a"), 80, (area - _center(actor)).normalized(), 380.0, 7.0, 0.9, 0.5)
+			await _wait(0.5)
+			for t: Battler in targets:
+				_burst(_center(t), Color("ff8a2a"), 14, 190.0, 7.0)
+				_burst(_center(t), Color("ffd23a"), 6, 110.0, 5.0)
+			_shake(8.0, 0.3)
+			await _wait(0.25)
 		"quake":  # hantaman yang mengguncang seluruh layar
 			_tint_to(Color(0.5, 0.3, 0.1, 0.3))
 			await _hop(actor, 46.0)

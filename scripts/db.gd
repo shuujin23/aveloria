@@ -101,6 +101,15 @@ const SKILLS := {
 	"jaring_raksasa": {"name": "Jaring Raksasa", "mp": 5, "target": "all_enemies", "kind": "status", "status": "slow", "desc": ""},
 	"semburan_racun": {"name": "Semburan Racun", "mp": 5, "target": "all_enemies", "kind": "magic", "power": 9,
 		"inflict": {"status": "poison", "chance": 0.5}, "desc": ""},
+	# --- Monster Pegunungan Abu ---
+	"gigitan_bara": {"name": "Gigitan Bara", "mp": 2, "target": "enemy", "kind": "phys", "power": 1.3,
+		"inflict": {"status": "burn", "chance": 0.4}, "desc": ""},
+	"cakar_tajam": {"name": "Cakar Tajam", "mp": 2, "target": "enemy", "kind": "phys", "power": 1.2,
+		"inflict": {"status": "defense_break", "chance": 0.4}, "desc": ""},
+	"hantaman_batu": {"name": "Hantaman Batu", "mp": 3, "target": "enemy", "kind": "phys", "power": 1.5, "desc": ""},
+	"kulit_batu": {"name": "Kulit Batu", "mp": 3, "target": "self", "kind": "status", "status": "defense_up", "desc": ""},
+	"semburan_lahar": {"name": "Semburan Lahar", "mp": 6, "target": "all_enemies", "kind": "magic", "power": 14,
+		"inflict": {"status": "burn", "chance": 0.5}, "desc": ""},
 }
 
 ## Barang habis pakai. Dipakai dari menu Barang di battle; yang berjenis heal/mp juga bisa dari menu peta.
@@ -140,6 +149,7 @@ const SKILL_FX := {
 	"serangan_buas": "bite", "spora": "spore", "jeritan": "debuff", "raungan": "buff_self", "tipu_muslihat": "debuff",
 	"hantaman_bumi": "quake",
 	"gigitan_racun": "bite", "jaring": "debuff", "lidah_api": "fire", "jaring_raksasa": "debuff", "semburan_racun": "spore",
+	"gigitan_bara": "bite", "cakar_tajam": "bite", "hantaman_batu": "heavy_slash", "kulit_batu": "buff_self", "semburan_lahar": "lava",
 }
 
 # base = stat di level 1, growth = tambahan per level, learn = level -> jurus baru
@@ -188,6 +198,16 @@ const ENEMIES := {
 	"ratu": {"name": "Ratu Laba-laba", "hp": 380, "mp": 60, "atk": 28, "defense": 11, "mag": 13, "agi": 9,
 		"xp": 180, "gold": 220, "skills": ["gigitan_racun", "jaring_raksasa", "semburan_racun"], "immune": ["poison", "slow"],
 		"boss": true},
+	# --- Pegunungan Abu ---
+	"kadal_bara": {"name": "Kadal Bara", "hp": 74, "mp": 8, "atk": 30, "defense": 12, "mag": 0, "agi": 12,
+		"xp": 26, "gold": 16, "skills": ["gigitan_bara"], "immune": ["burn"]},
+	"elang_abu": {"name": "Elang Abu", "hp": 56, "mp": 8, "atk": 28, "defense": 8, "mag": 0, "agi": 21,
+		"xp": 24, "gold": 14, "skills": ["cakar_tajam"], "immune": []},
+	"golem_batu": {"name": "Golem Batu", "hp": 120, "mp": 12, "atk": 33, "defense": 22, "mag": 0, "agi": 4,
+		"xp": 34, "gold": 24, "skills": ["hantaman_batu", "kulit_batu"], "immune": ["poison"]},
+	"lahar": {"name": "Raksasa Lahar", "hp": 640, "mp": 80, "atk": 38, "defense": 17, "mag": 18, "agi": 7,
+		"xp": 340, "gold": 420, "skills": ["semburan_lahar", "hantaman_bumi", "kulit_batu"], "immune": ["burn", "slow"],
+		"boss": true},
 }
 
 # Tabel pertemuan acak; tiap jenis medan di peta menunjuk ke salah satu tabel ini.
@@ -201,12 +221,18 @@ const ENCOUNTER_TABLES := {
 		["laba_laba", "serigala"], ["roh_kabut", "laba_laba"], ["goblin", "roh_kabut"], ["laba_laba", "laba_laba", "roh_kabut"]],
 	"kabut_hutan": [
 		["laba_laba", "laba_laba", "roh_kabut"], ["goblin", "goblin", "roh_kabut"], ["laba_laba", "goblin", "roh_kabut", "laba_laba"]],
+	"abu_padang": [
+		["kadal_bara", "elang_abu"], ["elang_abu", "elang_abu", "kadal_bara"], ["golem_batu", "kadal_bara"],
+		["kadal_bara", "kadal_bara", "elang_abu"]],
+	"abu_lereng": [
+		["golem_batu", "elang_abu", "kadal_bara"], ["golem_batu", "golem_batu"], ["kadal_bara", "elang_abu", "golem_batu", "elang_abu"]],
 }
 
 ## Semi-bos di peta: id penanda (flag) -> kelompok musuh.
 const BOSSES := {
 	"ogre": ["ogre"],
 	"ratu": ["laba_laba", "ratu", "laba_laba"],
+	"lahar": ["kadal_bara", "lahar", "kadal_bara"],
 }
 
 ## Aturan tiap sarang semi-bos di peta:
@@ -217,6 +243,7 @@ const BOSSES := {
 const BOSS_RULES := {
 	"ogre": {"need": "mira_joined", "blocked": "lair_alone", "after": "ogre_defeated", "backdrop": "gua"},
 	"ratu": {"need": "selene_joined", "blocked": "nest_sealed", "after": "ratu_defeated", "backdrop": "kabut"},
+	"lahar": {"need": "kael_joined", "blocked": "lahar_blocked", "after": "lahar_defeated", "backdrop": "kawah"},
 }
 
 

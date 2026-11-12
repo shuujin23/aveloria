@@ -14,6 +14,10 @@ extends RefCounted
 
 const INN_PRICE := 10
 const DUSUN_INN_PRICE := 20
+const POS_INN_PRICE := 30
+
+## Adegan pembuka tiap wilayah: awalan nama zona -> adegan (dimainkan sekali; penandanya = nama adegan).
+const ZONE_INTROS := {"Hutan Kabut": "kabut_intro", "Pegunungan Abu": "abu_intro"}
 
 # hide_flag: NPC menghilang dari peta setelah penanda itu tercatat.
 const NPCS := {
@@ -31,6 +35,14 @@ const NPCS := {
 	"dunia": [
 		{"id": "mira", "name": "Mira", "sprite": "mira", "tile": Vector2i(12, 2), "hide_flag": "mira_joined"},
 		{"id": "selene", "name": "Selene", "sprite": "selene", "tile": Vector2i(34, 5), "hide_flag": "selene_joined"},
+	],
+	"pos": [
+		{"id": "darma", "name": "Ki Darma", "sprite": "npc_darma", "tile": Vector2i(3, 2)},
+		{"id": "ningsih", "name": "Bu Ningsih", "sprite": "npc_ningsih", "tile": Vector2i(9, 3)},
+		{"id": "sabar", "name": "Pak Sabar", "sprite": "npc_sabar", "tile": Vector2i(11, 5)},
+	],
+	"abu": [
+		{"id": "kael", "name": "Kael", "sprite": "kael", "tile": Vector2i(19, 3), "hide_flag": "kael_joined"},
 	],
 }
 
@@ -76,9 +88,31 @@ const SCENES := {
 		{"who": "Selene", "text": "Akhirnya langit terlihat lagi. Sudah berbulan-bulan dusun ini tidak melihat matahari."},
 		{"who": "Mira", "text": "Celah Abu di timur pasti sudah bisa dilewati. Dari sana jalan menuju Pegunungan Abu."},
 	],
-	"abu_bersambung": [
-		{"text": "Jalan menanjak menuju Pegunungan Abu, tempat Kael sang pemanah konon berburu."},
-		{"text": "(Bersambung: wilayah berikutnya belum dibuat.)"},
+	"abu_intro": [
+		{"text": "Udara panas dan berbau belerang. Abu halus turun dari langit seperti salju kelabu."},
+		{"who": "Selene", "text": "Pegunungan Abu. Gunung api di timur itu tidak pernah benar-benar tidur."},
+		{"who": "Mira", "text": "Para pemburu punya pos di tengah lembah ini. Kita ikuti jalan setapaknya."},
+		{"do": "flag", "flag": "abu_intro"},
+	],
+	"kael_after": [
+		{"who": "Kael", "text": "Bidikan kalian lumayan, untuk orang lembah."},
+		{"who": "Kael", "text": "Raksasa Lahar itulah yang membuat gunung ini mengamuk. Selama dia hidup, jalan ke Kastil Kelam tertutup lahar."},
+		{"who": "Arlen", "text": "Kami memang menuju ke sana."},
+		{"who": "Kael", "text": "Kalau begitu panahku ikut. Sudah lama aku ingin membidik sesuatu yang lebih besar dari elang."},
+		{"text": "Kael kini ikut bertarung. Ia yang tercepat di party; Bidik Jitu dan Panah Racun adalah andalannya."},
+	],
+	"lahar_blocked": [
+		{"text": "Jembatan batu menuju kawah runtuh. Di seberang jurang terlihat tuas pemberat jembatan cadangan."},
+		{"who": "Selene", "text": "Terlalu jauh untuk sihirku, dan apiku hanya akan menghanguskan talinya. Kita butuh pemanah."},
+	],
+	"lahar_defeated": [
+		{"text": "Raksasa Lahar runtuh menjadi bongkahan batu dingin. Aliran lahar di timur perlahan mengeras."},
+		{"who": "Kael", "text": "Jalan ke timur terbuka. Di ujungnya, Kastil Kelam."},
+		{"who": "Arlen", "text": "Tinggal satu langkah lagi."},
+	],
+	"kastil_bersambung": [
+		{"text": "Di balik asap, menara-menara Kastil Kelam menjulang. Di sanalah Raja Monster menunggu."},
+		{"text": "(Bersambung: wilayah terakhir belum dibuat.)"},
 	],
 }
 
@@ -224,5 +258,60 @@ static func talk(npc_id: String, flags: Dictionary, gold: int) -> Array:
 				{"do": "flag", "flag": "selene_joined"},
 				{"text": "Selene bergabung dengan party!"},
 				{"do": "battle", "ids": ["laba_laba", "roh_kabut", "laba_laba"], "backdrop": "kabut", "after": "selene_after"},
+			]
+		"darma":
+			if flags.has("lahar"):
+				return [
+					{"who": "Ki Darma", "text": "Gunungnya tenang. Seumur hidupku belum pernah sesunyi ini."},
+					{"who": "Ki Darma", "text": "Jalan lahar di timur sudah mengeras. Kastil Kelam ada di ujungnya. Semoga langkah kalian ringan."},
+				]
+			if flags.has("kael_joined"):
+				return [
+					{"who": "Ki Darma", "text": "Kael ikut kalian? Anak itu memang tidak betah diam."},
+					{"who": "Ki Darma", "text": "Raksasa Lahar berdiam di kawah timur laut. Semburannya membakar, dan hantamannya meruntuhkan pertahanan. Bawa Penawar yang banyak."},
+				]
+			if flags.has("quest_kael"):
+				return [{"who": "Ki Darma", "text": "Punggung bukit utara, di antara dua lereng berbatu. Di situ Kael biasa mengintai."}]
+			return [
+				{"who": "Ki Darma", "text": "Orang lembah sampai ke sini? Kalian pasti yang mengusir kabut di barat."},
+				{"who": "Ki Darma", "text": "Gunung ini mengamuk sejak Raksasa Lahar bangkit di kawah. Lahar menutup satu-satunya jalan ke timur."},
+				{"who": "Ki Darma", "text": "Kael, pemanah terbaik kami, pergi mengintainya dari punggung bukit utara. Sudah tiga hari tidak ada kabar."},
+				{"who": "Ki Darma", "text": "Kalau kalian bertemu dia, bilang pos ini masih menunggunya."},
+				{"do": "flag", "flag": "quest_kael"},
+			]
+		"ningsih":
+			var bed: Array = [
+				{"do": "pay", "gold": POS_INN_PRICE}, {"do": "rest"},
+				{"who": "Bu Ningsih", "text": "Selimutnya tebal, tidurlah. (HP dan MP seluruh party pulih. Permainan disimpan.)"},
+			]
+			if gold < POS_INN_PRICE:
+				bed = [
+					{"who": "Bu Ningsih", "text": "Tidak ada emas? Pemburu saling menolong. Masuklah."},
+					{"do": "rest"},
+					{"text": "HP dan MP seluruh party pulih. Permainan disimpan."},
+				]
+			return [
+				{"who": "Bu Ningsih", "text": "Pondok singgah para pemburu. Semalam %d emas, sup daging rusa sepuasnya." % POS_INN_PRICE},
+				{"choice": [
+					{"text": "Menginap", "steps": bed},
+					{"text": "Tidak sekarang", "steps": [{"who": "Bu Ningsih", "text": "Apinya selalu menyala."}]},
+				]},
+			]
+		"sabar":
+			return [
+				{"who": "Pak Sabar", "text": "Bekal untuk naik gunung? Kadal bara menyulut, elang abu merobek zirah. Siapkan Penawar."},
+				{"do": "shop", "name": "Lapak Pak Sabar", "stock": ["ramuan", "penawar", "ramuan_besar", "eter", "air_kehidupan"]},
+				{"who": "Pak Sabar", "text": "Jangan dekat-dekat lahar."},
+			]
+		"kael":
+			return [
+				{"who": "Kael", "text": "Ssst. Merunduk."},
+				{"who": "Kael", "text": "Aku Kael. Tiga hari aku mengintai Raksasa Lahar dari sini... dan baru saja elang-elang itu menemukanku."},
+				{"who": "Arlen", "text": "Ki Darma mencarimu."},
+				{"who": "Kael", "text": "Nanti saja ceritanya. Mereka menukik!"},
+				{"do": "join", "id": "kael"},
+				{"do": "flag", "flag": "kael_joined"},
+				{"text": "Kael bergabung dengan party!"},
+				{"do": "battle", "ids": ["elang_abu", "kadal_bara", "elang_abu"], "backdrop": "abu", "after": "kael_after"},
 			]
 	return []

@@ -23,6 +23,12 @@ func _initialize() -> void:
 	_ground("path", "c2a471", "d4b986", "a98c5c", 3, "path")
 	_ground("water", "3a6fb5", "6b9ddb", "2f5e9e", 3, "water")
 	_ground("rock", "6b6558", "7c7566", "59544a", 2, "path")
+	# Pegunungan Abu
+	_ground("ash", "8a8478", "9c968a", "767064", 3, "path")
+	_ground("cinder", "5c5650", "6e6860", "4a4540", 2, "path")
+	_ground("lava", "e0622a", "ffb040", "b03a1c", 3, "water")
+	_dead_tree("dead_tree_0", false)
+	_dead_tree("dead_tree_1", true)
 
 	var green := ["8fd06a", "5fae4e", "3d8a40", "2a6a38", "1c4a2e"]
 	var teal := ["7cc4b0", "4e9c8c", "33766e", "235a58", "173f42"]
@@ -37,6 +43,8 @@ func _initialize() -> void:
 	_edges("mist_floor", "3d7069", "4b8279", "315d59")
 	_edges("path", "c2a471", "d4b986", "a98c5c")
 	_edges("rock", "6b6558", "7c7566", "59544a")
+	_edges("ash", "8a8478", "9c968a", "767064")
+	_edges("cinder", "5c5650", "6e6860", "4a4540")
 
 	_mountain("mountain_0", Vector2(16, 3), true)
 	_mountain("mountain_1", Vector2(12, 8), true)
@@ -61,6 +69,10 @@ func _initialize() -> void:
 	_hero("npc_sari", {"h": "6a4028", "H": "4a2a18", "b": "4a8a6a", "B": "346a50", "c": "f0f0f8", "C": "c8ccdc", "p": "4a8a6a"}, _dress_sari)
 	_hero("npc_dimas", {"h": "3a2c28", "H": "241a18", "b": "e0b040", "B": "b88a28", "c": "e0b040", "C": "b88a28", "p": "5a6a9a"}, _dress_dimas)
 	_hero("npc_joko", {"h": "3a2c28", "H": "241a18", "b": "3a8a8a", "B": "2a6a6a", "c": "e0b040", "C": "b88a28", "p": "6a5644"}, _dress_joko)
+	# Warga Pos Pemburu.
+	_hero("npc_darma", {"h": "8a8a8a", "H": "6a6a6a", "b": "6a5a4a", "B": "4e4236", "c": "7a5a3a", "C": "5f4326", "p": "4a4038"}, _dress_darma)
+	_hero("npc_ningsih", {"h": "3a2c28", "H": "241a18", "b": "9a4a3a", "B": "7a342a", "c": "e8e0d0", "C": "c8c0b0", "p": "9a4a3a"}, _dress_ningsih)
+	_hero("npc_sabar", {"h": "5a4030", "H": "3a2818", "b": "5a7a5a", "B": "425c42", "c": "d8b860", "C": "b09040", "p": "5a4a3a"}, _dress_sabar)
 	# Warga Dusun Embun.
 	_hero("npc_laras", {"h": "d8d8e0", "H": "a8a8b8", "b": "3a7a78", "B": "2a5a5c", "c": "2a5a5c", "C": "1c4448", "p": "3a7a78"}, _dress_laras)
 	_hero("npc_wiryo", {"h": "5a4030", "H": "3a2818", "b": "8a6a4a", "B": "6a4e34", "c": "c8ccdc", "C": "a0a4b4", "p": "4a4a5a"}, _dress_wiryo)
@@ -83,6 +95,11 @@ func _initialize() -> void:
 	_spider("monster_laba_laba", 1.0, ["8a7ab8", "5e4e8c", "44386a", "2c2448"], false)
 	_spider("monster_ratu", 1.75, ["a05a9a", "7a3a78", "5a2a5c", "3a1a40"], true)
 	_monster_roh_kabut()
+	# Pegunungan Abu
+	_monster_kadal_bara()
+	_monster_elang_abu()
+	_golem("monster_golem_batu", 1.0, ["a8a296", "847e72", "625c52", "443f38"], "2c2824", "7fe0f0")
+	_golem("monster_lahar", 1.7, ["8a6258", "5e4038", "44302a", "2c1e1a"], "ff8a2a", "ffd23a")
 
 	_backdrop("bg_lembah", ["6fb4e8", "a8d8f0"], "7fb08a", "5a9e58", ["5a9e4f", "6db35c", "4a8a44"], "")
 	_backdrop("bg_hutan", ["4f8fb8", "86bcc8"], "3f7a50", "2f6a40", ["4a8546", "5a9a52", "3c7340"], "trees")
@@ -635,6 +652,38 @@ func _dress_joko(img: Image, front: bool, _action: String) -> void:
 		_hrect(img, 10, 14, 12, 16, "86603a")
 
 
+## Ki Darma, kepala pemburu: topi bulu, jubah kulit, tombak.
+func _dress_darma(img: Image, front: bool, _action: String) -> void:
+	_hrect(img, 5, 0, 10, 0, "7a5a3a")
+	_hrect(img, 4, 1, 11, 3, "7a5a3a")
+	_hrect(img, 4, 3, 11, 3, "c8b898")
+	if front:
+		_hrect(img, 6, 8, 9, 9, "8a8a8a")  # janggut
+	_hrect(img, 16, -2, 16, 22, "6b4a2a")  # tombak
+	_hrect(img, 16, -5, 16, -3, "c9d1dc")
+	_hp(img, 15, -3, "c9d1dc")
+	_hp(img, 17, -3, "c9d1dc")
+
+
+## Bu Ningsih, penjaga pondok singgah: gaun merah bata, kerudung putih.
+func _dress_ningsih(img: Image, front: bool, _action: String) -> void:
+	_robe(img, "9a4a3a", "7a342a", "e8e0d0")
+	_hrect(img, 5, 1, 10, 1, "e8e0d0")
+	_hrect(img, 4, 2, 11, 3 if front else 9, "e8e0d0")
+	_hrect(img, 3, 3, 3, 9, "e8e0d0")
+	_hrect(img, 12, 3, 12, 9, "c8c0b0")
+
+
+## Pak Sabar, pedagang lapak: caping jerami, rompi hijau.
+func _dress_sabar(img: Image, front: bool, _action: String) -> void:
+	_hrect(img, 6, -1, 9, 0, "d8b860")
+	_hrect(img, 4, 1, 11, 1, "d8b860")
+	_hrect(img, 2, 2, 13, 3, "d8b860")
+	_hrect(img, 9, 2, 13, 3, "b09040")
+	if front:
+		_hrect(img, 6, 12, 9, 14, "e8e0d0")
+
+
 ## Nyi Laras, tetua dusun: jubah hijau-biru, rambut putih disanggul, tongkat jalan.
 func _dress_laras(img: Image, _front: bool, _action: String) -> void:
 	_robe(img, "3a7a78", "2a5a5c", "c8a040")
@@ -1119,6 +1168,93 @@ func _spider(sprite_name: String, s: float, body_hex: Array, queen: bool) -> voi
 	_finish(img, sprite_name, "1c1630", [22 * s, 27 * s + top, 19 * s, 2.5 * s])
 
 
+## Pohon mati di lereng Pegunungan Abu (28x36, jangkar 14,32). mirror membalik arah dahan.
+func _dead_tree(sprite_name: String, mirror: bool) -> void:
+	var img := _new(28, 36)
+	var bark := Color("5a4a40")
+	var dark := Color("3e322c")
+	_rect(img, 13, 12, 14, 32, bark)
+	_rect(img, 14, 12, 14, 32, dark)
+	for branch: Array in [[13, 18, 6, 9], [14, 15, 22, 7], [13, 23, 8, 18], [14, 25, 20, 20], [13, 12, 12, 4], [6, 9, 3, 10], [22, 7, 24, 3]]:
+		var a := Vector2(branch[0], branch[1])
+		var b := Vector2(branch[2], branch[3])
+		if mirror:
+			a.x = 27 - a.x
+			b.x = 27 - b.x
+		_line(img, a, b, bark, 1)
+	_outline(img, Color("2a211c"))
+	_shadow(img, 14, 32, 7, 3)
+	_save(img, sprite_name)
+
+
+## Kadal Bara: kadal menghadap kiri dengan duri punggung membara.
+func _monster_kadal_bara() -> void:
+	var img := _new(48, 26)
+	var skin := _pal(["e88a5a", "c05a34", "94402a", "6a2c20"])
+	_flat(img, [Vector2(33, 13), Vector2(46, 8), Vector2(47, 11), Vector2(36, 19)], skin[1])
+	_flat(img, [Vector2(43, 9), Vector2(46, 8), Vector2(47, 11), Vector2(44, 12)], skin[0])
+	_rect(img, 14, 16, 16, 22, skin[3])
+	_rect(img, 30, 16, 32, 22, skin[3])
+	_blob(img, 24, 14, 13, 5.5, skin)
+	_rect(img, 11, 17, 13, 22, skin[1])
+	_rect(img, 27, 17, 29, 22, skin[1])
+	_rect(img, 9, 22, 13, 23, skin[2])
+	_rect(img, 25, 22, 29, 23, skin[2])
+	for spike: Array in [[14, 10, 16, 4, 18, 10], [20, 9, 22, 3, 24, 9], [26, 9, 28, 4, 30, 10]]:
+		_flat(img, [Vector2(spike[0], spike[1]), Vector2(spike[2], spike[3]), Vector2(spike[4], spike[5])], Color("ffb040"))
+	_blob(img, 9, 12, 5.5, 3.8, skin)
+	_flat(img, [Vector2(0, 12), Vector2(5, 10), Vector2(5, 15), Vector2(1, 14)], skin[1])
+	_rect(img, 6, 11, 7, 11, Color("ffe14a"))
+	_px(img, 1, 12, Color("3a1810"))
+	_px(img, 2, 15, Color.WHITE)
+	_px(img, 4, 15, Color.WHITE)
+	_finish(img, "monster_kadal_bara", "3a1810", [24, 24, 17, 2.2])
+
+
+## Elang Abu: elang kelabu dengan sayap terbentang, melayang.
+func _monster_elang_abu() -> void:
+	var img := _new(48, 34)
+	var body := _pal(["e0dcd4", "b0aaa0", "807a72", "565048"])
+	var wing: Array = [Vector2(20, 14), Vector2(12, 6), Vector2(2, 3), Vector2(0, 8), Vector2(4, 9), Vector2(2, 13),
+		Vector2(7, 13), Vector2(6, 17), Vector2(12, 16), Vector2(16, 19), Vector2(20, 17)]
+	var feathers := func(x: int, y: int) -> Color:
+		if x % 5 == 0:
+			return Color("5e5850")
+		return Color("c8c2b8") if y < 9 else Color("948e84")
+	_fill_poly(img, wing, feathers)
+	_fill_poly(img, _mirror(wing, 48), feathers)
+	_flat(img, [Vector2(21, 22), Vector2(27, 22), Vector2(28, 29), Vector2(20, 29)], body[2])
+	_blob(img, 24, 17, 5, 7, body)
+	_blob(img, 24, 9.5, 4.2, 4, body)
+	_flat(img, [Vector2(22, 11), Vector2(26, 11), Vector2(24, 15)], Color("e0b040"))
+	_rect(img, 21, 8, 22, 9, Color("ffe14a"))
+	_rect(img, 26, 8, 27, 9, Color("ffe14a"))
+	_px(img, 22, 9, Color("2a2420"))
+	_px(img, 26, 9, Color("2a2420"))
+	_rect(img, 21, 24, 22, 25, Color("e0b040"))
+	_rect(img, 26, 24, 27, 25, Color("e0b040"))
+	_finish(img, "monster_elang_abu", "2a2420", [24, 32, 9, 1.8])
+
+
+## Golem: tumpukan bongkah batu berbentuk raksasa. s = skala; crack_hex = warna retakan
+## (jingga menyala untuk Raksasa Lahar); eye_hex = warna mata.
+## Titik kaki setelah pinggiran: (20*s + 2, 42*s + 2).
+func _golem(sprite_name: String, s: float, body_hex: Array, crack_hex: String, eye_hex: String) -> void:
+	var img := _new(int(40 * s) + 1, int(44 * s) + 1)
+	var rock := _pal(body_hex)
+	var thick: int = max(1, int(round(s)))
+	for part: Array in [[13, 36, 5, 6], [27, 36, 5, 6], [13, 41, 6, 2.2], [27, 41, 6, 2.2],  # kaki
+			[5, 26, 4, 8], [35, 26, 4, 8], [5, 34, 4.6, 4], [35, 34, 4.6, 4],  # lengan dan kepalan
+			[20, 22, 12, 11], [7, 16, 5.5, 5], [33, 16, 5.5, 5], [20, 8, 6.2, 5.6]]:  # badan, bahu, kepala
+		_blob(img, part[0] * s, part[1] * s, part[2] * s, part[3] * s, rock)
+	var crack := Color(crack_hex)
+	for seg: Array in [[14, 17, 19, 23], [19, 23, 16, 30], [25, 15, 27, 23], [27, 23, 24, 28], [5, 22, 6, 30], [34, 21, 35, 29]]:
+		_line(img, Vector2(seg[0], seg[1]) * s, Vector2(seg[2], seg[3]) * s, crack, thick)
+	for eye: Array in [[17, 7], [22, 7]]:
+		_rect(img, int(eye[0] * s), int(eye[1] * s), int(eye[0] * s) + thick, int(eye[1] * s) + thick, Color(eye_hex))
+	_finish(img, sprite_name, "1c1814", [20 * s, 42 * s, 14 * s, 2.5 * s])
+
+
 ## Roh Kabut: nyala api biru pucat yang melayang.
 func _monster_roh_kabut() -> void:
 	var img := _new(28, 36)
@@ -1197,7 +1333,7 @@ func _preview(path: String) -> void:
 	var y := 2
 	var row_h := 0
 	for sprite_name: String in _made:
-		if not (sprite_name in ["monster_laba_laba", "monster_ratu", "monster_roh_kabut", "npc_laras_front_stand", "npc_wiryo_front_stand", "npc_rumi_front_stand"]):
+		if not (sprite_name in ["monster_kadal_bara", "monster_elang_abu", "monster_golem_batu", "monster_lahar", "npc_darma_front_stand", "npc_ningsih_front_stand", "npc_sabar_front_stand", "dead_tree_0", "ash_0", "cinder_0", "lava_0"]):
 			continue
 		var img: Image = _made[sprite_name]
 		if x + img.get_width() > sheet.get_width() - 2:
@@ -1207,6 +1343,6 @@ func _preview(path: String) -> void:
 		sheet.blend_rect(img, Rect2i(Vector2i.ZERO, img.get_size()), Vector2i(x, y))
 		x += img.get_width() + 2
 		row_h = max(row_h, img.get_height())
-	sheet = sheet.get_region(Rect2i(0, 0, 240, 66))
+	sheet = sheet.get_region(Rect2i(0, 0, 240, 130))
 	sheet.resize(sheet.get_width() * 5, sheet.get_height() * 5, Image.INTERPOLATE_NEAREST)
 	sheet.save_png(path)

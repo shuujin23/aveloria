@@ -4,6 +4,7 @@ extends SceneTree
 ## Party dimainkan AI sederhana mengikuti alur cerita:
 ## Wilayah 1: Arlen sendirian di padang -> menolong Mira -> berdua berlatih -> Ogre Penjaga.
 ## Wilayah 2: berdua di Hutan Kabut -> menolong Selene -> bertiga berlatih -> Ratu Laba-laba.
+## Wilayah 3: bertiga di Pegunungan Abu -> menolong Kael -> berempat berlatih -> Raksasa Lahar.
 
 const RUNS := 400
 # Tiap tahap: tabel pertemuan, "event:mira" (Mira bergabung lalu battle cerita), atau "boss:<id>".
@@ -16,11 +17,16 @@ const ROUTE := [
 	"event:selene",
 	"kabut_padang", "kabut_padang", "kabut_hutan", "kabut_hutan", "kabut_hutan", "kabut_hutan",
 	"boss:ratu",
+	"abu_padang", "abu_padang", "abu_padang",
+	"event:kael",
+	"abu_padang", "abu_padang", "abu_lereng", "abu_lereng", "abu_lereng", "abu_lereng",
+	"boss:lahar",
 ]
 # Battle cerita: tokoh yang bergabung dan kelompok musuhnya.
 const EVENTS := {
 	"event:mira": {"join": "mira", "ids": ["serigala", "kelelawar"]},
 	"event:selene": {"join": "selene", "ids": ["laba_laba", "roh_kabut", "laba_laba"]},
+	"event:kael": {"join": "kael", "ids": ["elang_abu", "kadal_bara", "elang_abu"]},
 }
 
 
@@ -33,6 +39,7 @@ func _init() -> void:
 ## rest_every = menginap di desa setiap N pertarungan (selalu sebelum battle cerita dan semi-bos).
 func _run(rest_every: int) -> void:
 	var cleared := 0
+	var defeats := 0
 	var rounds_sum := 0
 	var battles := 0
 	var tries := {}
@@ -41,11 +48,13 @@ func _run(rest_every: int) -> void:
 	for i in RUNS:
 		var party := Db.new_party()
 		var step := 0
+		var retries := 0  # kalah = siuman di penginapan lalu mencoba tahap yang sama lagi
 		while step < ROUTE.size():
 			var stage: String = ROUTE[step]
 			var ids: Array
 			if EVENTS.has(stage):
-				party.append(Battler.from_character(EVENTS[stage].join, (party[0] as Battler).level))
+				if retries == 0:
+					party.append(Battler.from_character(EVENTS[stage].join, (party[0] as Battler).level))
 				ids = EVENTS[stage].ids
 			elif stage.begins_with("boss:"):
 				ids = Db.BOSSES[stage.trim_prefix("boss:")]
@@ -58,7 +67,14 @@ func _run(rest_every: int) -> void:
 			rounds_sum += abs(rounds)
 			tries[stage] = tries.get(stage, 0) + 1
 			if rounds < 0:
-				break
+				retries += 1
+				defeats += 1
+				if retries > 10:
+					break
+				for m: Battler in party:
+					m.full_restore()
+				continue
+			retries = 0
 			won[stage] = won.get(stage, 0) + 1
 			eng.grant_rewards()
 			step += 1
@@ -69,8 +85,9 @@ func _run(rest_every: int) -> void:
 			cleared += 1
 
 	print("=== Menginap tiap %d battle ===" % rest_every)
-	print("  tamat sampai Ratu         : %.0f%%" % (100.0 * cleared / RUNS))
+	print("  tamat sampai Raksasa Lahar: %.0f%%" % (100.0 * cleared / RUNS))
 	print("  rata-rata ronde per battle: %.1f" % (float(rounds_sum) / battles))
+	print("  rata-rata kalah per permainan: %.1f" % (float(defeats) / RUNS))
 	for stage: String in tries:
 		print("  %-14s menang %4d/%4d (%3.0f%%)   level Arlen rata-rata %.1f" % [stage, won.get(stage, 0), tries[stage],
 			100.0 * won.get(stage, 0) / tries[stage], level_at[stage] / tries[stage]])
