@@ -179,6 +179,14 @@ static func apply_item(item_id: String, target: Battler, lines: Array) -> bool:
 			if removed:
 				lines.append("Semua nerf pada %s hilang." % target.display_name)
 				return true
+		"status":
+			if target.is_alive():
+				var st: Dictionary = Db.STATUSES[item.status]
+				if st.has("cancels"):
+					target.statuses.erase(st.cancels)
+				target.statuses[item.status] = max(int(target.statuses.get(item.status, 0)), int(st.turns))
+				lines.append("%s mendapat %s!" % [target.display_name, st.name])
+				return true
 		"revive":
 			if not target.is_alive():
 				target.hp = max(1, int(target.max_hp * float(item.power)))

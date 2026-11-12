@@ -84,7 +84,11 @@ func _initialize() -> void:
 	_icon_bottle("icon_penawar", ["b8f08a", "6cc04e", "469a3c", "2e742e"], 4.0, false)
 	_icon_bottle("icon_eter", ["9ad0ff", "4a8ae0", "3466b8", "244a8a"], 4.0, false)
 	_icon_drop("icon_air_kehidupan")
+	_icon_bottle("icon_ramuan_kekuatan", ["ffd08a", "ff9a3a", "d8702a", "a84e1c"], 4.0, true)
+	_icon_bottle("icon_ramuan_pelindung", ["d8b8ff", "a070e0", "7a4ab8", "56308a"], 4.0, true)
+	_icon_bottle("icon_ramuan_angin", ["c8fff0", "5fd0c0", "3aa69a", "277a72"], 4.0, true)
 	_icon_bag("icon_tas")
+	_status_icons()
 
 	_monster_jamur()
 	_monster_kelelawar()
@@ -884,6 +888,79 @@ func _icon_bottle(sprite_name: String, liquid_hex: Array, radius: float, band: b
 	_save(img, sprite_name)
 
 
+# ---------------------------------------------------------------- ikon efek status (12x12, tampil 2x)
+
+## Sembilan ikon efek status. Pola: pedang = ATK, perisai = DEF, sepatu = SPD,
+## dengan panah hijau naik (buff) atau merah turun (nerf); api = Terbakar, tetes hijau = Racun,
+## perisai emas berpalang = Kebal.
+func _status_icons() -> void:
+	var sword := func(img: Image) -> void:
+		for i in 6:  # bilah miring
+			_px(img, 9 - i, 1 + i, Color("e8ecf2"))
+			_px(img, 9 - i, 2 + i, Color("9aa4b2"))
+		for p: Vector2i in [Vector2i(2, 5), Vector2i(3, 6), Vector2i(4, 7), Vector2i(5, 8)]:
+			_px(img, p.x, p.y, Color("d9a441"))
+		_px(img, 3, 8, Color("7a5028"))
+		_px(img, 2, 9, Color("7a5028"))
+		_px(img, 1, 10, Color("d9a441"))
+	var shield := func(img: Image, light: String, dark: String) -> void:
+		var spans := {1: [3, 8], 2: [2, 9], 3: [2, 9], 4: [2, 9], 5: [2, 9], 6: [3, 8], 7: [3, 8], 8: [4, 7], 9: [5, 6]}
+		for y: int in spans:
+			for x in range(spans[y][0], spans[y][1] + 1):
+				_px(img, x, y, Color(light) if x < 6 else Color(dark))
+		_rect(img, 3, 1, 8, 1, Color(light).lightened(0.35))
+	var boot := func(img: Image) -> void:
+		_rect(img, 3, 1, 5, 6, Color("a8794a"))
+		_rect(img, 5, 1, 5, 6, Color("7a5028"))
+		_rect(img, 3, 1, 5, 1, Color("d8b890"))
+		_rect(img, 3, 7, 8, 8, Color("a8794a"))
+		_rect(img, 8, 8, 9, 8, Color("7a5028"))
+		_rect(img, 2, 9, 9, 9, Color("4a3018"))
+
+	var icons := {
+		"attack_up": [sword, 1], "attack_break": [sword, -1],
+		"defense_up": [func(img: Image) -> void: shield.call(img, "6a8ac8", "46649c"), 1],
+		"defense_break": [func(img: Image) -> void: shield.call(img, "6a8ac8", "46649c"), -1],
+		"speed_up": [boot, 1], "slow": [boot, -1],
+		"immunity": [func(img: Image) -> void:
+			shield.call(img, "f0d070", "c8a040")
+			_rect(img, 5, 3, 6, 7, Color.WHITE)
+			_rect(img, 4, 4, 7, 5, Color.WHITE), 0],
+		"burn": [func(img: Image) -> void:
+			var spans := {1: [5, 5], 2: [5, 6], 3: [4, 6], 4: [3, 7], 5: [2, 8], 6: [2, 8], 7: [2, 8], 8: [3, 7], 9: [4, 6]}
+			for y: int in spans:
+				for x in range(spans[y][0], spans[y][1] + 1):
+					_px(img, x, y, Color("ff8a2a"))
+			_rect(img, 4, 6, 6, 8, Color("ffd23a"))
+			_px(img, 5, 5, Color("ffd23a"))
+			_px(img, 5, 8, Color("fff6c0")), 0],
+		"poison": [func(img: Image) -> void:
+			var spans := {1: [5, 6], 2: [5, 6], 3: [4, 7], 4: [3, 8], 5: [2, 9], 6: [2, 9], 7: [2, 9], 8: [3, 8], 9: [4, 7]}
+			for y: int in spans:
+				for x in range(spans[y][0], spans[y][1] + 1):
+					_px(img, x, y, Color("7ad05a") if x < 6 else Color("4a9a3c"))
+			_px(img, 4, 4, Color("d8ffc0"))
+			_px(img, 4, 6, Color("1c4a1c"))  # wajah tengkorak kecil
+			_px(img, 7, 6, Color("1c4a1c"))
+			_rect(img, 5, 8, 6, 8, Color("1c4a1c")), 0],
+	}
+	for status_id: String in icons:
+		var img := _new(12, 12)
+		(icons[status_id][0] as Callable).call(img)
+		_outline(img, Color("1a1420"))
+		var direction: int = icons[status_id][1]
+		if direction != 0:  # panah naik/turun di pojok kanan bawah, dengan garis tepi sendiri
+			var arrow := _new(12, 12)
+			var color := Color("6fe07a") if direction > 0 else Color("ff6a5a")
+			var tip := 6 if direction > 0 else 10
+			_px(arrow, 9, tip, color)
+			_rect(arrow, 8, tip + direction, 10, tip + direction, color)
+			_rect(arrow, 9, min(tip + 2 * direction, tip + 4 * direction), 9, max(tip + 2 * direction, tip + 4 * direction), color)
+			_outline(arrow, Color("1a1420"))
+			img.blend_rect(arrow, Rect2i(0, 0, 12, 12), Vector2i.ZERO)
+		_save(img, "status_%s" % status_id)
+
+
 ## Tas kulit: tombol pintasan tas di peta dan kartu "Perbesar tas" di toko.
 func _icon_bag(sprite_name: String) -> void:
 	var img := _new(16, 16)
@@ -1333,7 +1410,7 @@ func _preview(path: String) -> void:
 	var y := 2
 	var row_h := 0
 	for sprite_name: String in _made:
-		if not (sprite_name in ["monster_kadal_bara", "monster_elang_abu", "monster_golem_batu", "monster_lahar", "npc_darma_front_stand", "npc_ningsih_front_stand", "npc_sabar_front_stand", "dead_tree_0", "ash_0", "cinder_0", "lava_0"]):
+		if not sprite_name.begins_with("status_"):
 			continue
 		var img: Image = _made[sprite_name]
 		if x + img.get_width() > sheet.get_width() - 2:
@@ -1343,6 +1420,6 @@ func _preview(path: String) -> void:
 		sheet.blend_rect(img, Rect2i(Vector2i.ZERO, img.get_size()), Vector2i(x, y))
 		x += img.get_width() + 2
 		row_h = max(row_h, img.get_height())
-	sheet = sheet.get_region(Rect2i(0, 0, 240, 130))
+	sheet = sheet.get_region(Rect2i(0, 0, 130, 16))
 	sheet.resize(sheet.get_width() * 5, sheet.get_height() * 5, Image.INTERPOLATE_NEAREST)
 	sheet.save_png(path)

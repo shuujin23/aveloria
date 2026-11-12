@@ -187,7 +187,7 @@ static func talk(npc_id: String, flags: Dictionary, gold: int) -> Array:
 			if flags.has("ogre"):
 				return [
 					{"who": "Pak Joko", "text": "Gerbang terbuka, kiriman dari timur datang lagi! Silakan lihat daganganku."},
-					{"do": "shop", "stock": ["ramuan", "penawar", "ramuan_besar", "eter", "air_kehidupan"]},
+					{"do": "shop", "stock": ["ramuan", "penawar", "ramuan_besar", "eter", "air_kehidupan", "ramuan_kekuatan", "ramuan_pelindung", "ramuan_angin"]},
 					{"who": "Pak Joko", "text": "Hati-hati di Hutan Kabut."},
 				]
 			return [
@@ -245,7 +245,7 @@ static func talk(npc_id: String, flags: Dictionary, gold: int) -> Array:
 		"rumi":
 			return [
 				{"who": "Mbok Rumi", "text": "Mau apa, Nak? Di hutan ini Penawar lebih berharga daripada emas."},
-				{"do": "shop", "name": "Warung Mbok Rumi", "stock": ["ramuan", "penawar", "ramuan_besar", "eter", "air_kehidupan"]},
+				{"do": "shop", "name": "Warung Mbok Rumi", "stock": ["ramuan", "penawar", "ramuan_besar", "eter", "air_kehidupan", "ramuan_kekuatan", "ramuan_pelindung", "ramuan_angin"]},
 				{"who": "Mbok Rumi", "text": "Awas laba-laba. Racunnya menggerogoti pelan-pelan."},
 			]
 		"selene":
@@ -300,7 +300,7 @@ static func talk(npc_id: String, flags: Dictionary, gold: int) -> Array:
 		"sabar":
 			return [
 				{"who": "Pak Sabar", "text": "Bekal untuk naik gunung? Kadal bara menyulut, elang abu merobek zirah. Siapkan Penawar."},
-				{"do": "shop", "name": "Lapak Pak Sabar", "stock": ["ramuan", "penawar", "ramuan_besar", "eter", "air_kehidupan"]},
+				{"do": "shop", "name": "Lapak Pak Sabar", "stock": ["ramuan", "penawar", "ramuan_besar", "eter", "air_kehidupan", "ramuan_kekuatan", "ramuan_pelindung", "ramuan_angin"]},
 				{"who": "Pak Sabar", "text": "Jangan dekat-dekat lahar."},
 			]
 		"kael":

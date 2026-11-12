@@ -115,6 +115,7 @@ const SKILLS := {
 ## Barang habis pakai. Dipakai dari menu Barang di battle; yang berjenis heal/mp juga bisa dari menu peta.
 ##   heal   memulihkan HP sebesar `power`      mp     memulihkan MP sebesar `power`
 ##   cure   menghapus semua nerf               revive membangkitkan rekan tumbang dengan `power` x HP maksimum
+##   status memberi efek status `status` (buff) ke seorang rekan; hanya di pertarungan
 const ITEMS := {
 	"ramuan": {"name": "Ramuan", "price": 10, "kind": "heal", "power": 30,
 		"desc": "Memulihkan 30 HP seorang rekan."},
@@ -126,6 +127,12 @@ const ITEMS := {
 		"desc": "Memulihkan 20 MP seorang rekan."},
 	"air_kehidupan": {"name": "Air Kehidupan", "price": 60, "kind": "revive", "power": 0.5,
 		"desc": "Membangkitkan rekan yang tumbang dengan separuh HP."},
+	"ramuan_kekuatan": {"name": "Ramuan Kekuatan", "price": 20, "kind": "status", "status": "attack_up",
+		"desc": "ATK Naik untuk seorang rekan selama 3 ronde."},
+	"ramuan_pelindung": {"name": "Ramuan Pelindung", "price": 20, "kind": "status", "status": "defense_up",
+		"desc": "DEF Naik untuk seorang rekan selama 3 ronde."},
+	"ramuan_angin": {"name": "Ramuan Angin", "price": 20, "kind": "status", "status": "speed_up",
+		"desc": "Cepat (SPD naik) untuk seorang rekan selama 3 ronde."},
 }
 
 ## Isi tas di awal permainan.

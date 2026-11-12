@@ -49,6 +49,20 @@ func _init() -> void:
 	eng.execute({"actor": mira, "kind": "item", "item": "air_kehidupan", "target": arlen})
 	_expect(arlen.hp == arlen.max_hp / 2 and not bag.has("air_kehidupan"), "Air Kehidupan membangkitkan dengan separuh HP (%d)" % arlen.hp)
 
+	# Ramuan buff: memberi efek status ke rekan, dan menghapus nerf lawannya
+	var buffs := {"ramuan_kekuatan": 1, "ramuan_pelindung": 1, "ramuan_angin": 1}
+	eng.items = buffs
+	arlen.statuses.clear()
+	eng.apply_status(arlen, "slow", log)
+	var base_atk := arlen.stat("atk")
+	eng.execute({"actor": mira, "kind": "item", "item": "ramuan_kekuatan", "target": arlen})
+	eng.execute({"actor": mira, "kind": "item", "item": "ramuan_pelindung", "target": arlen})
+	eng.execute({"actor": mira, "kind": "item", "item": "ramuan_angin", "target": arlen})
+	_expect(arlen.has_status("attack_up") and is_equal_approx(arlen.stat("atk"), base_atk * 1.4), "Ramuan Kekuatan memberi ATK Naik")
+	_expect(arlen.has_status("defense_up"), "Ramuan Pelindung memberi DEF Naik")
+	_expect(arlen.has_status("speed_up") and not arlen.has_status("slow"), "Ramuan Angin memberi Cepat dan menghapus Lambat")
+	_expect(buffs.is_empty(), "ketiga ramuan buff terpakai")
+
 	# Tas awal dan dagangan Pak Joko
 	_expect(Db.START_ITEMS == {"ramuan": 2}, "permainan baru dimulai dengan 2 Ramuan")
 	_expect(_stock({}) == ["ramuan", "penawar"], "sebelum Ogre kalah: toko menjual Ramuan dan Penawar")

@@ -27,6 +27,7 @@ const FX_SOUND := {"attack": "swing", "heavy_slash": "swing", "spin": "swing", "
 	"bless": "buff", "rally": "buff", "debuff": "debuff", "spore": "slime", "quake": "quake", "guard": "guard",
 	"lava": "fire"}
 
+const STATUS_ICON_SIZE := Vector2(24, 24)  # ikon efek status 12x12 ditampilkan 2x
 const COLOR_PANEL := Color("0f1622")
 const COLOR_BORDER := Color("c9a85c")
 const COLOR_ACTIVE := Color("ffd866")
@@ -84,6 +85,14 @@ var _bag_actor: Battler
 var _results: PanelContainer  # layar hasil pertarungan
 var _results_running := false  # batang XP masih terisi
 var _results_skip := false
+var _pick_list: Array = []  # sasaran yang sedang bisa dipilih (kosong = tidak sedang memilih sasaran)
+var _pick_cb := Callable()
+var _hover: Battler  # unit di bawah penunjuk mouse saat memilih sasaran
+var _active_ring: Line2D  # lingkaran emas di kaki tokoh yang sedang memilih perintah / sedang beraksi
+var _target_ring: Line2D  # lingkaran di kaki sasaran yang sedang disorot
+var _banner: Label  # keterangan di atas arena: giliran siapa dan sedang apa
+var _order_box: HBoxContainer  # urutan aksi ronde ini
+var _order_chips: Array = []
 
 
 func _ready() -> void:
@@ -93,9 +102,139 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_cancel") and _back_cb.is_valid():
+	var click := event as InputEventMouseButton
+	var back_pressed := event.is_action_pressed("ui_cancel") \
+		or (click != null and click.pressed and click.button_index == MOUSE_BUTTON_RIGHT)
+	if back_pressed and _back_cb.is_valid():  # Esc atau klik kanan: kembali
 		get_viewport().set_input_as_handled()
+		Audio.sfx("ui_cancel")
 		_back_cb.call()
+		return
+	if _pick_list.is_empty():
+		return
+	# Sedang memilih sasaran: arahkan mouse ke petarung di arena lalu klik.
+	var motion := event as InputEventMouseMotion
+	if motion != null:
+		var unit := _unit_at(motion.position)
+		if unit != _hover:
+			_hover = unit
+			Input.set_default_cursor_shape(Input.CURSOR_POINTING_HAND if unit != null else Input.CURSOR_ARROW)
+			if unit != null:
+				_point_at(unit)
+				_hint.text = _describe(unit)
+				Audio.sfx("ui_move")
+	elif click != null and click.pressed and click.button_index == MOUSE_BUTTON_LEFT:
+		var unit := _unit_at(click.position)
+		if unit != null:
+			get_viewport().set_input_as_handled()
+			Audio.sfx("ui_ok")
+			var on_pick := _pick_cb
+			on_pick.call(unit)
+
+
+## Sasaran sah yang berada di bawah sebuah titik layar (yang terdekat kalau bertumpuk).
+func _unit_at(pos: Vector2) -> Battler:
+	var best: Battler = null
+	var best_distance := INF
+	for b: Battler in _pick_list:
+		var rect: Rect2 = _units[b].rect
+		if rect.grow(6).has_point(pos):
+			var distance := pos.distance_to(rect.get_center())
+			if distance < best_distance:
+				best = b
+				best_distance = distance
+	return best
+
+
+## Keterangan singkat seorang petarung: HP/MP untuk rekan, stat untuk musuh, plus efek status.
+func _describe(b: Battler) -> String:
+	var text := "%s   ATK %d  DEF %d  SPD %d" % [b.display_name, roundi(b.stat("atk")), roundi(b.stat("defense")), roundi(b.stat("agi"))]
+	if not b.is_enemy:
+		text = "%s   HP %d/%d  MP %d/%d" % [b.display_name, b.hp, b.max_hp, b.mp, b.max_mp]
+	var tags := _status_tags(b)
+	return text if tags == "" else "%s   [%s]" % [text, tags]
+
+
+## Perintah dalam satu baris, mis. "Bola Api > Goblin Perampok" atau "Bertahan".
+func _cmd_text(cmd: Dictionary) -> String:
+	var target: Battler = cmd.get("target")
+	var to := "" if target == null else " > %s" % target.display_name
+	match cmd.kind:
+		"attack":
+			return "Serang" + to
+		"defend":
+			return "Bertahan"
+		"item":
+			return String(Db.ITEMS[cmd.item].name) + to
+		"skill":
+			var sk: Dictionary = Db.SKILLS[cmd.skill]
+			var is_enemy: bool = (cmd.actor as Battler).is_enemy
+			match sk.target:
+				"all_enemies":
+					to = " > seluruh party" if is_enemy else " > semua musuh"
+				"all_allies":
+					to = " > semua monster" if is_enemy else " > seluruh party"
+				"self":
+					to = ""
+			return String(sk.name) + to
+	return ""
+
+
+## Tulisan kecil di atas kepala tiap tokoh: perintah yang sudah dipilih untuk ronde ini.
+func _update_plans() -> void:
+	for m: Battler in engine.party:
+		var text := ""
+		for cmd: Dictionary in _commands:
+			if cmd.actor == m:
+				text = _cmd_text(cmd)
+		(_units[m].plan as Label).text = text
+
+
+func _set_banner(text: String) -> void:
+	_banner.text = text
+	(_banner.get_parent().get_parent() as Control).visible = text != ""
+
+
+## Lingkaran emas di kaki petarung yang sedang memilih perintah atau sedang beraksi.
+func _mark_active(b: Battler) -> void:
+	_active_ring.visible = b != null and _units.has(b)
+	if _active_ring.visible:
+		_active_ring.position = _home(b) + Vector2(0, 2)
+
+
+## Deretan nama sesuai urutan aksi ronde ini (ditentukan SPD).
+func _build_order(order: Array) -> void:
+	for child in _order_box.get_children():
+		_order_box.remove_child(child)
+		child.queue_free()
+	_order_chips.clear()
+	for cmd: Dictionary in order:
+		var b: Battler = cmd.actor
+		var chip := Label.new()
+		chip.text = " %s " % b.display_name
+		chip.add_theme_font_size_override("font_size", 13)
+		_order_box.add_child(chip)
+		_order_chips.append(chip)
+	_order_box.visible = true
+	_mark_order(-1, order)
+
+
+## Tandai giliran ke-`index`: yang sudah lewat diredupkan, yang sedang beraksi berlatar emas.
+func _mark_order(index: int, order: Array) -> void:
+	for i in _order_chips.size():
+		var chip: Label = _order_chips[i]
+		var b: Battler = order[i].actor
+		var box := StyleBoxFlat.new()
+		box.set_corner_radius_all(3)
+		box.bg_color = Color("5a2a2a") if b.is_enemy else Color("24406a")
+		chip.add_theme_color_override("font_color", Color.WHITE)
+		chip.modulate.a = 1.0
+		if i == index:
+			box.bg_color = COLOR_ACTIVE
+			chip.add_theme_color_override("font_color", Color("10141c"))
+		elif i < index or not b.is_alive():
+			chip.modulate.a = 0.35
+		chip.add_theme_stylebox_override("normal", box)
 
 
 # ---------------------------------------------------------------- alur battle
@@ -153,10 +292,14 @@ func _ask_command() -> void:
 			"disabled": not engine.can_flee(), "cb": _attempt_flee})
 	else:
 		back = _undo_command
-	_show_menu("%s (%s)" % [actor.display_name, actor.job], items, back)
+	_show_menu("Giliran %s (%s)" % [actor.display_name, actor.job], items, back)
+	_order_box.visible = false
+	_set_banner("Pilih perintah untuk %s   (%d dari %d)" % [actor.display_name, _cmd_index + 1, _actors.size()])
+	_update_plans()
 
 
 func _skill_menu(actor: Battler) -> void:
+	_set_banner("%s: pilih jurus" % actor.display_name)
 	var items: Array = []
 	for skill_id: String in actor.skills:
 		var sk: Dictionary = Db.SKILLS[skill_id]
@@ -232,12 +375,18 @@ func _on_bag_closed() -> void:
 	_bag.visible = false
 	_ask_command()
 
+## Pilih sasaran: lewat daftar di menu, atau dengan mengarahkan mouse ke petarung di arena lalu klik.
 func _pick_target(title: String, list: Array, on_pick: Callable, back: Callable = _ask_command) -> void:
 	var items: Array = []
 	for t: Battler in list:
-		items.append({"text": t.display_name, "hint": "HP %d/%d" % [t.hp, t.max_hp] if not t.is_enemy else "", "unit": t,
+		items.append({"text": t.display_name, "hint": _describe(t), "unit": t,
 			"cb": func() -> void: on_pick.call(t)})
 	_show_menu(title, items, back)
+	_pick_list = list
+	_pick_cb = on_pick
+	_set_banner("%s   Klik sasaran di arena, atau pilih dari daftar." % title)
+	if not list.is_empty():
+		_point_at(list[0])
 
 
 func _push(cmd: Dictionary) -> void:
@@ -276,14 +425,21 @@ func _resolve_round() -> void:
 		cmds.append(engine.enemy_command(e))
 	engine.begin_round(cmds)
 	_refresh()
+	_update_plans()
+	var order := engine.turn_order(cmds)
+	_build_order(order)
 
-	for cmd: Dictionary in engine.turn_order(cmds):
+	for turn in order.size():
+		var cmd: Dictionary = order[turn]
 		var actor: Battler = cmd.actor
+		_mark_order(turn, order)
 		if not actor.is_alive():
 			continue
+		_mark_active(actor)
 		# Mesin battle langsung mengubah HP; tampilan baru diperbarui tepat saat animasi "mengenai".
 		var targets := engine.resolve_targets(cmd)
 		var animate: bool = cmd.kind != "skill" or actor.mp >= int(Db.SKILLS[cmd.skill].mp)
+		_set_banner("Giliran %s:   %s" % [actor.display_name, _cmd_text(cmd)])
 		var lines := engine.execute(cmd)
 		if lines.is_empty():
 			continue
@@ -296,8 +452,13 @@ func _resolve_round() -> void:
 		for line: String in lines.slice(1):
 			await _say(line)
 		await _end_fx(actor)
+		if not actor.is_enemy:
+			(_units[actor].plan as Label).text = ""  # perintahnya sudah dijalankan
 		if engine.is_victory() or engine.is_defeat():
 			break
+	_mark_active(null)
+	_order_box.visible = false
+	_set_banner("")
 
 	if engine.is_victory():
 		_victory()
@@ -325,7 +486,7 @@ func _victory() -> void:
 	var before: Array = []
 	for m: Battler in engine.party:
 		before.append({"alive": m.is_alive(), "level": m.level, "xp": m.xp, "skills": m.skills.duplicate(),
-			"stats": {"HP": m.max_hp, "MP": m.max_mp, "ATK": m.atk, "DEF": m.defense, "MAG": m.mag, "AGI": m.agi}})
+			"stats": {"HP": m.max_hp, "MP": m.max_mp, "ATK": m.atk, "DEF": m.defense, "MAG": m.mag, "SPD": m.agi}})
 	var reward := engine.grant_rewards()
 	Game.gold += reward.gold
 	Game.wins += 1
@@ -335,6 +496,9 @@ func _victory() -> void:
 				Game.flags[e.id] = true
 	_refresh()
 	_show_menu("", [])
+	_mark_active(null)
+	_order_box.visible = false
+	_set_banner("")
 	await _show_results(reward, before, was_boss)
 	Game.return_to_world("", true)
 
@@ -449,7 +613,7 @@ func _animate_xp(m: Battler, was: Dictionary, row: Dictionary) -> void:
 	await _fill_xp(row, from, m.xp, Db.xp_to_next(m.level))
 
 	if m.level > int(was.level):
-		var now := {"HP": m.max_hp, "MP": m.max_mp, "ATK": m.atk, "DEF": m.defense, "MAG": m.mag, "AGI": m.agi}
+		var now := {"HP": m.max_hp, "MP": m.max_mp, "ATK": m.atk, "DEF": m.defense, "MAG": m.mag, "SPD": m.agi}
 		var gains: Array = []
 		for stat_name: String in now:
 			var gain := int(now[stat_name]) - int(was.stats[stat_name])
@@ -905,10 +1069,25 @@ func _refresh() -> void:
 	for i in Game.party.size():
 		var m: Battler = Game.party[i]
 		var row: Dictionary = _party_rows[i]
-		(row.name as Label).text = "%s   Lv %d   %s" % [m.display_name, m.level, m.job]
+		(row.name as Label).text = "%s   Lv %d" % [m.display_name, m.level]
 		(row.stats as Label).text = "HP %d/%d    MP %d/%d" % [m.hp, m.max_hp, m.mp, m.max_mp]
-		(row.status as Label).text = _status_tags(m)
-		(row.status as Label).add_theme_color_override("font_color", _status_color(m))
+		# ATK/DEF/SPD setelah efek status: hijau kalau sedang naik, merah kalau sedang turun.
+		for stat_name: String in ["atk", "defense", "agi"]:
+			var label: Label = row[stat_name]
+			var base := int(m.get(stat_name))
+			var now := roundi(m.stat(stat_name))
+			label.text = "%s %d" % [{"atk": "ATK", "defense": "DEF", "agi": "SPD"}[stat_name], now]
+			label.add_theme_color_override("font_color",
+				Color("8fe08a") if now > base else (Color("ff8a7a") if now < base else Color(1, 1, 1, 0.7)))
+		# Baris tokoh yang sedang memilih perintah diberi latar.
+		var frame := StyleBoxFlat.new()
+		frame.bg_color = Color(1.0, 0.85, 0.4, 0.16) if m == current else Color(0, 0, 0, 0)
+		frame.border_color = COLOR_ACTIVE if m == current else Color(0, 0, 0, 0)
+		frame.border_width_left = 3
+		frame.set_content_margin_all(1)
+		frame.content_margin_left = 8
+		(row.frame as PanelContainer).add_theme_stylebox_override("panel", frame)
+		_fill_statuses(row.status, m)
 		(row.bar as ProgressBar).max_value = m.max_hp
 		(row.bar as ProgressBar).value = m.hp
 		var tint := Color.WHITE
@@ -925,12 +1104,13 @@ func _refresh() -> void:
 			_flash(sprite)
 			_recoil(sprite, Vector2(-10, 5))
 		_shown_hp[m] = m.hp
+	if _cmd_index >= 0:
+		_mark_active(current)
 
 	for e: Battler in engine.enemies:
 		var unit: Dictionary = _units[e]
 		(unit.bar as ProgressBar).value = e.hp
-		(unit.status as Label).text = _status_tags(e) if e.is_alive() else ""
-		(unit.status as Label).add_theme_color_override("font_color", _status_color(e))
+		_fill_statuses(unit.status, e)
 		if e.is_alive():
 			(unit.sprite as Sprite2D).modulate = _status_tint(e)
 		if e.hp < int(_shown_hp.get(e, e.hp)):
@@ -948,20 +1128,43 @@ func _refresh() -> void:
 		_shown_hp[e] = e.hp
 
 
-## Label singkat semua efek status yang sedang aktif, mis. "ATK+ RACUN".
+## Nama semua efek status yang sedang aktif beserta sisa rondenya, mis. "ATK Naik 3, Racun 4".
+## Dipakai di baris petunjuk saat sebuah petarung disorot, supaya arti tiap ikon mudah dikenali.
 func _status_tags(b: Battler) -> String:
 	var tags: Array = []
 	for status_id: String in b.statuses:
-		tags.append("%s %d" % [Db.STATUSES[status_id].tag, b.statuses[status_id]])
-	return "  ".join(tags)
+		tags.append("%s %d" % [Db.STATUSES[status_id].name, b.statuses[status_id]])
+	return ", ".join(tags)
 
 
-## Warna label: merah kalau ada nerf, biru kalau hanya buff.
-func _status_color(b: Battler) -> Color:
+## Isi sebuah deretan dengan ikon efek status petarung, masing-masing diikuti sisa rondenya.
+## Hanya disusun ulang kalau efeknya berubah.
+func _fill_statuses(box: HBoxContainer, b: Battler) -> void:
+	var signature := str(b.statuses) if b.is_alive() else ""
+	if box.get_meta("signature", "-") == signature:
+		return
+	box.set_meta("signature", signature)
+	for child in box.get_children():
+		box.remove_child(child)
+		child.queue_free()
+	if signature == "":
+		return
 	for status_id: String in b.statuses:
-		if Db.STATUSES[status_id].kind == "nerf":
-			return Color("ff9a7a")
-	return Color("9ad0ff")
+		var icon := TextureRect.new()
+		icon.texture = load(SPRITES + "status_%s.png" % status_id)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_SCALE
+		icon.custom_minimum_size = STATUS_ICON_SIZE
+		icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		box.add_child(icon)
+		var turns := Label.new()
+		turns.text = str(b.statuses[status_id])
+		turns.add_theme_font_size_override("font_size", 12)
+		turns.add_theme_constant_override("outline_size", 4)
+		turns.add_theme_color_override("font_outline_color", Color("10141c"))
+		turns.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		box.add_child(turns)
 
 
 ## Sprite ikut berubah warna saat terbakar atau keracunan.
@@ -988,7 +1191,11 @@ func _show_menu(title: String, items: Array, back: Callable = Callable()) -> voi
 	_menu_title.text = title
 	_hint.text = ""
 	_cursor.visible = false
+	_target_ring.visible = false
 	_back_cb = back
+	_pick_list = []  # _pick_target mengisinya lagi kalau menu ini memang pemilihan sasaran
+	_hover = null
+	Input.set_default_cursor_shape(Input.CURSOR_ARROW)
 
 	var all_items := items.duplicate()
 	if back.is_valid():
@@ -1020,8 +1227,11 @@ func _show_menu(title: String, items: Array, back: Callable = Callable()) -> voi
 ## Panah penunjuk di atas kepala unit yang sedang dipilih.
 func _point_at(b: Battler) -> void:
 	_cursor.visible = b != null and _units.has(b)
+	_target_ring.visible = _cursor.visible and not _pick_list.is_empty()
 	if _cursor.visible:
 		_cursor.position = _home(b) + Vector2(0, -float(_units[b].height) - 14.0)
+		_target_ring.position = _home(b) + Vector2(0, 2)
+		_target_ring.default_color = Color("ff6a5a") if b.is_enemy else Color("7fe08a")
 
 
 func _field_pos(slot: Vector2) -> Vector2:
@@ -1036,7 +1246,16 @@ func _build_units() -> void:
 
 	for i in engine.party.size():
 		var m: Battler = engine.party[i]
-		_add_unit(m, "%s_back_stand" % m.id, HERO_ANCHOR, _field_pos(PARTY_SLOTS[i % PARTY_SLOTS.size()]))
+		var hero := _add_unit(m, "%s_back_stand" % m.id, HERO_ANCHOR, _field_pos(PARTY_SLOTS[i % PARTY_SLOTS.size()]))
+		var plan := Label.new()  # perintah yang sudah dipilih, di atas kepala
+		plan.add_theme_font_size_override("font_size", 13)
+		plan.add_theme_color_override("font_color", COLOR_ACTIVE)
+		plan.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		plan.size = Vector2(260, 18)
+		plan.position = hero.home + Vector2(-130, -float(hero.height) - 38.0)
+		_add_text_outline(plan)
+		_tags.add_child(plan)
+		hero["plan"] = plan
 
 	var slots: Array = ENEMY_SLOTS[clampi(engine.enemies.size(), 1, 4)]
 	for i in engine.enemies.size():
@@ -1049,13 +1268,14 @@ func _build_units() -> void:
 		bar.position = unit.home + Vector2(-42, 6)
 		bar.max_value = e.max_hp
 		bar.value = e.hp
+		bar.mouse_filter = Control.MOUSE_FILTER_IGNORE  # jangan menghalangi klik ke monster
 		_tags.add_child(bar)
-		var status_label := Label.new()
-		status_label.add_theme_font_size_override("font_size", 12)
-		status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		status_label.size = Vector2(200, 16)
-		status_label.position = unit.home + Vector2(-100, 14)
-		_add_text_outline(status_label)
+		var status_label := HBoxContainer.new()  # deretan ikon efek status di bawah batang HP
+		status_label.alignment = BoxContainer.ALIGNMENT_CENTER
+		status_label.add_theme_constant_override("separation", 1)
+		status_label.size = Vector2(220, STATUS_ICON_SIZE.y)
+		status_label.position = unit.home + Vector2(-110, 15)
+		status_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_tags.add_child(status_label)
 		unit["tag"] = bar
 		unit["bar"] = bar
@@ -1070,7 +1290,8 @@ func _add_unit(b: Battler, sprite_name: String, anchor: Vector2, home: Vector2) 
 	sprite.scale = Vector2(PIXEL, PIXEL)
 	sprite.position = home
 	_unit_layer.add_child(sprite)
-	var unit := {"sprite": sprite, "home": home, "height": anchor.y * PIXEL}
+	var unit := {"sprite": sprite, "home": home, "height": anchor.y * PIXEL,
+		"rect": Rect2(home - anchor * PIXEL, sprite.texture.get_size() * PIXEL)}  # area klik di layar
 	_units[b] = unit
 	_shown_hp[b] = b.hp
 	return unit
@@ -1125,14 +1346,23 @@ func _build_ui() -> void:
 	ui_theme.default_font_size = 18
 	theme = ui_theme
 
+	mouse_filter = Control.MOUSE_FILTER_IGNORE  # klik di arena diteruskan ke _unhandled_input
 	var backing := ColorRect.new()
 	backing.color = Color("141a26")
 	backing.set_anchors_preset(Control.PRESET_FULL_RECT)
+	backing.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(backing)
 
 	_world = Node2D.new()
 	add_child(_world)
 	_world.add_child(_build_ground())
+	_active_ring = _make_ring(COLOR_ACTIVE, 34.0, 4.0)  # di bawah sprite, di atas tanah
+	_world.add_child(_active_ring)
+	_target_ring = _make_ring(Color("ff6a5a"), 40.0, 3.0)
+	_world.add_child(_target_ring)
+	var pulse := create_tween().set_loops()
+	pulse.tween_property(_active_ring, "scale", Vector2(1.12, 1.12), 0.45)
+	pulse.tween_property(_active_ring, "scale", Vector2(0.94, 0.94), 0.45)
 	_unit_layer = Node2D.new()
 	_unit_layer.y_sort_enabled = true
 	_world.add_child(_unit_layer)
@@ -1158,6 +1388,39 @@ func _build_ui() -> void:
 	_info.position = Vector2(16, 10)
 	_add_text_outline(_info)
 	add_child(_info)
+
+	# Keterangan giliran di tengah atas, dengan urutan aksi ronde di bawahnya.
+	var banner_panel := PanelContainer.new()
+	var banner_style := StyleBoxFlat.new()
+	banner_style.bg_color = Color(0.06, 0.09, 0.13, 0.82)
+	banner_style.border_color = COLOR_BORDER
+	banner_style.set_border_width_all(1)
+	banner_style.set_corner_radius_all(5)
+	banner_style.set_content_margin_all(6)
+	banner_style.content_margin_left = 14
+	banner_style.content_margin_right = 14
+	banner_panel.add_theme_stylebox_override("panel", banner_style)
+	banner_panel.anchor_left = 0.5
+	banner_panel.anchor_right = 0.5
+	banner_panel.offset_top = 6
+	banner_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	banner_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	banner_panel.visible = false
+	add_child(banner_panel)
+	var banner_col := VBoxContainer.new()
+	banner_col.add_theme_constant_override("separation", 4)
+	banner_col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	banner_panel.add_child(banner_col)
+	_banner = Label.new()
+	_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_banner.add_theme_color_override("font_color", COLOR_ACTIVE)
+	banner_col.add_child(_banner)
+	_order_box = HBoxContainer.new()
+	_order_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	_order_box.add_theme_constant_override("separation", 4)
+	_order_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_order_box.visible = false
+	banner_col.add_child(_order_box)
 
 	_hint = Label.new()
 	_hint.anchor_top = 1.0
@@ -1203,27 +1466,42 @@ func _build_ui() -> void:
 	var party_panel := _make_panel(360)
 	bottom.add_child(party_panel)
 	var party_col := VBoxContainer.new()
-	party_col.add_theme_constant_override("separation", 6)
+	party_col.add_theme_constant_override("separation", 1)
 	party_panel.add_child(party_col)
 	for m: Battler in Game.party:
 		var box := VBoxContainer.new()
 		box.add_theme_constant_override("separation", 0)
 		var name_label := Label.new()
+		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var name_row := HBoxContainer.new()  # nama dan level di kiri; ATK, DEF, SPD di kanan
+		name_row.add_theme_constant_override("separation", 10)
+		name_row.add_child(name_label)
+		var stat_labels := {}
+		for stat_name: String in ["atk", "defense", "agi"]:
+			var stat_label := Label.new()
+			stat_label.add_theme_font_size_override("font_size", 13)
+			name_row.add_child(stat_label)
+			stat_labels[stat_name] = stat_label
 		var stats_label := Label.new()
 		stats_label.add_theme_font_size_override("font_size", 15)
 		var bar := _make_bar(Color("5fbf6a"))
-		var status_label := Label.new()
-		status_label.add_theme_font_size_override("font_size", 13)
+		var status_label := HBoxContainer.new()  # deretan ikon efek status, rata kanan
 		status_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		status_label.alignment = BoxContainer.ALIGNMENT_END
+		status_label.add_theme_constant_override("separation", 1)
+		status_label.custom_minimum_size.y = STATUS_ICON_SIZE.y
 		var stats_row := HBoxContainer.new()  # angka HP/MP di kiri, efek status di kanan
 		stats_row.add_child(stats_label)
 		stats_row.add_child(status_label)
-		box.add_child(name_label)
+		box.add_child(name_row)
 		box.add_child(stats_row)
 		box.add_child(bar)
-		party_col.add_child(box)
-		_party_rows.append({"name": name_label, "stats": stats_label, "bar": bar, "status": status_label})
+		var frame := PanelContainer.new()  # latarnya menyala untuk tokoh yang sedang memilih perintah
+		frame.add_child(box)
+		party_col.add_child(frame)
+		var row := {"name": name_label, "stats": stats_label, "bar": bar, "status": status_label, "frame": frame}
+		row.merge(stat_labels)
+		_party_rows.append(row)
 
 
 func _build_bag() -> void:
@@ -1233,6 +1511,19 @@ func _build_bag() -> void:
 	add_child(_bag)
 	_bag.offset_top = -150  # di tengah arena, di atas panel status
 	_bag.offset_bottom = -150
+
+
+## Lingkaran pipih di tanah (mengikuti sudut pandang isometrik).
+func _make_ring(color: Color, radius: float, width: float) -> Line2D:
+	var ring := Line2D.new()
+	for i in 24:
+		var angle := TAU * i / 24.0
+		ring.add_point(Vector2(cos(angle), sin(angle) * 0.5) * radius)
+	ring.closed = true
+	ring.width = width
+	ring.default_color = color
+	ring.visible = false
+	return ring
 
 
 func _make_panel(min_width: float) -> PanelContainer:

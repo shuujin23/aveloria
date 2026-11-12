@@ -7,6 +7,7 @@ extends SceneTree
 var _failed := false
 var _game: Node
 var _shot_dir := ""
+var _battle_log := ""  # isi kotak pesan battle terakhir, untuk diagnosis
 
 
 func _initialize() -> void:
@@ -269,7 +270,7 @@ func _initialize() -> void:
 	_expect(_game.respawn_map == "dusun", "menginap di dusun menjadikannya titik kembali")
 	current_scene.call("_talk", "rumi")
 	await _skip_dialog()
-	_expect(current_scene.get("_shop_open") and (current_scene.get("_shop_stock") as Array).size() == 5, "warung Mbok Rumi menjual semua barang")
+	_expect(current_scene.get("_shop_open") and (current_scene.get("_shop_stock") as Array).size() == Db.ITEMS.size(), "warung Mbok Rumi menjual semua barang")
 	current_scene.emit_signal("shop_closed")
 	await _skip_dialog()
 	current_scene.call("_walk_to", WorldMap.find("X"))
@@ -297,7 +298,7 @@ func _initialize() -> void:
 	_expect((current_scene.get("_npc_at") as Dictionary).is_empty(), "Selene hilang dari peta setelah bergabung")
 
 	# --- Ratu Laba-laba dan Celah Abu ---
-	_set_levels(14)
+	_set_levels(20)  # cukup tinggi supaya menang pasti walau uji hanya menekan Serang
 	var pass_tile := WorldMap.find_in("dunia", "P")
 	await _open_world("dunia", nest + Vector2i(-1, 0))
 	_expect(not WorldMap.is_walkable(pass_tile, _game.flags), "Celah Abu tertutup sebelum Ratu kalah")
@@ -379,7 +380,7 @@ func _initialize() -> void:
 	_expect((current_scene.get("_npc_at") as Dictionary).is_empty(), "Kael hilang dari peta setelah bergabung")
 
 	# --- Raksasa Lahar dan jalan ke Kastil Kelam ---
-	_set_levels(18)
+	_set_levels(26)  # level 18 masih kalah sekitar 13% kalau hanya menekan Serang
 	var lava_gate := WorldMap.find_in("abu", "R")
 	await _open_world("abu", crater + Vector2i(-1, 0))
 	_expect(not WorldMap.is_walkable(lava_gate, _game.flags), "jalan lahar tertutup sebelum Raksasa kalah")
@@ -388,6 +389,9 @@ func _initialize() -> void:
 	await _shot("battle_lahar.png")
 	await _play_battle()
 	_expect(_game.flags.has("lahar"), "penanda Raksasa Lahar tercatat")
+	if not _game.flags.has("lahar"):
+		_print_battle_log()
+		print("      | party: ", _game.party.map(func(m: Battler) -> String: return "%s Lv%d HP%d/%d" % [m.id, m.level, m.hp, m.max_hp]))
 	_expect(current_scene.get("_dialog_open"), "adegan kemenangan atas Raksasa Lahar tampil")
 	await _skip_dialog()
 	_expect(WorldMap.is_walkable(lava_gate, _game.flags), "jalan lahar terbuka setelah Raksasa kalah")
@@ -471,6 +475,31 @@ func _initialize() -> void:
 		_expect(queued.size() == 1 and queued[0].kind == "item" and queued[0].item == "ramuan", "battle: memilih barang mencatat perintah item")
 		_expect(current_scene.call("_available", "ramuan") == 0, "battle: Ramuan terakhir tidak bisa dipesan dua kali dalam satu ronde")
 
+		# Memilih sasaran dengan mouse: klik monster kedua untuk Serang, lalu klik rekan untuk Pulih.
+		current_scene.call("_start_round")
+		_expect((current_scene.get("_banner") as Label).text.begins_with("Pilih perintah untuk Arlen"), "banner menyebut giliran siapa yang memilih perintah")
+		_expect((current_scene.get("_active_ring") as Node2D).visible, "lingkaran penanda ada di kaki tokoh yang sedang memilih")
+		(root.gui_get_focus_owner() as Button).pressed.emit()  # Serang
+		await create_timer(0.1).timeout
+		var foe: Battler = eng.enemies[1]
+		var foe_rect: Rect2 = (current_scene.get("_units") as Dictionary)[foe].rect
+		_expect(current_scene.call("_unit_at", foe_rect.get_center()) == foe, "titik di atas monster dikenali sebagai sasaran")
+		await _mouse(foe_rect.get_center(), false)
+		await _shot("battle_sasaran.png")
+		await _mouse(foe_rect.get_center(), true)
+		queued = current_scene.get("_commands")
+		_expect(queued.size() == 1 and queued[0].kind == "attack" and queued[0].target == foe, "klik monster di arena memilihnya sebagai sasaran Serang")
+		_expect(((current_scene.get("_units") as Dictionary)[eng.party[0]].plan as Label).text == "Serang > %s" % foe.display_name, "perintah yang dipilih tampil di atas kepala tokoh")
+		current_scene.call("_choose_skill", eng.party[2], "pulih")
+		var ally: Battler = eng.party[1]
+		var ally_rect: Rect2 = (current_scene.get("_units") as Dictionary)[ally].rect
+		await _mouse(ally_rect.get_center(), true)
+		queued = current_scene.get("_commands")
+		_expect(queued.size() == 2 and queued[1].kind == "skill" and queued[1].target == ally, "klik rekan di arena memilihnya sebagai sasaran Pulih")
+		await _shot("battle_rencana.png")
+		var stat_row: Dictionary = (current_scene.get("_party_rows") as Array)[0]
+		_expect((stat_row["atk"] as Label).text.begins_with("ATK ") and (stat_row["defense"] as Label).text.begins_with("DEF ") and (stat_row["agi"] as Label).text.begins_with("SPD "), "panel party menampilkan ATK, DEF, dan SPD")
+
 		# Layar hasil pertarungan: Arlen diturunkan ke level 1 supaya naik level, Kael dibuat tumbang.
 		var hero: Battler = eng.party[0]
 		hero.level = 1
@@ -549,10 +578,18 @@ func _play_battle() -> void:
 		if current_scene.name == "World":
 			await create_timer(0.3).timeout
 			return
+		_battle_log = (current_scene.get("_log") as RichTextLabel).get_parsed_text()
 		var focus := root.gui_get_focus_owner()
 		if focus is Button and not (focus as Button).disabled:
 			(focus as Button).pressed.emit()
 	_expect(false, "battle selesai dalam batas waktu")
+
+
+## Cetak akhir jalannya battle terakhir (dipakai saat sebuah harapan tentang hasil battle gagal).
+func _print_battle_log() -> void:
+	var lines := _battle_log.split("\n")
+	for line: String in lines.slice(max(0, lines.size() - 14)):
+		print("      | ", line)
 
 
 func _check_maps() -> void:
@@ -632,6 +669,23 @@ func _reachable(start: Vector2i, flags: Dictionary) -> Dictionary:
 				seen[n] = true
 				queue.append(n)
 	return seen
+
+
+## Gerakkan mouse ke sebuah titik layar; click = tekan tombol kiri di sana.
+func _mouse(at: Vector2, click: bool) -> void:
+	var move := InputEventMouseMotion.new()
+	move.position = at
+	move.global_position = at
+	Input.parse_input_event(move)
+	await create_timer(0.1).timeout
+	if click:
+		var press := InputEventMouseButton.new()
+		press.button_index = MOUSE_BUTTON_LEFT
+		press.pressed = true
+		press.position = at
+		press.global_position = at
+		Input.parse_input_event(press)
+		await create_timer(0.1).timeout
 
 
 func _shot(file_name: String) -> void:
