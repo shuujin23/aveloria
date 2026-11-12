@@ -12,6 +12,8 @@ extends Control
 ##   _tags (batang HP di kaki tiap monster)
 ##   panel bawah (menu, pesan, status party)
 
+signal results_closed  # pemain menekan Lanjut di layar hasil pertarungan
+
 const MSG_DELAY := 0.45
 const SPRITES := "res://assets/sprites/"
 const PIXEL := 3.0  # sprite digambar 1x, ditampilkan 3x
@@ -79,6 +81,9 @@ var _menu_box: VBoxContainer
 var _log: RichTextLabel
 var _bag: PanelContainer  # tampilan tas (scripts/ui/bag_view.gd)
 var _bag_actor: Battler
+var _results: PanelContainer  # layar hasil pertarungan
+var _results_running := false  # batang XP masih terisi
+var _results_skip := false
 
 
 func _ready() -> void:
@@ -316,21 +321,160 @@ func _victory() -> void:
 	var was_boss := not engine.can_flee()
 	Audio.play_jingle("victory", false)
 	await _say("Semua monster dikalahkan!")
+	# Catat keadaan tiap anggota sebelum hadiah dibagikan, untuk layar hasil.
+	var before: Array = []
+	for m: Battler in engine.party:
+		before.append({"alive": m.is_alive(), "level": m.level, "xp": m.xp, "skills": m.skills.duplicate(),
+			"stats": {"HP": m.max_hp, "MP": m.max_mp, "ATK": m.atk, "DEF": m.defense, "MAG": m.mag, "AGI": m.agi}})
 	var reward := engine.grant_rewards()
 	Game.gold += reward.gold
 	Game.wins += 1
-	for line: String in reward.lines:
-		_refresh()
-		await _say(line)
 	if was_boss:
 		for e: Battler in engine.enemies:
 			if Db.BOSSES.has(e.id):
 				Game.flags[e.id] = true
-		await _say("Semi-bos tumbang!")
 	_refresh()
-	_show_menu("Menang!", [{"text": "Lanjut", "hint": "Kembali ke peta. HP dan MP tidak dipulihkan.",
-		"cb": func() -> void: Game.return_to_world("", true)}])
+	_show_menu("", [])
+	await _show_results(reward, before, was_boss)
+	Game.return_to_world("", true)
 
+
+## Layar hasil pertarungan: emas dan XP yang didapat, batang XP tiap anggota yang terisi bertahap,
+## kenaikan level beserta kenaikan stat, dan jurus baru. Selesai saat pemain menekan Lanjut.
+func _show_results(reward: Dictionary, before: Array, was_boss: bool) -> void:
+	_results = PanelContainer.new()
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.06, 0.09, 0.13, 0.97)
+	style.border_color = COLOR_BORDER
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(6)
+	style.set_content_margin_all(18)
+	_results.add_theme_stylebox_override("panel", style)
+	_results.set_anchors_preset(Control.PRESET_CENTER)
+	_results.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_results.grow_vertical = Control.GROW_DIRECTION_BOTH
+	add_child(_results)
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 10)
+	column.custom_minimum_size.x = 720
+	_results.add_child(column)
+
+	var title := Label.new()
+	title.text = "Semi-bos tumbang!" if was_boss else "Menang!"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 30)
+	title.add_theme_color_override("font_color", COLOR_ACTIVE)
+	column.add_child(title)
+	var summary := Label.new()
+	summary.text = "+%d XP untuk tiap anggota yang bertahan        +%d emas  (total %d)" % [reward.xp, reward.gold, Game.gold]
+	summary.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(summary)
+	column.add_child(HSeparator.new())
+
+	var rows: Array = []
+	for i in engine.party.size():
+		var m: Battler = engine.party[i]
+		var top := HBoxContainer.new()
+		top.add_theme_constant_override("separation", 12)
+		var name_label := Label.new()
+		name_label.text = m.display_name
+		name_label.custom_minimum_size.x = 90
+		var level_label := Label.new()
+		level_label.text = "Lv %d" % int(before[i].level)
+		level_label.custom_minimum_size.x = 60
+		var bar := _make_bar(Color("6ab0ff"))
+		bar.custom_minimum_size = Vector2(0, 12)
+		bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		bar.max_value = Db.xp_to_next(int(before[i].level))
+		bar.value = int(before[i].xp)
+		var xp_label := Label.new()
+		xp_label.custom_minimum_size.x = 110
+		xp_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		xp_label.text = "%d / %d" % [int(before[i].xp), Db.xp_to_next(int(before[i].level))]
+		top.add_child(name_label)
+		top.add_child(level_label)
+		top.add_child(bar)
+		top.add_child(xp_label)
+		var note := Label.new()
+		note.add_theme_font_size_override("font_size", 14)
+		note.add_theme_color_override("font_color", Color("9ad0ff"))
+		var box := VBoxContainer.new()
+		box.add_theme_constant_override("separation", 0)
+		box.add_child(top)
+		box.add_child(note)
+		column.add_child(box)
+		rows.append({"level": level_label, "bar": bar, "xp": xp_label, "note": note})
+
+	_results_running = true
+	_results_skip = false
+	var button := Button.new()
+	button.text = "Lewati"
+	button.focus_entered.connect(func() -> void: Audio.sfx("ui_move"))
+	button.pressed.connect(func() -> void:
+		Audio.sfx("ui_ok")
+		if _results_running:
+			_results_skip = true  # tampilkan hasil akhir sekarang juga
+		else:
+			results_closed.emit())
+	column.add_child(button)
+	button.grab_focus()
+	Audio.sfx("coin")
+
+	for i in engine.party.size():
+		await _animate_xp(engine.party[i], before[i], rows[i])
+	_results_running = false
+	button.text = "Lanjut"
+	await results_closed
+
+
+## Isi batang XP satu anggota dari keadaan sebelum ke sesudah, berhenti sejenak di tiap kenaikan level.
+func _animate_xp(m: Battler, was: Dictionary, row: Dictionary) -> void:
+	if not was.alive:
+		(row.note as Label).text = "Tumbang saat pertarungan berakhir: tidak mendapat XP."
+		(row.note as Label).add_theme_color_override("font_color", COLOR_DOWN)
+		return
+	var level: int = was.level
+	var from: int = was.xp
+	while level < m.level:
+		var need := Db.xp_to_next(level)
+		await _fill_xp(row, from, need, need)
+		level += 1
+		from = 0
+		(row.level as Label).text = "Lv %d" % level
+		(row.level as Label).add_theme_color_override("font_color", COLOR_ACTIVE)
+		Audio.sfx("buff")
+		if not _results_skip:
+			await _wait(0.25)
+	await _fill_xp(row, from, m.xp, Db.xp_to_next(m.level))
+
+	if m.level > int(was.level):
+		var now := {"HP": m.max_hp, "MP": m.max_mp, "ATK": m.atk, "DEF": m.defense, "MAG": m.mag, "AGI": m.agi}
+		var gains: Array = []
+		for stat_name: String in now:
+			var gain := int(now[stat_name]) - int(was.stats[stat_name])
+			if gain > 0:
+				gains.append("%s +%d" % [stat_name, gain])
+		var text := "Naik level!   " + "   ".join(gains)
+		var learned: Array = []
+		for skill_id: String in m.skills:
+			if not (was.skills as Array).has(skill_id):
+				learned.append(Db.SKILLS[skill_id].name)
+		if not learned.is_empty():
+			text += "\nJurus baru: " + ", ".join(learned)
+		(row.note as Label).text = text
+
+
+func _fill_xp(row: Dictionary, from: int, to: int, need: int) -> void:
+	var bar: ProgressBar = row.bar
+	bar.max_value = need
+	bar.value = from
+	if not _results_skip and to > from:
+		var tween := create_tween()
+		tween.tween_property(bar, "value", float(to), 0.2 + 0.5 * float(to - from) / need)
+		await tween.finished
+	bar.value = to
+	(row.xp as Label).text = "%d / %d" % [to, need]
 
 func _defeat() -> void:
 	Audio.play_jingle("game_over", false)

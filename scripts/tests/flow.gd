@@ -471,6 +471,27 @@ func _initialize() -> void:
 		_expect(queued.size() == 1 and queued[0].kind == "item" and queued[0].item == "ramuan", "battle: memilih barang mencatat perintah item")
 		_expect(current_scene.call("_available", "ramuan") == 0, "battle: Ramuan terakhir tidak bisa dipesan dua kali dalam satu ronde")
 
+		# Layar hasil pertarungan: Arlen diturunkan ke level 1 supaya naik level, Kael dibuat tumbang.
+		var hero: Battler = eng.party[0]
+		hero.level = 1
+		hero.recalc()
+		hero.xp = 4
+		(eng.party[3] as Battler).hp = 0
+		var gold_before: int = _game.gold
+		for e: Battler in eng.enemies:
+			e.hp = 0
+		current_scene.call("_victory")
+		await _wait_until(func() -> bool: return current_scene.get("_results") != null and not current_scene.get("_results_running"), 200)
+		await create_timer(0.3).timeout
+		await _shot("battle_hasil.png")
+		_expect((current_scene.get("_results") as Control).visible and not current_scene.get("_results_running"), "menang: layar hasil pertarungan tampil sampai selesai menghitung")
+		_expect(hero.level == 2 and hero.xp == 4 + 17 - Db.xp_to_next(1), "hasil: Arlen naik ke Lv 2, sisa XP benar (Lv %d, XP %d)" % [hero.level, hero.xp])
+		_expect((eng.party[3] as Battler).xp == 0 and (eng.party[3] as Battler).hp == 1, "hasil: anggota yang tumbang tidak mendapat XP dan bangkit dengan 1 HP")
+		_expect(_game.gold == gold_before + 11, "hasil: emas bertambah (+%d)" % (_game.gold - gold_before))
+		current_scene.emit_signal("results_closed")
+		await _wait_until(func() -> bool: return current_scene != null and current_scene.name == "World", 100)
+		_expect(current_scene.name == "World", "hasil: Lanjut mengembalikan ke peta")
+
 	print("HASIL: %s" % ("ADA YANG GAGAL" if _failed else "SEMUA LOLOS"))
 	quit(1 if _failed else 0)
 
