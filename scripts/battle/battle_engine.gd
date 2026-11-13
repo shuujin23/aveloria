@@ -109,27 +109,17 @@ func enemy_command(e: Battler) -> Dictionary:
 	return {"actor": e, "kind": "attack", "target": _random_living(party)}
 
 
-## Dipanggil sekali di awal ronde, sebelum aksi dijalankan.
-func begin_round(cmds: Array) -> void:
-	for b: Battler in party + enemies:
-		b.defending = false
-	for cmd: Dictionary in cmds:
-		if cmd.kind == "defend":
-			(cmd.actor as Battler).defending = true
-
-
-## Urutan aksi: AGI tertinggi lebih dulu, dengan sedikit unsur acak.
-func turn_order(cmds: Array) -> Array:
+## Urutan giliran satu ronde: semua petarung yang masih hidup, SPD tertinggi lebih dulu dengan sedikit
+## unsur acak. Diundi sekali di awal ronde; tiap petarung lalu beraksi saat gilirannya tiba.
+func round_order() -> Array:
 	var keyed: Array = []
-	for cmd: Dictionary in cmds:
-		var actor: Battler = cmd.actor
-		keyed.append({"cmd": cmd, "key": actor.stat("agi") * rng.randf_range(0.75, 1.25)})
+	for b: Battler in living(party + enemies):
+		keyed.append({"who": b, "key": b.stat("agi") * rng.randf_range(0.75, 1.25)})
 	keyed.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.key > b.key)
 	var out: Array = []
 	for k: Dictionary in keyed:
-		out.append(k.cmd)
+		out.append(k.who)
 	return out
-
 
 ## Tentukan sasaran akhir sebuah aksi sebelum dijalankan (untuk animasi), dan kunci
 ## sasaran itu di dalam cmd supaya execute() mengenai petarung yang sama.
@@ -154,14 +144,16 @@ func resolve_targets(cmd: Dictionary) -> Array:
 	return [actor]
 
 
-## Jalankan satu aksi; mengembalikan baris pesan untuk ditampilkan.
+## Jalankan giliran seorang petarung; mengembalikan baris pesan untuk ditampilkan.
 func execute(cmd: Dictionary) -> Array:
 	var lines: Array = []
 	var actor: Battler = cmd.actor
 	if not actor.is_alive():
 		return lines
+	actor.defending = false  # bertahan berlaku sampai giliran berikutnya petarung itu
 	match cmd.kind:
 		"defend":
+			actor.defending = true
 			lines.append(Loc.t("%s bersiaga menahan serangan.") % actor.display_name)
 		"attack":
 			var target := _retarget(cmd.get("target"), _foes(actor))
@@ -235,7 +227,6 @@ func end_round() -> Array:
 		if m.is_alive():
 			m.mp = min(m.max_mp, m.mp + mp_gain(m))
 	for b: Battler in party + enemies:
-		b.defending = false
 		for status_id: String in b.statuses.keys():
 			var st: Dictionary = Db.STATUSES[status_id]
 			if st.has("dot") and b.is_alive():

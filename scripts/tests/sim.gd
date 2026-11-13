@@ -136,14 +136,10 @@ func _equip(party: Array, tier: int, plus: int) -> void:
 ## Mengembalikan jumlah ronde; negatif kalau party kalah.
 func _fight(eng: BattleEngine) -> int:
 	for r in range(1, 200):
-		var cmds: Array = []
-		for m: Battler in eng.living(eng.party):
-			cmds.append(_policy(eng, m))
-		for e: Battler in eng.living(eng.enemies):
-			cmds.append(eng.enemy_command(e))
-		eng.begin_round(cmds)
-		for cmd: Dictionary in eng.turn_order(cmds):
-			eng.execute(cmd)
+		for b: Battler in eng.round_order():  # tiap petarung memutuskan saat gilirannya tiba
+			if not b.is_alive():
+				continue
+			eng.execute(eng.enemy_command(b) if b.is_enemy else _policy(eng, b))
 			if eng.is_victory():
 				return r
 			if eng.is_defeat():

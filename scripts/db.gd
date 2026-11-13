@@ -335,7 +335,7 @@ const ENEMIES := {
 		"xp": 16, "gold": 10, "skills": ["gigitan_racun", "jaring"], "immune": ["poison"]},
 	"roh_kabut": {"name": "Roh Kabut", "hp": 38, "mp": 20, "atk": 9, "defense": 14, "mag": 18, "agi": 9,
 		"xp": 15, "gold": 12, "skills": ["lidah_api"], "immune": ["burn"], "voice": "soft"},
-	"ratu": {"name": "Ratu Laba-laba", "hp": 608, "mp": 60, "atk": 37, "defense": 11, "mag": 17, "agi": 9,
+	"ratu": {"name": "Ratu Laba-laba", "hp": 668, "mp": 60, "atk": 40, "defense": 11, "mag": 18, "agi": 9,
 		"xp": 180, "gold": 220, "skills": ["gigitan_racun", "jaring_raksasa", "semburan_racun"], "immune": ["poison", "slow"],
 		"boss": true},
 	# --- Pegunungan Abu ---

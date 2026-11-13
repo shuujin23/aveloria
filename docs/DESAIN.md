@@ -104,3 +104,13 @@ wilayah sebelumnya kalah.
 - Di akhir tiap ronde, tiap anggota party yang masih berdiri memulihkan `Db.MP_REGEN` (8%) dari MP maksimumnya, minimal 1. Yang memilih **Bertahan** di ronde itu pulih dua kali lipat (`Db.MP_REGEN_DEFEND`).
 - Monster tidak memulihkan MP, supaya bos tetap kehabisan jurus di pertarungan panjang.
 - Simulasi (`sim.gd -- regen=0.05`) bisa mencoba angka lain. Dengan 8%, peluang menang melawan semi-bos naik sekitar 4-8 poin dibanding tanpa pemulihan, jadi angka bos tidak diubah.
+
+## Giliran di pertarungan
+
+- Tiap ronde, urutan semua petarung diundi sekali di awal (`BattleEngine.round_order()`: SPD x acak 0,75-1,25) dan langsung ditampilkan sebagai deretan nama di atas arena. Efek Cepat/Lambat yang masuk di tengah ronde baru memengaruhi urutan ronde berikutnya.
+- Pemain memilih perintah seorang tokoh **saat giliran tokoh itu tiba**, dan perintahnya langsung dijalankan. Monster memutuskan aksinya juga pada gilirannya.
+- **Bertahan** berlaku sampai giliran berikutnya tokoh itu (bukan sampai akhir ronde), dan tetap melipatgandakan pemulihan MP ronde itu.
+- **Kabur** bisa dicoba di giliran tokoh mana pun; kalau gagal, giliran tokoh itu hangus.
+- Akhir ronde tidak berubah: terbakar/racun melukai, durasi efek berkurang, MP pulih.
+- Karena pemain kini bisa menanggapi keadaan (menyembuhkan tepat setelah kena), Ratu Laba-laba diperkuat 10% (HP 668, ATK 40, MAG 18). Simulasi dengan perlengkapan wajar: Ogre 76%, Ratu 82%, Lahar 71%, Raja 76%.
+- Uji tampilan memakai `_hold` di layar battle supaya perintah hanya dicatat (`_last_cmd`) tanpa dijalankan.

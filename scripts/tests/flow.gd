@@ -544,7 +544,10 @@ func _initialize() -> void:
 		await create_timer(0.2).timeout
 		await _shot("battle_status.png")
 
-		# Menu Barang di battle: pilih Ramuan untuk Selene, lalu pastikan perintahnya tercatat.
+		# Uji tampilan menu battle: perintah hanya dicatat (_hold), dan Arlen dibuat selalu mendapat giliran pertama.
+		current_scene.set("_hold", true)
+		(eng.party[0] as Battler).agi = 999
+		# Menu Barang di battle: pilih Ramuan, lalu pastikan perintahnya tercatat.
 		_game.items = {"ramuan": 1, "air_kehidupan": 1}
 		(eng.party[1] as Battler).hp = 5
 		current_scene.call("_start_round")
@@ -557,13 +560,15 @@ func _initialize() -> void:
 		await create_timer(0.1).timeout
 		_expect(not bag.visible, "battle: tas tertutup setelah barang dipilih")
 		(root.gui_get_focus_owner() as Button).pressed.emit()  # sasaran pertama: Arlen
-		var queued: Array = current_scene.get("_commands")
-		_expect(queued.size() == 1 and queued[0].kind == "item" and queued[0].item == "ramuan", "battle: memilih barang mencatat perintah item")
-		_expect(current_scene.call("_available", "ramuan") == 0, "battle: Ramuan terakhir tidak bisa dipesan dua kali dalam satu ronde")
+		var picked: Dictionary = current_scene.get("_last_cmd")
+		_expect(picked.get("kind") == "item" and picked.get("item") == "ramuan", "battle: memilih barang mencatat perintah item")
 
 		# Memilih sasaran dengan mouse: klik monster kedua untuk Serang, lalu klik rekan untuk Pulih.
 		current_scene.call("_start_round")
-		_expect((current_scene.get("_banner") as Label).text.begins_with("Pilih perintah untuk Arlen"), "banner menyebut giliran siapa yang memilih perintah")
+		_expect((current_scene.get("_banner") as Label).text == "Giliran Arlen: pilih perintah", "banner menyebut giliran siapa yang memilih perintah")
+		var chips: Array = current_scene.get("_order_chips")
+		_expect((current_scene.get("_order_box") as Control).is_visible_in_tree() and chips.size() == eng.living(eng.party + eng.enemies).size(), "urutan giliran tampil sejak awal ronde (%d petarung)" % chips.size())
+		_expect((chips[0] as Label).text.strip_edges() == "Arlen", "petarung tercepat berada paling depan di urutan")
 		_expect((current_scene.get("_active_ring") as Node2D).visible, "lingkaran penanda ada di kaki tokoh yang sedang memilih")
 		(root.gui_get_focus_owner() as Button).pressed.emit()  # Serang
 		await create_timer(0.1).timeout
@@ -573,15 +578,14 @@ func _initialize() -> void:
 		await _mouse(foe_rect.get_center(), false)
 		await _shot("battle_sasaran.png")
 		await _mouse(foe_rect.get_center(), true)
-		queued = current_scene.get("_commands")
-		_expect(queued.size() == 1 and queued[0].kind == "attack" and queued[0].target == foe, "klik monster di arena memilihnya sebagai sasaran Serang")
-		_expect(((current_scene.get("_units") as Dictionary)[eng.party[0]].plan as Label).text == "Serang > %s" % foe.display_name, "perintah yang dipilih tampil di atas kepala tokoh")
+		picked = current_scene.get("_last_cmd")
+		_expect(picked.get("kind") == "attack" and picked.get("target") == foe, "klik monster di arena memilihnya sebagai sasaran Serang")
 		current_scene.call("_choose_skill", eng.party[2], "pulih")
 		var ally: Battler = eng.party[1]
 		var ally_rect: Rect2 = (current_scene.get("_units") as Dictionary)[ally].rect
 		await _mouse(ally_rect.get_center(), true)
-		queued = current_scene.get("_commands")
-		_expect(queued.size() == 2 and queued[1].kind == "skill" and queued[1].target == ally, "klik rekan di arena memilihnya sebagai sasaran Pulih")
+		picked = current_scene.get("_last_cmd")
+		_expect(picked.get("kind") == "skill" and picked.get("target") == ally, "klik rekan di arena memilihnya sebagai sasaran Pulih")
 		await _shot("battle_rencana.png")
 		var stat_row: Dictionary = (current_scene.get("_party_rows") as Array)[0]
 		_expect((stat_row["atk"] as Label).text.begins_with("ATK ") and (stat_row["defense"] as Label).text.begins_with("DEF ") and (stat_row["agi"] as Label).text.begins_with("SPD "), "panel party menampilkan ATK, DEF, dan SPD")

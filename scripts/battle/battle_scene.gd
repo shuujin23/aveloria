@@ -69,9 +69,11 @@ var engine: BattleEngine
 var _units := {}  # Battler -> {"sprite": Sprite2D, "home": Vector2, "height": float, "tag": Control, "bar": ProgressBar}
 var _shown_hp := {}  # Battler -> HP yang terakhir ditampilkan, untuk mendeteksi siapa yang baru kena
 var _party_rows: Array = []  # {"name": Label, "stats": Label, "bar": ProgressBar}
-var _actors: Array = []  # anggota party yang masih hidup di ronde ini
-var _commands: Array = []
-var _cmd_index := -1
+var _order: Array = []  # petarung dalam urutan giliran ronde ini
+var _turn := -1  # indeks giliran yang sedang berjalan di _order
+var _current: Battler  # tokoh yang sedang memilih perintah (null saat aksi berjalan)
+var _last_cmd := {}  # perintah terakhir yang dipilih pemain
+var _hold := false  # uji tampilan: perintah hanya dicatat, tidak dijalankan
 var _back_cb := Callable()
 
 var _world: Node2D
@@ -187,16 +189,6 @@ func _cmd_text(cmd: Dictionary) -> String:
 	return ""
 
 
-## Tulisan kecil di atas kepala tiap tokoh: perintah yang sudah dipilih untuk ronde ini.
-func _update_plans() -> void:
-	for m: Battler in engine.party:
-		var text := ""
-		for cmd: Dictionary in _commands:
-			if cmd.actor == m:
-				text = _cmd_text(cmd)
-		(_units[m].plan as Label).text = text
-
-
 func _set_banner(text: String) -> void:
 	_banner.text = text
 	(_banner.get_parent().get_parent() as Control).visible = text != ""
@@ -209,40 +201,38 @@ func _mark_active(b: Battler) -> void:
 		_active_ring.position = _home(b) + Vector2(0, 2)
 
 
-## Deretan nama sesuai urutan aksi ronde ini (ditentukan SPD).
-func _build_order(order: Array) -> void:
+## Deretan nama sesuai urutan giliran ronde ini (ditentukan SPD), tampil sejak awal ronde.
+func _build_order() -> void:
 	for child in _order_box.get_children():
 		_order_box.remove_child(child)
 		child.queue_free()
 	_order_chips.clear()
-	for cmd: Dictionary in order:
-		var b: Battler = cmd.actor
+	for b: Battler in _order:
 		var chip := Label.new()
 		chip.text = " %s " % b.display_name
 		chip.add_theme_font_size_override("font_size", 13)
 		_order_box.add_child(chip)
 		_order_chips.append(chip)
 	_order_box.visible = true
-	_mark_order(-1, order)
+	_mark_order()
 
 
-## Tandai giliran ke-`index`: yang sudah lewat diredupkan, yang sedang beraksi berlatar emas.
-func _mark_order(index: int, order: Array) -> void:
+## Tandai giliran yang sedang berjalan: yang sudah lewat diredupkan, yang sedang beraksi berlatar emas.
+func _mark_order() -> void:
 	for i in _order_chips.size():
 		var chip: Label = _order_chips[i]
-		var b: Battler = order[i].actor
+		var b: Battler = _order[i]
 		var box := StyleBoxFlat.new()
 		box.set_corner_radius_all(3)
 		box.bg_color = Color("5a2a2a") if b.is_enemy else Color("24406a")
 		chip.add_theme_color_override("font_color", Color.WHITE)
 		chip.modulate.a = 1.0
-		if i == index:
+		if i == _turn:
 			box.bg_color = COLOR_ACTIVE
 			chip.add_theme_color_override("font_color", Color("10141c"))
-		elif i < index or not b.is_alive():
+		elif i < _turn or not b.is_alive():
 			chip.modulate.a = 0.35
 		chip.add_theme_stylebox_override("normal", box)
-
 
 # ---------------------------------------------------------------- alur battle
 
@@ -256,7 +246,7 @@ func _new_battle() -> void:
 		if e.id == "raja":
 			music = "raja"
 	Audio.play_music(music)
-	_cmd_index = -1
+	_current = null
 	_log.clear()
 	_build_units()
 	_show_menu("", [])
@@ -280,19 +270,38 @@ func _new_battle() -> void:
 	_start_round()
 
 
+## Awal ronde: urutan giliran diundi sekali (SPD tertinggi cenderung lebih dulu) dan langsung ditampilkan,
+## lalu tiap petarung beraksi saat gilirannya tiba.
 func _start_round() -> void:
-	_actors = engine.living(engine.party)
-	_commands.clear()
-	_cmd_index = 0
-	_ask_command()
+	_order = engine.round_order()
+	_turn = -1
+	_build_order()
+	_next_turn()
 
 
-func _ask_command() -> void:
-	if _cmd_index >= _actors.size():
-		_resolve_round()
+## Lanjut ke petarung berikutnya di urutan ronde ini; kalau sudah habis, tutup rondenya.
+func _next_turn() -> void:
+	_turn += 1
+	while _turn < _order.size() and not (_order[_turn] as Battler).is_alive():
+		_turn += 1
+	if _turn >= _order.size():
+		_end_round()
 		return
+	var actor: Battler = _order[_turn]
+	_mark_order()
+	if actor.is_enemy:
+		_current = null
+		_refresh()
+		_run_turn(engine.enemy_command(actor))
+	else:
+		_current = actor
+		_ask_command()
+
+
+## Tampilkan menu perintah untuk tokoh yang sedang mendapat giliran.
+func _ask_command() -> void:
+	var actor := _current
 	_refresh()
-	var actor: Battler = _actors[_cmd_index]
 	var foes := engine.living(engine.enemies)
 	var items: Array = [
 		{"text": Loc.t("Serang"), "hint": Loc.t("Serangan biasa ke satu musuh."), "unit": actor,
@@ -302,19 +311,14 @@ func _ask_command() -> void:
 			"cb": func() -> void: _skill_menu(actor)},
 		{"text": Loc.t("Barang"), "hint": Loc.t("Pakai barang dari tas."), "disabled": not _has_items(), "unit": actor,
 			"cb": func() -> void: _item_menu(actor)},
-		{"text": Loc.t("Bertahan"), "hint": Loc.t("Kerusakan yang diterima ronde ini jadi setengah, dan MP pulih dua kali lipat."), "unit": actor,
+		{"text": Loc.t("Bertahan"), "hint": Loc.t("Kerusakan yang diterima sampai giliran berikutnya jadi setengah, dan MP pulih dua kali lipat."), "unit": actor,
 			"cb": func() -> void: _push({"actor": actor, "kind": "defend"})},
+		{"text": Loc.t("Kabur"), "hint": Loc.t("Coba melarikan diri. Kalau gagal, giliran ini hangus."), "unit": actor,
+			"disabled": not engine.can_flee(), "cb": _attempt_flee},
 	]
-	var back := Callable()
-	if _cmd_index == 0:
-		items.append({"text": Loc.t("Kabur"), "hint": Loc.t("Coba melarikan diri dari pertarungan."), "unit": actor,
-			"disabled": not engine.can_flee(), "cb": _attempt_flee})
-	else:
-		back = _undo_command
-	_show_menu(Loc.t("Giliran %s (%s)") % [actor.display_name, Loc.t(actor.job)], items, back)
-	_order_box.visible = false
-	_set_banner(Loc.t("Pilih perintah untuk %s   (%d dari %d)") % [actor.display_name, _cmd_index + 1, _actors.size()])
-	_update_plans()
+	_show_menu(Loc.t("Giliran %s (%s)") % [actor.display_name, Loc.t(actor.job)], items)
+	_set_banner(Loc.t("Giliran %s: pilih perintah") % actor.display_name)
+	_mark_active(actor)
 
 
 func _skill_menu(actor: Battler) -> void:
@@ -344,13 +348,8 @@ func _choose_skill(actor: Battler, skill_id: String) -> void:
 			_push(cmd)
 
 
-## Jumlah sebuah barang yang masih bisa dipilih: isi tas dikurangi yang sudah dipesan anggota lain ronde ini.
 func _available(item_id: String) -> int:
-	var count := int(Game.items.get(item_id, 0))
-	for cmd: Dictionary in _commands:
-		if cmd.kind == "item" and cmd.item == item_id:
-			count -= 1
-	return count
+	return int(Game.items.get(item_id, 0))
 
 
 func _has_items() -> bool:
@@ -370,7 +369,7 @@ func _item_targets(item_id: String) -> Array:
 	return targets
 
 
-## Buka tampilan tas untuk memilih barang yang dipakai `actor` ronde ini.
+## Buka tampilan tas untuk memilih barang yang dipakai `actor` di gilirannya.
 func _item_menu(actor: Battler) -> void:
 	_bag_actor = actor
 	_show_menu(Loc.t("Barang"), [])
@@ -408,60 +407,45 @@ func _pick_target(title: String, list: Array, on_pick: Callable, back: Callable 
 		_point_at(list[0])
 
 
+## Perintah sudah lengkap: langsung jalankan sebagai giliran tokoh itu.
 func _push(cmd: Dictionary) -> void:
-	_commands.append(cmd)
-	_cmd_index += 1
-	_ask_command()
+	_last_cmd = cmd
+	if _hold:  # uji tampilan: perintah hanya dicatat, lalu menu yang sama dibuka lagi
+		_ask_command()
+		return
+	_current = null
+	_run_turn(cmd)
 
 
-func _undo_command() -> void:
-	_commands.pop_back()
-	_cmd_index -= 1
-	_ask_command()
-
-
+## Kabur menghabiskan giliran tokoh yang mencobanya kalau gagal.
 func _attempt_flee() -> void:
-	_cmd_index = -1
+	_current = null
 	_show_menu("", [])
 	_refresh()
 	await _say(Loc.t("Party mencoba kabur..."))
 	if engine.try_flee():
 		Audio.sfx("flee")
 		await _say(Loc.t("Berhasil lolos!"))
+		_mark_active(null)
+		_set_banner("")
 		_show_menu(Loc.t("Lolos"), [{"text": Loc.t("Lanjut"), "hint": Loc.t("Kembali ke peta."),
 			"cb": func() -> void: Game.return_to_world()}])
 	else:
 		await _say(Loc.t("Gagal! Jalan keluar terhalang."))
-		_commands.clear()
-		_resolve_round()
+		_next_turn()
 
 
-func _resolve_round() -> void:
-	_cmd_index = -1
+## Jalankan satu giliran (tokoh atau monster) lengkap dengan animasinya, lalu lanjut ke giliran berikutnya.
+func _run_turn(cmd: Dictionary) -> void:
 	_show_menu("", [])
-	var cmds := _commands.duplicate()
-	for e: Battler in engine.living(engine.enemies):
-		cmds.append(engine.enemy_command(e))
-	engine.begin_round(cmds)
-	_refresh()
-	_update_plans()
-	var order := engine.turn_order(cmds)
-	_build_order(order)
-
-	for turn in order.size():
-		var cmd: Dictionary = order[turn]
-		var actor: Battler = cmd.actor
-		_mark_order(turn, order)
-		if not actor.is_alive():
-			continue
-		_mark_active(actor)
-		# Mesin battle langsung mengubah HP; tampilan baru diperbarui tepat saat animasi "mengenai".
-		var targets := engine.resolve_targets(cmd)
-		var animate: bool = cmd.kind != "skill" or actor.mp >= int(Db.SKILLS[cmd.skill].mp)
-		_set_banner(Loc.t("Giliran %s:   %s") % [actor.display_name, _cmd_text(cmd)])
-		var lines := engine.execute(cmd)
-		if lines.is_empty():
-			continue
+	var actor: Battler = cmd.actor
+	_mark_active(actor)
+	# Mesin battle langsung mengubah HP; tampilan baru diperbarui tepat saat animasi "mengenai".
+	var targets := engine.resolve_targets(cmd)
+	var animate: bool = cmd.kind != "skill" or actor.mp >= int(Db.SKILLS[cmd.skill].mp)
+	_set_banner(Loc.t("Giliran %s:   %s") % [actor.display_name, _cmd_text(cmd)])
+	var lines := engine.execute(cmd)
+	if not lines.is_empty():
 		_log.append_text(String(lines[0]) + "\n")
 		if animate:
 			await _play_fx(cmd, targets)
@@ -471,30 +455,33 @@ func _resolve_round() -> void:
 		for line: String in lines.slice(1):
 			await _say(line)
 		await _end_fx(actor)
-		if not actor.is_enemy:
-			(_units[actor].plan as Label).text = ""  # perintahnya sudah dijalankan
-		if engine.is_victory() or engine.is_defeat():
-			break
+	if engine.is_victory() or engine.is_defeat():
+		_mark_active(null)
+		_order_box.visible = false
+		_set_banner("")
+		if engine.is_victory():
+			_victory()
+		else:
+			_defeat()
+		return
+	_next_turn()
+
+
+## Akhir ronde: terbakar/racun melukai, efek yang habis masa berlakunya hilang, dan MP pulih.
+func _end_round() -> void:
 	_mark_active(null)
 	_order_box.visible = false
 	_set_banner("")
-
+	for line: String in engine.end_round():
+		_refresh()
+		await _say(line)
+	_refresh()
 	if engine.is_victory():
 		_victory()
 	elif engine.is_defeat():
 		_defeat()
 	else:
-		# Akhir ronde: terbakar/racun melukai dan efek yang habis masa berlakunya hilang.
-		for line: String in engine.end_round():
-			_refresh()
-			await _say(line)
-		_refresh()
-		if engine.is_victory():
-			_victory()
-		elif engine.is_defeat():
-			_defeat()
-		else:
-			_start_round()
+		_start_round()
 
 
 func _victory() -> void:
@@ -1114,9 +1101,7 @@ func _learns(char_id: String, skill_id: String) -> bool:
 func _refresh() -> void:
 	_info.text = Loc.t("Emas: %d     Menang: %d") % [Game.gold, Game.wins]
 
-	var current: Battler = null
-	if _cmd_index >= 0 and _cmd_index < _actors.size():
-		current = _actors[_cmd_index]
+	var current := _current
 	for i in Game.party.size():
 		var m: Battler = Game.party[i]
 		var row: Dictionary = _party_rows[i]
@@ -1155,7 +1140,7 @@ func _refresh() -> void:
 			_flash(sprite)
 			_recoil(sprite, Vector2(-10, 5))
 		_shown_hp[m] = m.hp
-	if _cmd_index >= 0:
+	if current != null:
 		_mark_active(current)
 
 	for e: Battler in engine.enemies:
@@ -1297,16 +1282,7 @@ func _build_units() -> void:
 
 	for i in engine.party.size():
 		var m: Battler = engine.party[i]
-		var hero := _add_unit(m, "%s_back_stand" % m.id, HERO_ANCHOR, _field_pos(PARTY_SLOTS[i % PARTY_SLOTS.size()]))
-		var plan := Label.new()  # perintah yang sudah dipilih, di atas kepala
-		plan.add_theme_font_size_override("font_size", 13)
-		plan.add_theme_color_override("font_color", COLOR_ACTIVE)
-		plan.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		plan.size = Vector2(260, 18)
-		plan.position = hero.home + Vector2(-130, -float(hero.height) - 38.0)
-		_add_text_outline(plan)
-		_tags.add_child(plan)
-		hero["plan"] = plan
+		_add_unit(m, "%s_back_stand" % m.id, HERO_ANCHOR, _field_pos(PARTY_SLOTS[i % PARTY_SLOTS.size()]))
 
 	var slots: Array = ENEMY_SLOTS[clampi(engine.enemies.size(), 1, 4)]
 	for i in engine.enemies.size():
