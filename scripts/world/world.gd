@@ -883,8 +883,13 @@ func _material(t: Vector2i) -> String:
 			return "mist_floor"
 		"k", "J":
 			return "cinder"
-		"x", "e":
-			return WorldMap.floor_material()
+		"x", "e":  # peti dan jalan keluar: bahan peta itu, atau ikut petak tetangga yang bisa diinjak
+			if WorldMap.floor_material() != "":
+				return WorldMap.floor_material()
+			for side: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+				var beside := WorldMap.char_at(t + side)
+				if beside != "x" and beside != "e" and WorldMap.TILES[beside].walk:
+					return _material(t + side)
 		",":
 			return "mist_grass"
 		"F", "Q":

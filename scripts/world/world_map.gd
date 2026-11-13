@@ -26,45 +26,64 @@ extends RefCounted
 const MAPS := {
 	"dunia": {
 		"name": "Aveloria", "outside": "^",
+		"chests": {Vector2i(6, 1): {"item": "ramuan", "count": 2}, Vector2i(6, 27): {"gold": 40},
+			Vector2i(61, 3): {"mats": {"benang_kabut": 3}}, Vector2i(50, 27): {"item": "ramuan_besar", "count": 1}},
 		"rows": [
-			"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-			"^^^^^..ffff....^^^^^^^~~~~^^^,,,,FFFF,,,^^^^",
-			"^^^...ffffff.....^^^^~~~~~^^,,,FFFFFF,,,,^^^",
-			"^^....fffff.......^^^~~~~^^,,,,FFFFFFF,,,,^^",
-			"^.....ffff....=====B^~~~~^,,,,,,FFFFF,,,,,^^",
-			"^.........=====...^^~~~~^^,,,,,,,FFF,,,,,,,^",
-			"^..T=======.......^^~~~~^^,,,,,,,,,,,,,,,,PE",
-			"^..=S.....=........^~~~~^,,,,,,,,,,,,,,FF,,^",
-			"^..=......=...ff...^~~~~^,,,,,,,,,,,,,FFFF,^",
-			"^..=......=..ffff..~~~~~~,,,,,,,,,,,,,FFQF,^",
-			"^.....ff..=..ffff..~~~~~~,,,,,,,,,,,,,,FF,,^",
-			"^....ffff.=...ff...~~~~~~,,,,FF,,,,,,,,,,,,^",
-			"^....ffff.=========G=======DFFFF,,,,,,,,,,^^",
-			"^.....ff..=........~~~~~~,,,FFFF,,,,,,,,,^^^",
-			"^.........=........~~~~~~,,,,FF,,,,,,,,,^^^^",
-			"^^........=.......~~~~~~~~,,,,,,,,,,,,^^^^^^",
-			"^^^......ff......~~~~~~~~~~,,,,,,,,,^^^^^^^^",
-			"^^^^^...ffff...^^^~~~~~~~~^^^,,,,,^^^^^^^^^^",
-			"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+			"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+			"^^^^^^x...ffffff.......^^^^^^^^^^~~~~~~^^^^,,,,,,,FFFFFF,,,,,^^^^^",
+			"^^^^^^....ffffff.......^^^^^^^^^^~~~~~~^^^^,,,,,,,FFFFFF,,,,,^^^^^",
+			"^^^^....ffffffffff........^^^^^~~~~~~~~^^,,,,,FFFFFFFFFF,,,,,x^^^^",
+			"^^^^....ffffffffff........^^^^^~~~~~~~~^^,,,,,FFFFFFFFFF,,,,,,^^^^",
+			"^^......ffffffff............^^^~~~~~~^^^,,,,,,FFFFFFFFFFFF,,,,,,^^",
+			"^^......ffffffff............^^^~~~~~~^^^,,,,,,FFFFFFFFFFFF,,,,,,^^",
+			"^.......fffffff.......=======B^~~~~~~^^,,,,,,,,,FFFFFFFF,,,,,,,,^^",
+			"^..............========.....^^~~~~~~^^^,,,,,,,,,,,FFFFF,,,,,,,,,,^",
+			"^...T===========............^^~~~~~~^^^,,,,,,,,,,,,,,,,,,,,,,,,,PE",
+			"^...=..........=.............^~~~~~~^,,,,,,,,,,,,,,,,,,,,,,,FF,,,^",
+			"^...=..........=.............^~~~~~~^,,,,,,,,,,,,,,,,,,,,,,,FF,,,^",
+			"^...=..........=......fff....^~~~~~~^,,,,,,,,,,,,,,,,,,,,,FFFFFF,^",
+			"^...=..........=......fff....^~~~~~~^,,,,,,,,,,,,,,,,,,,,,FFFFFF,^",
+			"^...=..........=....ffffff...~~~~~~~~,,,,,,,,,,,,,,,,,,,,,FFFQFF,^",
+			"^.......ffff...=....ffffff...~~~~~~~~,,,,,,,,,,,,,,,,,,,,,,,FF,,,^",
+			"^.......ffff...=....ffffff...~~~~~~~~,,,,,,,,,,,,,,,,,,,,,,,FF,,,^",
+			"^.....fffffff..=......fff....~~~~~~~~,,,,,,FFF,,,,,,,,,,,,,,,,,,,^",
+			"^.....fffffff..=......fff....~~~~~~~~,,,,,,FFF,,,,,,,,,,,,,,,,,,,^",
+			"^.....fffffff..==============G==========DFFFFFFF,,,,,,,,,,,,,,,,^^",
+			"^.......ffff...=.............~~~~~~~~,,,,FFFFFFF,,,,,,,,,,,,,,^^^^",
+			"^.......ffff...=.............~~~~~~~~,,,,FFFFFFF,,,,,,,,,,,,,,^^^^",
+			"^..............=.............~~~~~~~~,,,,,,FFF,,,,,,,,,,,,,,,^^^^^",
+			"^..............=.............~~~~~~~~,,,,,,FFF,,,,,,,,,,,,,,,^^^^^",
+			"^^.............=............~~~~~~~~~~~,,,,,,,,,,,,,,,,,,,^^^^^^^^",
+			"^^.............=............~~~~~~~~~~~,,,,,,,,,,,,,,,,,,,^^^^^^^^",
+			"^^^^.........fff..........~~~~~~~~~~~~~~,,,,,,,,,,,,,,,^^^^^^^^^^^",
+			"^^^^^^x.....ffffff.....^^^^^~~~~~~~~~~~^^^^,,,,,,,x^^^^^^^^^^^^^^^",
+			"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
 		],
 	},
 	"abu": {
 		"name": "Pegunungan Abu", "outside": "^",
+		"chests": {Vector2i(4, 1): {"mats": {"sisik_bara": 3}}, Vector2i(51, 3): {"gold": 150}},
 		"rows": [
-			"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-			"^^^aaaacccc^^^^aaaaaaa^^^^LLLL^^^^^^",
-			"^^aaaaccccccaaaaaaaaaaaa^^LLLLLaaa^^",
-			"^aaaaaaccccaaaaaaccccaaaaaLLLaaaaaa^",
-			"^aaaaaaaaaaaaaaaccccccaaaaaLaaaaNaa^",
-			"W===aaaaaaaaaaaaaccccaaaaaaaaaaaaaa^",
-			"^aa=aaaaaLLaaaaaaaaaaaaaaaccccaaaaa^",
-			"^aa=====LLLLaaaaaaaaaaaaaccccccaaaRZ",
-			"^aaaaaa=aLLaaaaaKaaaaaaaaaccccaaaaa^",
-			"^aaaccc=aaaaaaa==aaaaaaaaaaaaaaaaa^^",
-			"^^accccc========aaaaaccccaaaaaaaa^^^",
-			"^^^acccaaaaaaaaaaaaccccccaaaaaa^^^^^",
-			"^^^^^aaaaaaaa^^^^aaaccccaaaa^^^^^^^^",
-			"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+			"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+			"^^^^xaaaaccccc^^^^^^^aaaaaaaaaaa^^^^^^^^LLLLLLL^^^^^^^",
+			"^^^^aaaaaccccc^^^^^^^aaaaaaaaaaa^^^^^^^^LLLLLLL^^^^^^^",
+			"^^aaaaaaccccccccaaaaaaaaaaaaaaaaaaaa^^^^LLLLLLLLLaax^^",
+			"^^aaaaaaccccccccaaaaaaaaaaaaaaaaaaaa^^^^LLLLLLLLLaaa^^",
+			"^aaaaaaaacccccaaaaaaaaacccccccaaaaaaaaaaLLLLLaaaaaaaa^",
+			"^aaaaaaaacccccaaaaaaaaacccccccaaaaaaaaaaLLLLLaaaaaaaa^",
+			"^aaaaaaaaaaaaaaaaaaaaaccccccccccaaaaaaaaaLLaaaaaaaNaa^",
+			"W====aaaaaaaaaaaaaaaaaacccccccaaaaaaaaaaaaaaaaaaaaaaa^",
+			"^aaa=aaaaaaLLLaaaaaaaaaaaaaaaaaaaaaaaaaacccccccaaaaaa^",
+			"^aaa=aaaaaaLLLaaaaaaaaaaaaaaaaaaaaaaaaaacccccccaaaaaa^",
+			"^aaa======LLLLLLaaaaaaaaaaaaaaaaaaaaaacccccccccccaaaRZ",
+			"^aaaaaaaa=aLLLaaaaaaaaKaaaaaaaaaaaaaaaaacccccccaaaaaa^",
+			"^aaaacccc=aaaaaaaaaaa==aaaaaaaaaaaaaaaaaaaaaaaaaaaaa^^",
+			"^^aacccccc============aaaaaaaaccccccccaaaaaaaaaaaaa^^^",
+			"^^^^accccaaaaaaaaaaaaaaaaaccccccccccccaaaaaaaaaaa^^^^^",
+			"^^^^accccaaaaaaaaaaaaaaaaaccccccccccccaaaaaaaaaaa^^^^^",
+			"^^^^^^aaaaaaaaaaaa^^^^^aaaaaccccccccaaaaaaa^^^^^^^^^^^",
+			"^^^^^^aaaaaaaaaaaa^^^^^aaaaaccccccccaaaaaaa^^^^^^^^^^^",
+			"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
 		],
 	},
 	"kastil": {
@@ -197,6 +216,7 @@ const MAPS := {
 
 # walk   = bisa diinjak
 # rate   = peluang pertemuan per langkah, table = tabel di Db.ENCOUNTER_TABLES
+#          (peta wilayah diperbesar 1,5x di v1.6, jadi peluangnya diturunkan supaya jumlah pertarungan hanya naik sedikit)
 # portal = pindah ke peta lain saat diinjak
 # boss   = semi-bos yang bersarang di sini (lihat Db.BOSS_RULES)
 # dungeon = pintu masuk dungeon semi-bos itu: hanya bisa dimasuki kalau syarat Db.BOSS_RULES terpenuhi
@@ -210,10 +230,10 @@ const TILES := {
 	"S": {"walk": true, "zone": ""},
 	"T": {"walk": true, "zone": "Desa Rindu", "portal": "desa"},
 	"D": {"walk": true, "zone": "Dusun Embun", "portal": "dusun"},
-	".": {"walk": true, "zone": "Lembah Hijau", "rate": 0.08, "table": "lembah_padang"},
-	"f": {"walk": true, "zone": "Lembah Hijau - hutan", "rate": 0.16, "table": "lembah_hutan"},
-	",": {"walk": true, "zone": "Hutan Kabut", "rate": 0.09, "table": "kabut_padang"},
-	"F": {"walk": true, "zone": "Hutan Kabut - rimba", "rate": 0.17, "table": "kabut_hutan"},
+	".": {"walk": true, "zone": "Lembah Hijau", "rate": 0.065, "table": "lembah_padang"},
+	"f": {"walk": true, "zone": "Lembah Hijau - hutan", "rate": 0.13, "table": "lembah_hutan"},
+	",": {"walk": true, "zone": "Hutan Kabut", "rate": 0.075, "table": "kabut_padang"},
+	"F": {"walk": true, "zone": "Hutan Kabut - rimba", "rate": 0.14, "table": "kabut_hutan"},
 	"B": {"walk": true, "zone": "Sarang Ogre", "dungeon": "ogre", "portal": "gua"},
 	"G": {"walk": true, "zone": "Gerbang Timur", "gate": "ogre",
 		"locked": "Gerbang terkunci. Konon penjaganya bersarang di ujung jalan utara."},
@@ -222,8 +242,8 @@ const TILES := {
 		"locked": "Kabut pekat menutup celah gunung ini. Mustahil melihat jalan di depan."},
 	"E": {"walk": true, "zone": "Jalan ke Pegunungan Abu", "portal": "abu"},
 	"W": {"walk": true, "zone": "Celah Abu", "portal": "dunia"},
-	"a": {"walk": true, "zone": "Pegunungan Abu", "rate": 0.09, "table": "abu_padang"},
-	"c": {"walk": true, "zone": "Pegunungan Abu - lereng", "rate": 0.17, "table": "abu_lereng"},
+	"a": {"walk": true, "zone": "Pegunungan Abu", "rate": 0.075, "table": "abu_padang"},
+	"c": {"walk": true, "zone": "Pegunungan Abu - lereng", "rate": 0.14, "table": "abu_lereng"},
 	"L": {"walk": false, "zone": ""},
 	"K": {"walk": true, "zone": "Pos Pemburu", "portal": "pos"},
 	"N": {"walk": true, "zone": "Kawah Lahar", "dungeon": "lahar", "portal": "kawah"},
@@ -283,9 +303,9 @@ static func is_dungeon(map_id: String) -> bool:
 	return MAPS[map_id].get("dungeon", false)
 
 
-## Bahan tanah untuk petak peti dan jalan keluar di peta ini.
+## Bahan tanah untuk petak peti dan jalan keluar di peta ini; kosong = ikut petak di sebelahnya.
 static func floor_material() -> String:
-	return MAPS[current].get("floor", "path")
+	return MAPS[current].get("floor", "")
 
 
 ## Isi peti di sebuah petak: {"gold"} / {"item", "count"} / {"mats": {id: jumlah}}; kosong kalau tidak ada.

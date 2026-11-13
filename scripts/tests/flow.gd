@@ -184,7 +184,7 @@ func _initialize() -> void:
 	_expect(current_scene.call("_walk_to", WorldMap.find("X")), "klik jalan keluar desa menghasilkan rute")
 	await _wait_until(func() -> bool: return _game.map_id == "dunia" and current_scene != null and not current_scene.get("_busy"))
 	_expect(_game.map_id == "dunia" and _game.player_tile == WorldMap.find_in("dunia", "T"), "keluar desa -> muncul di petak desa pada peta dunia")
-	_expect(not current_scene.call("_walk_to", Vector2i(30, 6)), "klik ke Hutan Kabut ditolak selama gerbang terkunci")
+	_expect(not current_scene.call("_walk_to", Vector2i(45, 9)), "klik ke Hutan Kabut ditolak selama gerbang terkunci")
 	_expect(not current_scene.call("_walk_to", WorldMap.find("G")), "klik ke gerbang terkunci ditolak")
 
 	# --- Keyboard (level dinaikkan supaya pertemuan acak di tengah uji tidak mengalahkan Arlen) ---
@@ -220,7 +220,7 @@ func _initialize() -> void:
 
 	# --- Menolong Mira ---
 	_set_levels(3)
-	await _open_world("dunia", Vector2i(13, 2))
+	await _open_world("dunia", Vector2i(19, 3))
 	await _shot("peta_mira.png")
 	current_scene.call("_talk", "mira")
 	await _skip_dialog()
@@ -229,7 +229,7 @@ func _initialize() -> void:
 	await _skip_dialog()
 	_expect(_game.party.size() == 2 and (_game.party[1] as Battler).id == "mira", "Mira masuk party")
 	_expect((_game.party[1] as Battler).level == 3 or (_game.party[1] as Battler).level == 4, "Mira bergabung setingkat Arlen (Lv %d)" % (_game.party[1] as Battler).level)
-	_expect(not (current_scene.get("_npc_at") as Dictionary).has(Vector2i(12, 2)), "Mira hilang dari peta setelah bergabung")
+	_expect(not (current_scene.get("_npc_at") as Dictionary).has(Vector2i(18, 3)), "Mira hilang dari peta setelah bergabung")
 
 	# --- Ogre Penjaga dan gerbang ---
 	_set_levels(16)  # sejak Ogre diperkuat (v1.2), level 8 tanpa perlengkapan kadang kalah
@@ -245,6 +245,14 @@ func _initialize() -> void:
 	await _skip_dialog()
 	_expect(_game.map_id == "gua", "setelah Ogre kalah, party masih di dalam gua")
 	_expect(_walkable_in("dunia", WorldMap.find_in("dunia", "G")), "gerbang terbuka setelah Ogre kalah")
+
+	# --- Peti di peta wilayah: tanahnya ikut petak di sebelahnya ---
+	await _open_world("dunia", Vector2i(7, 1))
+	await _shot("peti_wilayah.png")
+	_expect(current_scene.call("_material", Vector2i(6, 1)) == "grass", "peti di padang digambar di atas rumput")
+	current_scene.call("_walk_to", Vector2i(6, 1))
+	await _wait_until(func() -> bool: return _game.flags.has("chest_dunia_6_1"), 100)
+	_expect(_game.flags.has("chest_dunia_6_1") and int(_game.items.get("ramuan", 0)) >= 2, "peti di peta wilayah bisa dibuka")
 
 	# --- Peti harta di Gua Ogre ---
 	_game.gold = 0
@@ -279,7 +287,7 @@ func _initialize() -> void:
 	# --- Masuk Hutan Kabut pertama kali ---
 	await _open_world("dunia", WorldMap.find_in("dunia", "G") + Vector2i(5, 0))
 	await _shot("peta_gerbang.png")
-	current_scene.call("_walk_to", WorldMap.find("G") + Vector2i(6, -1))
+	current_scene.call("_walk_to", WorldMap.find("G") + Vector2i(8, -1))
 	await _wait_until(func() -> bool: return current_scene.get("_dialog_open"))
 	_expect(current_scene.get("_dialog_open"), "adegan pembuka Hutan Kabut tampil")
 	await _skip_dialog()
@@ -312,7 +320,7 @@ func _initialize() -> void:
 	await _shot("judul_lanjut.png")
 	current_scene.call("_on_continue")
 	await create_timer(0.5).timeout
-	_expect(current_scene.name == "World" and not current_scene.get("_busy") and not (current_scene.get("_npc_at") as Dictionary).has(Vector2i(12, 2)), "Lanjutkan membuka peta tanpa Mira di tepi hutan")
+	_expect(current_scene.name == "World" and not current_scene.get("_busy") and not (current_scene.get("_npc_at") as Dictionary).has(Vector2i(18, 3)), "Lanjutkan membuka peta tanpa Mira di tepi hutan")
 
 	var file := FileAccess.open(_game.save_path, FileAccess.WRITE)
 	file.store_string("{ rusak")
@@ -356,7 +364,7 @@ func _initialize() -> void:
 
 	# --- Menolong Selene ---
 	_set_levels(10)
-	await _open_world("dunia", Vector2i(34, 6))
+	await _open_world("dunia", Vector2i(51, 9))
 	await _shot("peta_selene.png")
 	current_scene.call("_talk", "selene")
 	await _skip_dialog()
@@ -389,7 +397,7 @@ func _initialize() -> void:
 	# --- Kalah di Wilayah 2: kembali ke penginapan dusun ---
 	_set_levels(1)
 	_game.gold = 40
-	await _open_world("dunia", Vector2i(30, 6))
+	await _open_world("dunia", Vector2i(45, 9))
 	current_scene.call("_start_battle", ["goblin", "goblin", "goblin", "goblin"])
 	await _play_battle()
 	_expect(_game.map_id == "dusun" and _game.gold == 20, "kalah setelah menginap di dusun -> siuman di dusun (peta=%s, emas=%d)" % [_game.map_id, _game.gold])
@@ -397,9 +405,9 @@ func _initialize() -> void:
 	# ================= Wilayah 3: Pegunungan Abu =================
 	_set_levels(12)
 	var west := WorldMap.find_in("abu", "W")
-	await _open_world("abu", west + Vector2i(3, 0))
+	await _open_world("abu", west + Vector2i(4, 0))
 	await _shot("abu.png")
-	current_scene.call("_walk_to", west + Vector2i(4, 0))
+	current_scene.call("_walk_to", west + Vector2i(5, 0))
 	await _wait_until(func() -> bool: return current_scene.get("_dialog_open"))
 	_expect(current_scene.get("_dialog_open"), "adegan pembuka Pegunungan Abu tampil")
 	await _skip_dialog()
@@ -440,7 +448,7 @@ func _initialize() -> void:
 	await _skip_dialog()
 
 	# --- Menolong Kael ---
-	await _open_world("abu", Vector2i(19, 4))
+	await _open_world("abu", Vector2i(26, 6))
 	await _shot("peta_kael.png")
 	current_scene.call("_talk", "kael")
 	await _skip_dialog()
@@ -476,7 +484,7 @@ func _initialize() -> void:
 	# --- Kalah di Wilayah 3: kembali ke Pos Pemburu ---
 	_set_levels(1)
 	_game.gold = 60
-	await _open_world("abu", Vector2i(10, 4))
+	await _open_world("abu", Vector2i(13, 7))
 	current_scene.call("_start_battle", ["golem_batu", "golem_batu", "golem_batu", "golem_batu"])
 	await _play_battle()
 	_expect(_game.map_id == "pos" and _game.gold == 30, "kalah setelah menginap di pos -> siuman di pos (peta=%s, emas=%d)" % [_game.map_id, _game.gold])
@@ -536,7 +544,7 @@ func _initialize() -> void:
 	_game.new_game()
 	_game.pending_scene = ""
 	_game.gold = 100
-	await _open_world("dunia", Vector2i(13, 4))
+	await _open_world("dunia", Vector2i(20, 7))
 	current_scene.call("_start_battle", ["goblin", "goblin", "goblin", "goblin"])
 	await _play_battle()
 	_expect(_game.map_id == "desa" and _game.player_tile == _game.START_TILE, "kalah -> kembali ke penginapan desa")
@@ -788,7 +796,9 @@ func _check_maps() -> void:
 
 	WorldMap.current = "abu"
 	var ash := _reachable(WorldMap.find("W"), {})
-	_expect(ash.has(WorldMap.find("K")) and ash.has(Vector2i(19, 4)) and ash.has(WorldMap.find("N")), "pos, tempat Kael, dan kawah terjangkau dari jalan masuk Pegunungan Abu")
+	_expect(ash.has(Vector2i(4, 1)) and ash.has(Vector2i(51, 3)) and WorldMap.char_at(Vector2i(4, 1)) == "x" and WorldMap.char_at(Vector2i(51, 3)) == "x", "dua peti Pegunungan Abu terjangkau")
+	_expect(WorldMap.width() == 54 and WorldMap.height() == 20, "peta Pegunungan Abu berukuran 54 x 20 petak")
+	_expect(ash.has(WorldMap.find("K")) and ash.has(Vector2i(26, 6)) and ash.has(WorldMap.find("N")), "pos, tempat Kael, dan kawah terjangkau dari jalan masuk Pegunungan Abu")
 	_expect(not ash.has(WorldMap.find("Z")), "jalan ke Kastil Kelam tertutup sebelum Raksasa kalah")
 	_expect(_reachable(WorldMap.find("W"), {"lahar": true}).has(WorldMap.find("Z")), "jalan ke Kastil Kelam terjangkau setelah Raksasa kalah")
 
@@ -807,7 +817,10 @@ func _check_maps() -> void:
 	var closed := _reachable(start, {})
 	var opened := _reachable(start, {"ogre": true})
 	_expect(closed.has(WorldMap.find("B")), "sarang semi-bos terjangkau dari desa")
-	_expect(closed.has(Vector2i(13, 2)), "tempat Mira terjangkau dari desa")
+	_expect(closed.has(Vector2i(19, 3)), "tempat Mira terjangkau dari desa")
+	_expect(closed.has(Vector2i(6, 1)) and closed.has(Vector2i(6, 27)) and WorldMap.char_at(Vector2i(6, 1)) == "x" and WorldMap.char_at(Vector2i(6, 27)) == "x", "dua peti Lembah Hijau terjangkau dari desa")
+	_expect(not closed.has(Vector2i(61, 3)) and opened.has(Vector2i(61, 3)) and opened.has(Vector2i(50, 27)) and WorldMap.char_at(Vector2i(61, 3)) == "x" and WorldMap.char_at(Vector2i(50, 27)) == "x", "dua peti Hutan Kabut terjangkau setelah gerbang terbuka")
+	_expect(WorldMap.width() == 66 and WorldMap.height() == 29, "peta dunia berukuran 66 x 29 petak")
 	var leak := 0
 	var region2 := 0
 	var region2_open := 0
@@ -821,7 +834,7 @@ func _check_maps() -> void:
 				if opened.has(t):
 					region2_open += 1
 	_expect(leak == 0, "Hutan Kabut tertutup selama gerbang terkunci (bocor: %d petak)" % leak)
-	_expect(opened.has(WorldMap.find("D")) and opened.has(Vector2i(34, 6)) and opened.has(WorldMap.find("Q")), "dusun, tempat Selene, dan sarang Ratu terjangkau setelah gerbang terbuka")
+	_expect(opened.has(WorldMap.find("D")) and opened.has(Vector2i(51, 9)) and opened.has(WorldMap.find("Q")), "dusun, tempat Selene, dan sarang Ratu terjangkau setelah gerbang terbuka")
 	_expect(not opened.has(WorldMap.find("E")), "ujung jalan tertutup sebelum Ratu kalah")
 	_expect(_reachable(start, {"ogre": true, "ratu": true}).has(WorldMap.find("E")), "ujung jalan terjangkau setelah Ratu kalah")
 	_expect(region2_open == region2, "seluruh Hutan Kabut terjangkau setelah gerbang terbuka (%d/%d)" % [region2_open, region2])

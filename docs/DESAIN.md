@@ -123,3 +123,12 @@ wilayah sebelumnya kalah.
 - **Peti harta** (petak `x`): isinya di `"chests"` tiap peta, berupa `{"gold"}`, `{"item", "count"}`, atau `{"mats"}`. Menginjak peti membukanya sekali; penandanya `chest_<peta>_<x>_<y>` di `Game.flags`, jadi ikut tersimpan. Peti berisi barang tetap tertutup kalau tas penuh. Ada dua peti di tiap dungeon dan dua di Kastil Kelam.
 - Kastil Kelam sudah berbentuk dungeon (aula, ruang dalam, altar), jadi hanya ditambah peti.
 - Simulasi: tiga pertarungan dungeon sebelum tiap semi-bos, tanpa menginap di antaranya; kalah berarti mengulang dari pintu masuk. Dengan perlengkapan wajar: Ogre 77%, Ratu 79%, Lahar 79%, Raja 78%, jadi angka bos tidak diubah.
+
+## Peta wilayah diperbesar 1,5x
+
+- Peta dunia (Lembah Hijau + Hutan Kabut) menjadi 66 x 29 petak (dari 44 x 19), dan Pegunungan Abu 54 x 20 (dari 36 x 14). Kastil Kelam dan peta permukiman tidak diubah.
+- Caranya meregangkan peta lama: baris dan kolom tertentu digandakan, dipilih yang tidak memuat petak khusus (desa, gerbang, sarang) dan tidak memotong jalan searah, jadi jalan tetap selebar satu petak dan semua tempat tetap tersambung. Bentuk wilayahnya sama, hanya lebih lapang.
+- Peluang bertemu monster per langkah diturunkan (padang 8% -> 6,5%, hutan 16% -> 13%, dan setara di wilayah lain), supaya jarak 1,5x hanya menambah pertarungan sekitar 20%.
+- Enam peti baru di sudut-sudut wilayah (dua per wilayah). Petak peti di peta wilayah memakai bahan tanah petak tetangganya.
+- Posisi Mira, Selene, dan Kael ikut dipindah ke padanan tempat lamanya.
+- Simpanan: `SAVE_VERSION` 3. Simpanan versi lama yang posisinya di peta dunia atau Pegunungan Abu dimuat di penginapan terakhir (posisi lama tidak berlaku di peta baru); progres, party, dan barang tetap. Simpanan di permukiman, dungeon, dan kastil tidak terpengaruh.

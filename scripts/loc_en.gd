@@ -309,6 +309,7 @@ const TEXT := {
 	"Emas atau bahan belum cukup.": "Not enough gold or materials.",
 	"%s Lv %d  ·  %d anggota  ·  %s": "%s Lv %d  ·  %d members  ·  %s",
 	"Permainan dimuat.": "Game loaded.",
+	"Peta wilayah kini lebih luas. Party kembali ke penginapan terakhir.": "The region maps are larger now. The party returns to the last inn.",
 
 	# ------------------------------------------------------------ nama tempat
 	"Desa Rindu": "Willowmere Village",

@@ -183,6 +183,22 @@ func _initialize() -> void:
 	file.close()
 	_expect(game.load_game() and game.member("arlen").level == 7 and game.member("arlen").equip.is_empty() and game.mats.is_empty()
 		and game.gold == 55, "simpanan versi 1 dimuat dengan perlengkapan dan kantong bahan kosong")
+	# Simpanan versi 2 di peta wilayah (kini lebih luas): posisi lama tidak berlaku, kembali ke penginapan terakhir.
+	file = FileAccess.open(game.save_path, FileAccess.WRITE)
+	file.store_string(JSON.stringify({"version": 2, "party": [{"id": "arlen", "level": 9, "xp": 0, "hp": 30, "mp": 5}],
+		"gold": 80, "wins": 20, "flags": ["quest_mira", "mira_joined", "ogre"], "items": {}, "bag_slots": 6, "map": "dunia", "tile": [30, 6],
+		"respawn_map": "dusun", "respawn_tile": [8, 3]}))
+	file.close()
+	_expect(game.load_game() and game.map_id == "dusun" and game.player_tile == Vector2i(8, 3) and game.flags.has("ogre") and game.gold == 80,
+		"simpanan versi 2 di peta wilayah: kembali ke penginapan terakhir, progres tetap")
+	file = FileAccess.open(game.save_path, FileAccess.WRITE)
+	file.store_string(JSON.stringify({"version": 2, "party": [{"id": "arlen", "level": 9, "xp": 0, "hp": 30, "mp": 5}],
+		"gold": 80, "wins": 20, "flags": ["mira_joined"], "items": {}, "bag_slots": 6, "map": "gua", "tile": [9, 11],
+		"respawn_map": "desa", "respawn_tile": [7, 10]}))
+	file.close()
+	_expect(game.load_game() and game.map_id == "gua" and game.player_tile == Vector2i(9, 11), "simpanan versi 2 di dalam dungeon: posisi tetap")
+	game.save_game()
+	_expect(game.load_game() and game.map_id == "gua", "simpanan versi 3 dimuat seperti biasa")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.save_path))
 
 	# --- Pandai besi di tiap permukiman ---

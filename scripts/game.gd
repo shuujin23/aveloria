@@ -8,7 +8,9 @@ const BATTLE_SCENE := "res://scenes/battle.tscn"
 const ENDING_SCENE := "res://scenes/ending.tscn"
 const START_MAP := "desa"
 const START_TILE := Vector2i(7, 10)  # di depan penginapan; juga titik kembali setelah kalah
-const SAVE_VERSION := 2  # versi 1 (sebelum perlengkapan) tetap bisa dimuat
+const SAVE_VERSION := 3  # versi 1 (sebelum perlengkapan) dan 2 (sebelum peta wilayah diperbesar) tetap bisa dimuat
+## Peta yang bentuknya berubah di versi simpanan 3: posisi lama di peta ini tidak berlaku lagi.
+const RESIZED_MAPS := ["dunia", "abu"]
 
 var party: Array = []
 var gold := 0
@@ -383,6 +385,12 @@ func load_game() -> bool:
 	after_battle_scene = ""
 	pending_scene = ""
 	world_message = Loc.t("Permainan dimuat.")
+	# Simpanan lama di peta wilayah yang kini lebih luas: mulai lagi dari penginapan terakhir.
+	if int(data.get("version", 0)) < 3 and RESIZED_MAPS.has(data.get("map", "")):
+		map_id = respawn_map
+		player_tile = respawn_tile
+		WorldMap.current = map_id
+		world_message = Loc.t("Peta wilayah kini lebih luas. Party kembali ke penginapan terakhir.")
 	return true
 
 
@@ -393,6 +401,6 @@ func _read_save() -> Dictionary:
 	if json.parse(FileAccess.get_file_as_string(save_path)) != OK:
 		return {}
 	var parsed: Variant = json.data
-	if not (parsed is Dictionary) or not (int(parsed.get("version", 0)) in [1, SAVE_VERSION]):
+	if not (parsed is Dictionary) or not (int(parsed.get("version", 0)) in [1, 2, SAVE_VERSION]):
 		return {}
 	return parsed

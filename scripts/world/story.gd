@@ -37,8 +37,8 @@ const NPCS := {
 		{"id": "sena", "name": "Halvard", "sprite": "npc_sena", "tile": Vector2i(4, 5)},
 	],
 	"dunia": [
-		{"id": "mira", "name": "Mira", "sprite": "mira", "tile": Vector2i(12, 2), "hide_flag": "mira_joined"},
-		{"id": "selene", "name": "Selene", "sprite": "selene", "tile": Vector2i(34, 5), "hide_flag": "selene_joined"},
+		{"id": "mira", "name": "Mira", "sprite": "mira", "tile": Vector2i(18, 3), "hide_flag": "mira_joined"},
+		{"id": "selene", "name": "Selene", "sprite": "selene", "tile": Vector2i(51, 8), "hide_flag": "selene_joined"},
 	],
 	"pos": [
 		{"id": "darma", "name": "Tetua Aldric", "sprite": "npc_darma", "tile": Vector2i(3, 2)},
@@ -47,7 +47,7 @@ const NPCS := {
 		{"id": "rekso", "name": "Varek", "sprite": "npc_rekso", "tile": Vector2i(4, 5)},
 	],
 	"abu": [
-		{"id": "kael", "name": "Kael", "sprite": "kael", "tile": Vector2i(19, 3), "hide_flag": "kael_joined"},
+		{"id": "kael", "name": "Kael", "sprite": "kael", "tile": Vector2i(26, 5), "hide_flag": "kael_joined"},
 	],
 }
 
