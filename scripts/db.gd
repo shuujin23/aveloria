@@ -367,6 +367,12 @@ const ENCOUNTER_TABLES := {
 		["jamur", "kelelawar", "kelelawar"], ["jamur", "jamur", "jamur"]],
 	"lembah_hutan": [
 		["serigala", "kelelawar", "kelelawar"], ["serigala", "jamur", "jamur"], ["serigala", "serigala"]],
+	"lembah_gua": [
+		["goblin", "kelelawar", "kelelawar"], ["serigala", "goblin"], ["kelelawar", "kelelawar", "goblin"]],
+	"kabut_sarang": [
+		["laba_laba", "laba_laba"], ["laba_laba", "roh_kabut", "laba_laba"], ["laba_laba", "laba_laba", "laba_laba"]],
+	"abu_kawah": [
+		["kadal_bara", "kadal_bara"], ["golem_batu", "kadal_bara"], ["kadal_bara", "golem_batu", "kadal_bara"]],
 	"kabut_padang": [
 		["laba_laba", "serigala"], ["roh_kabut", "laba_laba"], ["goblin", "roh_kabut"], ["laba_laba", "laba_laba", "roh_kabut"]],
 	"kabut_hutan": [

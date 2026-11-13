@@ -114,3 +114,12 @@ wilayah sebelumnya kalah.
 - Akhir ronde tidak berubah: terbakar/racun melukai, durasi efek berkurang, MP pulih.
 - Karena pemain kini bisa menanggapi keadaan (menyembuhkan tepat setelah kena), Ratu Laba-laba diperkuat 10% (HP 668, ATK 40, MAG 18). Simulasi dengan perlengkapan wajar: Ogre 76%, Ratu 82%, Lahar 71%, Raja 76%.
 - Uji tampilan memakai `_hold` di layar battle supaya perintah hanya dicatat (`_last_cmd`) tanpa dijalankan.
+
+## Dungeon semi-bos dan peti harta
+
+- Tiga semi-bos kini menunggu di ujung dungeon tersendiri: **Gua Ogre** (`gua`), **Sarang Ratu Laba-laba** (`sarang`), dan **Kawah Lahar** (`kawah`). Petak B / Q / N di peta wilayah menjadi pintu masuknya (`"dungeon"` + `"portal"` di `WorldMap.TILES`); syarat rekan dari `Db.BOSS_RULES` diperiksa di pintu itu.
+- Tiap dungeon sekitar 50-60 petak lorong dengan cabang dan jalan buntu, monster wilayahnya (tabel `lembah_gua`, `kabut_sarang`, `abu_kawah`, peluang 11% per langkah), dan tidak ada penginapan di dalamnya. Semi-bos tampak berdiri di petaknya sampai dikalahkan. Petak `e` adalah jalan keluar ke peta induk.
+- Dinding dungeon memakai bukit batu rendah supaya lorong satu petak tetap terlihat; pohon terlalu tinggi dan menutupi lorong.
+- **Peti harta** (petak `x`): isinya di `"chests"` tiap peta, berupa `{"gold"}`, `{"item", "count"}`, atau `{"mats"}`. Menginjak peti membukanya sekali; penandanya `chest_<peta>_<x>_<y>` di `Game.flags`, jadi ikut tersimpan. Peti berisi barang tetap tertutup kalau tas penuh. Ada dua peti di tiap dungeon dan dua di Kastil Kelam.
+- Kastil Kelam sudah berbentuk dungeon (aula, ruang dalam, altar), jadi hanya ditambah peti.
+- Simulasi: tiga pertarungan dungeon sebelum tiap semi-bos, tanpa menginap di antaranya; kalah berarti mengulang dari pintu masuk. Dengan perlengkapan wajar: Ogre 77%, Ratu 79%, Lahar 79%, Raja 78%, jadi angka bos tidak diubah.

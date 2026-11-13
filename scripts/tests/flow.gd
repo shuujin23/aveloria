@@ -235,13 +235,46 @@ func _initialize() -> void:
 	_set_levels(16)  # sejak Ogre diperkuat (v1.2), level 8 tanpa perlengkapan kadang kalah
 	await _open_world("dunia", WorldMap.find_in("dunia", "B") + Vector2i(-1, 0))
 	_expect(not WorldMap.is_walkable(WorldMap.find("G"), _game.flags), "gerbang tertutup sebelum Ogre kalah")
-	current_scene.call("_walk_to", WorldMap.find("B"))
+	await _to_boss(WorldMap.find("B"), "gua", "O")
+	await _shot("dungeon_gua.png")
+	current_scene.call("_walk_to", WorldMap.find("O"))
 	await _wait_until(func() -> bool: return current_scene != null and current_scene.name == "Battle")
 	await _play_battle()
 	_expect(_game.flags.has("ogre"), "penanda Ogre tercatat")
 	_expect(current_scene.get("_dialog_open"), "adegan kemenangan atas Ogre tampil")
 	await _skip_dialog()
-	_expect(WorldMap.is_walkable(WorldMap.find("G"), _game.flags), "gerbang terbuka setelah Ogre kalah")
+	_expect(_game.map_id == "gua", "setelah Ogre kalah, party masih di dalam gua")
+	_expect(_walkable_in("dunia", WorldMap.find_in("dunia", "G")), "gerbang terbuka setelah Ogre kalah")
+
+	# --- Peti harta di Gua Ogre ---
+	_game.gold = 0
+	await _open_world("gua", Vector2i(14, 6))
+	current_scene.call("_walk_to", Vector2i(15, 6))
+	await _wait_until(func() -> bool: return _game.flags.has("chest_gua_15_6"), 100)
+	_expect(_game.gold == 60 and _game.flags.has("chest_gua_15_6"), "peti berisi emas: emas bertambah 60 dan peti tercatat terbuka")
+	await _shot("peti_terbuka.png")
+	await _open_world("gua", Vector2i(14, 6))
+	current_scene.call("_walk_to", Vector2i(15, 6))
+	await create_timer(0.6).timeout
+	_expect(_game.gold == 60, "peti yang sudah dibuka tidak memberi hadiah lagi")
+	_game.items = {"ramuan": 5, "penawar": 5, "eter": 5, "ramuan_besar": 5, "air_kehidupan": 5, "ramuan_kekuatan": 5}
+	_game.bag_slots = 6
+	await _open_world("kastil", Vector2i(19, 7))
+	current_scene.call("_walk_to", Vector2i(20, 7))
+	await create_timer(0.6).timeout
+	_expect(not _game.flags.has("chest_kastil_20_7") and int(_game.items["air_kehidupan"]) == 5, "tas penuh: peti berisi barang tetap tertutup")
+	_game.items = {"ramuan": 1}
+	await _open_world("kastil", Vector2i(19, 7))
+	current_scene.call("_walk_to", Vector2i(20, 7))
+	await _wait_until(func() -> bool: return _game.flags.has("chest_kastil_20_7"), 100)
+	_expect(int(_game.items.get("air_kehidupan", 0)) == 1, "peti berisi barang: barang masuk tas")
+	_game.mats = {}
+	await _open_world("gua", Vector2i(2, 1))
+	current_scene.call("_walk_to", Vector2i(1, 1))
+	await _wait_until(func() -> bool: return _game.flags.has("chest_gua_1_1"), 100)
+	_expect(int(_game.mats.get("taring_serigala", 0)) == 2, "peti berisi bahan: bahan masuk kantong bahan")
+	_game.flags.erase("chest_kastil_20_7")
+	_game.items = {"ramuan": 3}
 
 	# --- Masuk Hutan Kabut pertama kali ---
 	await _open_world("dunia", WorldMap.find_in("dunia", "G") + Vector2i(5, 0))
@@ -338,14 +371,16 @@ func _initialize() -> void:
 	var pass_tile := WorldMap.find_in("dunia", "P")
 	await _open_world("dunia", nest + Vector2i(-1, 0))
 	_expect(not WorldMap.is_walkable(pass_tile, _game.flags), "Celah Abu tertutup sebelum Ratu kalah")
-	current_scene.call("_walk_to", nest)
+	await _to_boss(nest, "sarang", "U")
+	await _shot("dungeon_sarang.png")
+	current_scene.call("_walk_to", WorldMap.find("U"))
 	await _wait_until(func() -> bool: return current_scene != null and current_scene.name == "Battle")
 	await _shot("battle_ratu.png")
 	await _play_battle()
 	_expect(_game.flags.has("ratu"), "penanda Ratu tercatat")
 	_expect(current_scene.get("_dialog_open"), "adegan kemenangan atas Ratu tampil")
 	await _skip_dialog()
-	_expect(WorldMap.is_walkable(pass_tile, _game.flags), "Celah Abu terbuka setelah Ratu kalah")
+	_expect(_walkable_in("dunia", pass_tile), "Celah Abu terbuka setelah Ratu kalah")
 	await _open_world("dunia", pass_tile + Vector2i(-1, 0))
 	current_scene.call("_walk_to", WorldMap.find("E"))
 	await _wait_until(func() -> bool: return _game.map_id == "abu" and not current_scene.get("_busy"))
@@ -420,7 +455,9 @@ func _initialize() -> void:
 	var lava_gate := WorldMap.find_in("abu", "R")
 	await _open_world("abu", crater + Vector2i(-1, 0))
 	_expect(not WorldMap.is_walkable(lava_gate, _game.flags), "jalan lahar tertutup sebelum Raksasa kalah")
-	current_scene.call("_walk_to", crater)
+	await _to_boss(crater, "kawah", "J")
+	await _shot("dungeon_kawah.png")
+	current_scene.call("_walk_to", WorldMap.find("J"))
 	await _wait_until(func() -> bool: return current_scene != null and current_scene.name == "Battle")
 	await _shot("battle_lahar.png")
 	await _play_battle()
@@ -430,7 +467,7 @@ func _initialize() -> void:
 		print("      | party: ", _game.party.map(func(m: Battler) -> String: return "%s Lv%d HP%d/%d" % [m.id, m.level, m.hp, m.max_hp]))
 	_expect(current_scene.get("_dialog_open"), "adegan kemenangan atas Raksasa Lahar tampil")
 	await _skip_dialog()
-	_expect(WorldMap.is_walkable(lava_gate, _game.flags), "jalan lahar terbuka setelah Raksasa kalah")
+	_expect(_walkable_in("abu", lava_gate), "jalan lahar terbuka setelah Raksasa kalah")
 	await _open_world("abu", lava_gate + Vector2i(-1, 0))
 	current_scene.call("_walk_to", WorldMap.find("Z"))
 	await _wait_until(func() -> bool: return _game.map_id == "kastil" and not current_scene.get("_busy"))
@@ -565,7 +602,7 @@ func _initialize() -> void:
 
 		# Memilih sasaran dengan mouse: klik monster kedua untuk Serang, lalu klik rekan untuk Pulih.
 		current_scene.call("_start_round")
-		_expect((current_scene.get("_banner") as Label).text == "Giliran Arlen: pilih perintah", "banner menyebut giliran siapa yang memilih perintah")
+		_expect((current_scene.get("_banner") as Label).text == Loc.t("Giliran %s: pilih perintah") % "Arlen","banner menyebut giliran siapa yang memilih perintah")
 		var chips: Array = current_scene.get("_order_chips")
 		_expect((current_scene.get("_order_box") as Control).is_visible_in_tree() and chips.size() == eng.living(eng.party + eng.enemies).size(), "urutan giliran tampil sejak awal ronde (%d petarung)" % chips.size())
 		_expect((chips[0] as Label).text.strip_edges() == "Arlen", "petarung tercepat berada paling depan di urutan")
@@ -616,6 +653,23 @@ func _initialize() -> void:
 
 
 # ---------------------------------------------------------------- alat bantu
+
+## Injak pintu masuk dungeon, pastikan berpindah ke peta dungeonnya, lalu berdiri di sebelah barat petak semi-bos.
+func _to_boss(entrance: Vector2i, dungeon: String, boss_char: String) -> void:
+	current_scene.call("_walk_to", entrance)
+	await _wait_until(func() -> bool: return _game.map_id == dungeon and not current_scene.get("_busy"), 100)
+	_expect(_game.map_id == dungeon and _game.player_tile == WorldMap.MAPS[dungeon].spawn, "pintu masuk membawa ke dungeon %s" % dungeon)
+	await _open_world(dungeon, WorldMap.find_in(dungeon, boss_char) + Vector2i(-1, 0))
+
+
+## Apakah sebuah petak di peta lain bisa diinjak dengan penanda cerita saat ini.
+func _walkable_in(map_id: String, tile: Vector2i) -> bool:
+	var before := WorldMap.current
+	WorldMap.current = map_id
+	var ok := WorldMap.is_walkable(tile, _game.flags)
+	WorldMap.current = before
+	return ok
+
 
 func _open_world(map_id: String, tile: Vector2i) -> void:
 	_game.map_id = map_id
@@ -689,6 +743,21 @@ func _check_maps() -> void:
 			for ch in (WorldMap.rows()[y] as String):
 				if not WorldMap.TILES.has(ch):
 					_expect(false, "karakter peta dikenal: '%s' di %s baris %d" % [ch, map_id, y])
+
+	# Dungeon: semi-bos, jalan keluar, dan semua peti terjangkau dari titik masuk; pintu masuknya ada di peta induk.
+	for dungeon: Array in [["gua", "O", "dunia", "B"], ["sarang", "U", "dunia", "Q"], ["kawah", "J", "abu", "N"]]:
+		WorldMap.current = dungeon[0]
+		var inside := _reachable(WorldMap.MAPS[dungeon[0]].spawn, {})
+		var chests: Dictionary = WorldMap.MAPS[dungeon[0]].chests
+		var all_chests := chests.size() >= 2
+		for chest_tile: Vector2i in chests:
+			all_chests = all_chests and inside.has(chest_tile) and WorldMap.char_at(chest_tile) == "x"
+		_expect(inside.has(WorldMap.find(dungeon[1])) and inside.has(WorldMap.find("e")) and all_chests,
+			"dungeon %s: semi-bos, jalan keluar, dan %d peti terjangkau (%d petak lorong)" % [dungeon[0], chests.size(), inside.size()])
+		_expect(WorldMap.arrival(dungeon[2], dungeon[0]) == WorldMap.find_in(dungeon[2], dungeon[3]), "keluar dari %s -> muncul di pintu masuknya" % dungeon[0])
+	WorldMap.current = "kastil"
+	for chest_tile: Vector2i in WorldMap.MAPS["kastil"].chests:
+		_expect(WorldMap.char_at(chest_tile) == "x" and _reachable(WorldMap.find("V"), {}).has(chest_tile), "peti kastil di %s terjangkau" % chest_tile)
 
 	WorldMap.current = "desa"
 	var village := _reachable(_game.START_TILE, {})

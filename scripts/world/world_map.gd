@@ -18,6 +18,11 @@ extends RefCounted
 #   A Altar Cahaya (memulihkan party)   M takhta Raja Monster
 # Peta desa/dusun/pos:
 #   g tanah lapang (aman)  h rumah    I penginapan   Y pohon   X jalan keluar (ke peta "exit")
+# Peta dungeon ("gua", "sarang", "kawah"): lorong berliku menuju semi-bos, dimasuki dari B / Q / N.
+#   r lorong gua   s lorong sarang   k lorong kawah   (ada monster)
+#   O Ogre Penjaga   U Ratu Laba-laba   J Raksasa Lahar   (petak semi-bos)
+#   x peti harta (isinya di "chests" peta itu)   e jalan keluar (ke peta "exit")
+# Peta dungeon bertanda "dungeon": true; "floor" = bahan tanah untuk petak peti dan jalan keluar.
 const MAPS := {
 	"dunia": {
 		"name": "Aveloria", "outside": "^",
@@ -63,7 +68,8 @@ const MAPS := {
 		],
 	},
 	"kastil": {
-		"name": "Kastil Kelam", "outside": "w", "theme": "castle",
+		"name": "Kastil Kelam", "outside": "w", "theme": "castle", "floor": "floor_dark",
+		"chests": {Vector2i(4, 6): {"gold": 300}, Vector2i(20, 7): {"item": "air_kehidupan", "count": 1}},
 		"rows": [
 			"wwwwwwwwwwwwwwwwwwwwwwwwwwwwww",
 			"wwwwwwwwwwwwMwwwwwwwwwwwwwwwww",
@@ -71,8 +77,8 @@ const MAPS := {
 			"wwwwwwwwwdddCdddwwwwwwwwwwwwww",
 			"wwwwwwwwwwwwCwwwwwwwwwwwwwwwww",
 			"wwwwddddddddCddddddddwwwwwwwww",
-			"wwwwdddwwdddCdddwwdddwwwwwwwww",
-			"wwwwdddwwdddCdddwwdddwwwwwwwww",
+			"wwwwxddwwdddCdddwwdddwwwwwwwww",
+			"wwwwdddwwdddCdddwwddxwwwwwwwww",
 			"wwwwddddddddCddddddddwwwwwwwww",
 			"wwwwwwwwwwwwCwwwwwwwwwwwwwwwww",
 			"wwwwwwwoooooCooooowwwwwwwwwwww",
@@ -99,6 +105,65 @@ const MAPS := {
 			"YgYgggg=gggggYgggY",
 			"Ygggggg=gggggggggY",
 			"YYYYYYYXYYYYYYYYYY",
+		],
+	},
+	"gua": {
+		"name": "Gua Ogre", "outside": "^", "dungeon": true, "exit": "dunia", "spawn": Vector2i(9, 11), "floor": "path",
+		"chests": {Vector2i(1, 1): {"mats": {"taring_serigala": 2}}, Vector2i(15, 6): {"gold": 60}},
+		"rows": [
+			"^^^^^^^^^^^^^^^^^^^^",
+			"^xrr^^^^^^rrrrr^^^^^",
+			"^^^r^^^^^^r^^^r^^^^^",
+			"^^^rrrrr^^r^^^rrO^^^",
+			"^^^^^^^r^^r^^^^^^^^^",
+			"^rrrr^^rrrr^^^^^^^^^",
+			"^r^^r^^r^^^^^rrx^^^^",
+			"^r^^rrrrrrrrrr^^^^^^",
+			"^r^^^^^^^r^^^^^^^^^^",
+			"^rrrr^^^^r^^^^^^^^^^",
+			"^^^^r^^^^r^^^^^^^^^^",
+			"^^^^rrrrrr^^^^^^^^^^",
+			"^^^^^^^^^e^^^^^^^^^^",
+			"^^^^^^^^^^^^^^^^^^^^",
+		],
+	},
+	"sarang": {
+		"name": "Sarang Ratu Laba-laba", "outside": "^", "theme": "mist", "dungeon": true, "exit": "dunia",
+		"spawn": Vector2i(10, 10), "floor": "mist_floor",
+		"chests": {Vector2i(16, 2): {"mats": {"bara_roh": 2}}, Vector2i(3, 7): {"item": "eter", "count": 2}},
+		"rows": [
+			"^^^^^^^^^^^^^^^^^^^^",
+			"^^^^^^sssU^^^^^^^^^^",
+			"^^^^^^s^^^^^^sssx^^^",
+			"^sss^^s^^^^^^s^^^^^^",
+			"^s^sssssssssss^^^^^^",
+			"^s^^^^^^^s^^^^^^^^^^",
+			"^s^^^^^^^s^^^ssss^^^",
+			"^ssx^^^^^s^^^s^^s^^^",
+			"^^^^^^sssssss^^^s^^^",
+			"^^^^^^s^^^^^^^^^s^^^",
+			"^^^^^^sssssssssss^^^",
+			"^^^^^^^^^^e^^^^^^^^^",
+			"^^^^^^^^^^^^^^^^^^^^",
+		],
+	},
+	"kawah": {
+		"name": "Kawah Lahar", "outside": "^", "theme": "ash", "dungeon": true, "exit": "abu",
+		"spawn": Vector2i(8, 9), "floor": "cinder",
+		"chests": {Vector2i(1, 2): {"mats": {"inti_batu": 2}}, Vector2i(17, 5): {"item": "air_kehidupan", "count": 1}},
+		"rows": [
+			"^^^^^^^^^^^^^^^^^^^^",
+			"^^^^^^^^^^^^kkJ^^^^^",
+			"^xkkk^^LLL^^k^^^^^^^",
+			"^^^^k^LLLLL^kkkk^^^^",
+			"^kkkkkkLLLkkkk^k^^^^",
+			"^k^^^^kkLkk^^^^kkx^^",
+			"^k^^^^^kkk^^^^^^^^^^",
+			"^kkkk^^^k^^^^^^^^^^^",
+			"^^^^k^^^k^^^^^^^^^^^",
+			"^^^^kkkkk^^^^^^^^^^^",
+			"^^^^^^^^e^^^^^^^^^^^",
+			"^^^^^^^^^^^^^^^^^^^^",
 		],
 	},
 	# theme: "mist" = warna Hutan Kabut; "ash" = tanah abu dan pohon mati.
@@ -134,6 +199,8 @@ const MAPS := {
 # rate   = peluang pertemuan per langkah, table = tabel di Db.ENCOUNTER_TABLES
 # portal = pindah ke peta lain saat diinjak
 # boss   = semi-bos yang bersarang di sini (lihat Db.BOSS_RULES)
+# dungeon = pintu masuk dungeon semi-bos itu: hanya bisa dimasuki kalau syarat Db.BOSS_RULES terpenuhi
+# chest  = peti harta; isinya ada di "chests" peta itu
 # gate   = hanya bisa dilewati setelah penanda itu tercatat; locked = pesan saat masih terkunci
 # scene  = adegan cerita yang dimainkan tiap kali petak ini diinjak
 const TILES := {
@@ -147,10 +214,10 @@ const TILES := {
 	"f": {"walk": true, "zone": "Lembah Hijau - hutan", "rate": 0.16, "table": "lembah_hutan"},
 	",": {"walk": true, "zone": "Hutan Kabut", "rate": 0.09, "table": "kabut_padang"},
 	"F": {"walk": true, "zone": "Hutan Kabut - rimba", "rate": 0.17, "table": "kabut_hutan"},
-	"B": {"walk": true, "zone": "Sarang Ogre", "boss": "ogre"},
+	"B": {"walk": true, "zone": "Sarang Ogre", "dungeon": "ogre", "portal": "gua"},
 	"G": {"walk": true, "zone": "Gerbang Timur", "gate": "ogre",
 		"locked": "Gerbang terkunci. Konon penjaganya bersarang di ujung jalan utara."},
-	"Q": {"walk": true, "zone": "Sarang Ratu Laba-laba", "boss": "ratu"},
+	"Q": {"walk": true, "zone": "Sarang Ratu Laba-laba", "dungeon": "ratu", "portal": "sarang"},
 	"P": {"walk": true, "zone": "Celah Abu", "gate": "ratu",
 		"locked": "Kabut pekat menutup celah gunung ini. Mustahil melihat jalan di depan."},
 	"E": {"walk": true, "zone": "Jalan ke Pegunungan Abu", "portal": "abu"},
@@ -159,7 +226,7 @@ const TILES := {
 	"c": {"walk": true, "zone": "Pegunungan Abu - lereng", "rate": 0.17, "table": "abu_lereng"},
 	"L": {"walk": false, "zone": ""},
 	"K": {"walk": true, "zone": "Pos Pemburu", "portal": "pos"},
-	"N": {"walk": true, "zone": "Kawah Lahar", "boss": "lahar"},
+	"N": {"walk": true, "zone": "Kawah Lahar", "dungeon": "lahar", "portal": "kawah"},
 	"R": {"walk": true, "zone": "Jalan Lahar", "gate": "lahar",
 		"locked": "Aliran lahar menutup jalan ke timur. Mustahil diseberangi."},
 	"Z": {"walk": true, "zone": "Jalan ke Kastil Kelam", "portal": "kastil"},
@@ -175,6 +242,14 @@ const TILES := {
 	"I": {"walk": false, "zone": ""},
 	"Y": {"walk": false, "zone": ""},
 	"X": {"walk": true, "zone": "", "portal": "@exit"},  # tujuan = "exit" milik peta ini
+	"r": {"walk": true, "zone": "Gua Ogre", "rate": 0.11, "table": "lembah_gua"},
+	"s": {"walk": true, "zone": "Sarang Ratu Laba-laba", "rate": 0.11, "table": "kabut_sarang"},
+	"k": {"walk": true, "zone": "Kawah Lahar", "rate": 0.11, "table": "abu_kawah"},
+	"O": {"walk": true, "zone": "Sarang Ogre", "boss": "ogre"},
+	"U": {"walk": true, "zone": "Sarang Ratu Laba-laba", "boss": "ratu"},
+	"J": {"walk": true, "zone": "Kawah Lahar", "boss": "lahar"},
+	"x": {"walk": true, "zone": "", "chest": true},
+	"e": {"walk": true, "zone": "", "portal": "@exit"},
 }
 
 ## Peta yang sedang aktif; diatur scene peta dari Game.map_id.
@@ -200,7 +275,27 @@ static func theme() -> String:
 
 ## Peta permukiman (desa, dusun, pos): aman dari monster dan punya jalan keluar.
 static func is_settlement(map_id: String) -> bool:
-	return MAPS[map_id].has("exit")
+	return MAPS[map_id].has("exit") and not is_dungeon(map_id)
+
+
+## Peta dungeon: lorong menuju semi-bos, dimasuki dari peta wilayahnya.
+static func is_dungeon(map_id: String) -> bool:
+	return MAPS[map_id].get("dungeon", false)
+
+
+## Bahan tanah untuk petak peti dan jalan keluar di peta ini.
+static func floor_material() -> String:
+	return MAPS[current].get("floor", "path")
+
+
+## Isi peti di sebuah petak: {"gold"} / {"item", "count"} / {"mats": {id: jumlah}}; kosong kalau tidak ada.
+static func chest_at(t: Vector2i) -> Dictionary:
+	return MAPS[current].get("chests", {}).get(t, {})
+
+
+## Penanda progres untuk peti yang sudah dibuka di peta aktif.
+static func chest_flag(t: Vector2i) -> String:
+	return "chest_%s_%d_%d" % [current, t.x, t.y]
 
 
 ## Peta tujuan sebuah petak portal.

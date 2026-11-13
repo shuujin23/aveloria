@@ -13,18 +13,24 @@ const ROUTE := [
 	"lembah_padang", "lembah_padang", "lembah_padang", "lembah_padang",
 	"event:mira",
 	"lembah_padang", "lembah_padang", "lembah_padang", "lembah_hutan", "lembah_hutan", "lembah_hutan", "lembah_hutan",
+	"lembah_gua", "lembah_gua", "lembah_gua",
 	"boss:ogre",
 	"kabut_padang", "kabut_padang", "kabut_padang",
 	"event:selene",
 	"kabut_padang", "kabut_padang", "kabut_hutan", "kabut_hutan", "kabut_hutan", "kabut_hutan",
+	"kabut_sarang", "kabut_sarang", "kabut_sarang",
 	"boss:ratu",
 	"abu_padang", "abu_padang", "abu_padang",
 	"event:kael",
 	"abu_padang", "abu_padang", "abu_lereng", "abu_lereng", "abu_lereng", "abu_lereng",
+	"abu_kawah", "abu_kawah", "abu_kawah",
 	"boss:lahar",
 	"kastil_aula", "kastil_aula", "kastil_aula", "kastil_dalam", "kastil_dalam", "kastil_dalam", "kastil_dalam",
 	"boss:raja",
 ]
+# Tabel dungeon: party masuk dalam keadaan segar, lalu tidak bisa menginap sampai semi-bosnya kalah.
+# Kalah di dalam dungeon atau melawan semi-bosnya = mengulang dari pintu masuk dungeon.
+const DUNGEONS := ["lembah_gua", "kabut_sarang", "abu_kawah"]
 # Battle cerita: tokoh yang bergabung dan kelompok musuhnya.
 const EVENTS := {
 	"event:mira": {"join": "mira", "ids": ["serigala", "kelelawar"]},
@@ -77,13 +83,15 @@ func _run(rest_every: int, geared: int) -> void:
 				ids = Db.BOSSES[stage.trim_prefix("boss:")]
 			else:
 				ids = Db.random_group(stage).slice(0, party.size() + 1)
-			if geared > 0 and retries == 0 and stage.contains(":"):
+			var from_dungeon := step > 0 and DUNGEONS.has(ROUTE[step - 1])  # tahap sebelumnya masih di dalam dungeon
+			var enters := DUNGEONS.has(stage) and not from_dungeon  # baru masuk dungeon: persiapan semi-bos dilakukan di sini
+			if geared > 0 and retries == 0 and ((stage.contains(":") and not from_dungeon) or enters):
 				var tier := 1
 				for i2 in step:
 					if (ROUTE[i2] as String).begins_with("boss:"):
 						tier += 1
 				var boss_plus := 1 if geared == 1 else 3
-				_equip(party, min(tier, Db.GEAR_TIERS), boss_plus if stage.begins_with("boss:") else geared - 1)
+				_equip(party, min(tier, Db.GEAR_TIERS), boss_plus if (stage.begins_with("boss:") or enters) else geared - 1)
 			var eng := BattleEngine.new(party, BattleEngine.make_encounter(ids))
 			eng.mp_regen = _regen
 			for e: Battler in eng.enemies:
@@ -104,11 +112,15 @@ func _run(rest_every: int, geared: int) -> void:
 					break
 				for m: Battler in party:
 					m.full_restore()
+				while step > 0 and DUNGEONS.has(ROUTE[step - 1]):  # siuman di penginapan: dungeon diulang dari awal
+					step -= 1
 				continue
 			retries = 0
 			won[stage] = won.get(stage, 0) + 1
 			eng.grant_rewards()
 			step += 1
+			if DUNGEONS.has(stage):
+				continue  # di dalam dungeon tidak ada penginapan
 			if step % rest_every == 0 or (step < ROUTE.size() and (ROUTE[step] as String).contains(":")):
 				for m: Battler in party:
 					m.full_restore()

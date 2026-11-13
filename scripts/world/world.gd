@@ -33,8 +33,11 @@ const TREE_ANCHOR := Vector2(14, 32)
 const MOUNTAIN_ANCHOR := Vector2(16, 31)
 const HOUSE_ANCHOR := Vector2(20, 38)
 const PERSON_ANCHOR := Vector2(12, 30)
+const CHEST_ANCHOR := Vector2(14, 24)
+# Titik kaki sprite semi-bos yang berdiri di petaknya di dalam dungeon.
+const BOSS_ANCHOR := {"ogre": Vector2(34, 66), "ratu": Vector2(40, 55), "lahar": Vector2(36, 73)}
 const BACKDROPS := {"grass": "lembah", "forest_floor": "hutan", "mist_grass": "kabut", "mist_floor": "kabut",
-	"ash": "abu", "cinder": "abu", "floor": "kastil", "floor_dark": "kastil"}
+	"ash": "abu", "cinder": "abu", "floor": "kastil", "floor_dark": "kastil", "path": "gua"}
 const GROUND_VARIANTS := {"grass": 3, "forest_floor": 2, "mist_grass": 3, "mist_floor": 2, "water": 3, "rock": 2, "path": 3,
 	"ash": 3, "cinder": 2, "lava": 3, "floor": 3, "floor_dark": 2, "carpet": 2}
 # Bahan berprioritas lebih tinggi merambat ke tetangganya. Lantai kastil setara satu sama lain (tepinya lurus).
@@ -59,6 +62,7 @@ var _talk_after := ""  # id NPC yang diajak bicara setelah rute klik selesai
 var _npc_at := {}  # Vector2i -> data NPC (yang sedang terlihat di peta ini)
 var _npc_sprites := {}  # id NPC -> Sprite2D
 var _textures := {}
+var _chest_sprites := {}  # Vector2i -> Sprite2D peti di peta ini
 
 var _marker: Line2D
 var _objects: Node2D
@@ -109,7 +113,8 @@ func _ready() -> void:
 	elif Game.world_message != "":
 		_show_message(Game.world_message)
 	Game.world_message = ""
-	Audio.play_music("desa" if WorldMap.is_settlement(Game.map_id) else ("kastil" if Game.map_id == "kastil" else "dunia"))
+	var gloomy := Game.map_id == "kastil" or WorldMap.is_dungeon(Game.map_id)
+	Audio.play_music("desa" if WorldMap.is_settlement(Game.map_id) else ("kastil" if gloomy else "dunia"))
 
 
 ## Posisi layar dari titik tengah sebuah petak.
@@ -339,8 +344,16 @@ func _on_step() -> void:
 	_update_hud()
 	var tile := WorldMap.tile_at(_tile)
 
-	if tile.has("portal"):
+	if tile.has("dungeon"):  # pintu masuk dungeon semi-bos: butuh rekan yang disyaratkan
+		var entry_rule: Dictionary = Db.BOSS_RULES[tile.dungeon]
+		if Game.flags.has(entry_rule.need):
+			_travel(WorldMap.portal_target(tile))
+		else:
+			_run_scene(Story.scene(entry_rule.blocked))
+	elif tile.has("portal"):
 		_travel(WorldMap.portal_target(tile))
+	elif tile.has("chest"):
+		_open_chest(_tile)
 	elif tile.has("boss"):
 		var rule: Dictionary = Db.BOSS_RULES[tile.boss]
 		if Game.flags.has(tile.boss):
@@ -361,6 +374,36 @@ func _on_step() -> void:
 		var npc_id := _talk_after
 		_cancel_path()
 		_talk(npc_id)
+
+
+## Buka peti di petak ini (sekali saja): emas, barang, atau bahan tempa.
+func _open_chest(t: Vector2i) -> void:
+	var loot := WorldMap.chest_at(t)
+	var flag := WorldMap.chest_flag(t)
+	if loot.is_empty():
+		return
+	if Game.flags.has(flag):
+		_show_message(Loc.t("Peti ini sudah kosong."))
+		return
+	var text := ""
+	if loot.has("gold"):
+		Game.gold += int(loot.gold)
+		text = Loc.t("Peti harta: mendapat %d emas.") % int(loot.gold)
+	elif loot.has("item"):
+		if not Game.add_items(loot.item, int(loot.count)):
+			_show_message(Loc.t("Tas penuh. Peti dibiarkan tertutup."))
+			return
+		text = Loc.t("Peti harta: mendapat %s x%d.") % [Loc.t(Db.ITEMS[loot.item].name), int(loot.count)]
+	else:
+		Game.add_mats(loot.mats)
+		var mat_id: String = (loot.mats as Dictionary).keys()[0]
+		text = Loc.t("Peti harta: mendapat %s x%d.") % [Loc.t(Db.MATERIALS[mat_id].name), int(loot.mats[mat_id])]
+	Game.flags[flag] = true
+	Audio.sfx("coin")
+	if _chest_sprites.has(t):
+		(_chest_sprites[t] as Sprite2D).texture = _tex("chest_open")
+	_update_hud()
+	_show_message(text)
 
 
 ## Adegan pembuka wilayah untuk zona ini, kalau belum pernah dimainkan; kosong kalau tidak ada.
@@ -733,7 +776,7 @@ func _show_message(text: String) -> void:
 func _update_hud() -> void:
 	var zone: String = WorldMap.tile_at(_tile).zone
 	if zone == "":
-		zone = WorldMap.map_name() if WorldMap.is_settlement(Game.map_id) else Loc.t("Jalan")
+		zone = WorldMap.map_name() if (WorldMap.is_settlement(Game.map_id) or WorldMap.is_dungeon(Game.map_id)) else Loc.t("Jalan")
 	_zone_label.text = Loc.t("%s\nEmas: %d\nEsc: menu   I: tas   E: perlengkapan") % [Loc.t(zone), Game.gold]
 	var lines: Array = []
 	for m: Battler in Game.party:
@@ -784,6 +827,8 @@ func _draw() -> void:
 ## Hiasan di luar batas peta: pegunungan yang dijarangkan, atau hutan lebat di sekeliling desa.
 func _far_prop(t: Vector2i) -> Dictionary:
 	if WorldMap.outside() == "^":
+		if WorldMap.is_dungeon(Game.map_id):  # dungeon dikelilingi bukit batu rapat
+			return {"name": "hill_%d" % _variant(t, 2), "anchor": MOUNTAIN_ANCHOR}
 		var sprite_name := _mountain_name(t, 1, 5)
 		return {} if sprite_name == "" else {"name": sprite_name, "anchor": MOUNTAIN_ANCHOR}
 	if WorldMap.theme() == "castle":  # kastil dikelilingi tembok rapat
@@ -832,6 +877,14 @@ func _material(t: Vector2i) -> String:
 			return "lava"
 		"N":
 			return "rock"
+		"r", "O":  # lorong gua: tanah terang supaya kontras dengan dinding batu
+			return "path"
+		"s", "U":
+			return "mist_floor"
+		"k", "J":
+			return "cinder"
+		"x", "e":
+			return WorldMap.floor_material()
 		",":
 			return "mist_grass"
 		"F", "Q":
@@ -865,8 +918,17 @@ func _build_objects() -> void:
 			var t := Vector2i(x, y)
 			var sprite: Sprite2D = null
 			match WorldMap.char_at(t):
-				"^":
-					sprite = _sprite(_mountain_name(t, 6, 10), MOUNTAIN_ANCHOR)
+				"^":  # di dalam dungeon dindingnya bukit batu, bukan gunung bersalju
+					sprite = _sprite("hill_%d" % _variant(t, 2) if WorldMap.is_dungeon(Game.map_id) else _mountain_name(t, 6, 10), MOUNTAIN_ANCHOR)
+				"x":
+					sprite = _sprite("chest_open" if Game.flags.has(WorldMap.chest_flag(t)) else "chest_closed", CHEST_ANCHOR)
+					_chest_sprites[t] = sprite
+				"e":
+					sprite = _sprite("gate_open", Vector2(20, 30))
+				"O", "U", "J":  # semi-bos menunggu di petaknya sampai dikalahkan
+					var boss_id: String = WorldMap.tile_at(t).boss
+					if not Game.flags.has(boss_id):
+						sprite = _sprite("monster_%s" % boss_id, BOSS_ANCHOR[boss_id])
 				"f", "Y":
 					sprite = _sprite(_tree_name(t), TREE_ANCHOR)
 				"F":
@@ -884,19 +946,19 @@ func _build_objects() -> void:
 				"V":
 					sprite = _sprite("gate_open", Vector2(20, 30))
 				"N":  # kawah Raksasa Lahar: gua yang sama, bernuansa bara
-					sprite = _sprite("lair_empty" if Game.flags.has(WorldMap.tile_at(t).boss) else "lair_occupied", Vector2(18, 30))
+					sprite = _sprite("lair_empty" if Game.flags.has(WorldMap.tile_at(t).dungeon) else "lair_occupied", Vector2(18, 30))
 					sprite.modulate = Color(1.0, 0.62, 0.42)
 				"R":
 					sprite = _sprite("gate_open" if Game.flags.has(WorldMap.tile_at(t).gate) else "gate_closed", Vector2(20, 30))
 				"Q":  # sarang Ratu Laba-laba: gua yang sama, bernuansa ungu
-					sprite = _sprite("lair_empty" if Game.flags.has(WorldMap.tile_at(t).boss) else "lair_occupied", Vector2(18, 30))
+					sprite = _sprite("lair_empty" if Game.flags.has(WorldMap.tile_at(t).dungeon) else "lair_occupied", Vector2(18, 30))
 					sprite.modulate = Color(0.78, 0.66, 1.0)
 				"P":
 					sprite = _sprite("gate_open" if Game.flags.has(WorldMap.tile_at(t).gate) else "gate_closed", Vector2(20, 30))
 				"I":
 					sprite = _sprite("inn", HOUSE_ANCHOR)
 				"B":
-					sprite = _sprite("lair_empty" if Game.flags.has(WorldMap.tile_at(t).boss) else "lair_occupied", Vector2(18, 30))
+					sprite = _sprite("lair_empty" if Game.flags.has(WorldMap.tile_at(t).dungeon) else "lair_occupied", Vector2(18, 30))
 				"G":
 					sprite = _sprite("gate_open" if Game.flags.has(WorldMap.tile_at(t).gate) else "gate_closed", Vector2(20, 30))
 			if sprite != null:

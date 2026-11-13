@@ -276,6 +276,11 @@ const TEXT := {
 	# ------------------------------------------------------------ peta
 	"Tidak ada jalan ke sana.": "There is no way there.",
 	"Tidak ada apa-apa lagi di sini.": "There is nothing left here.",
+	"Peti ini sudah kosong.": "This chest is already empty.",
+	"Peti harta: mendapat %d emas.": "Treasure chest: found %d gold.",
+	"Peti harta: mendapat %s x%d.": "Treasure chest: found %s x%d.",
+	"Tas penuh. Peti dibiarkan tertutup.": "The bag is full. The chest stays closed.",
+	"Gua Ogre": "Ogre's Cave",
 	"Toko Doran": "Doran's Shop",
 	"Pandai Besi": "Blacksmith",
 	"Lanjut bermain": "Resume",

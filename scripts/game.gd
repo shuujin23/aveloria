@@ -127,6 +127,16 @@ func add_item(item_id: String) -> bool:
 	return true
 
 
+## Tambah beberapa barang sejenis sekaligus; tidak menambah apa pun kalau tidak semuanya muat.
+func add_items(item_id: String, count: int) -> bool:
+	var after := items.duplicate()
+	after[item_id] = int(after.get(item_id, 0)) + count
+	if Db.stacks_of(after).size() > bag_slots:
+		return false
+	items = after
+	return true
+
+
 func remove_item(item_id: String) -> void:
 	items[item_id] = int(items.get(item_id, 0)) - 1
 	if items[item_id] <= 0:

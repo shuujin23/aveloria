@@ -36,6 +36,8 @@ func _initialize() -> void:
 	_wall_block()
 	_throne()
 	_altar()
+	_chest("chest_closed", false)
+	_chest("chest_open", true)
 
 	var green := ["8fd06a", "5fae4e", "3d8a40", "2a6a38", "1c4a2e"]
 	var teal := ["7cc4b0", "4e9c8c", "33766e", "235a58", "173f42"]
@@ -1357,6 +1359,33 @@ func _throne() -> void:
 	_outline(img, Color("140c20"))
 	_shadow(img, 16, 34, 13, 4)
 	_save(img, "throne")
+
+
+## Peti harta (28x28, jangkar 14,24). open = tutupnya terangkat dan isinya berkilau.
+func _chest(sprite_name: String, open: bool) -> void:
+	var img := _new(28, 28)
+	_rect(img, 5, 14, 22, 23, Color("8a5a2c"))  # badan
+	_rect(img, 17, 14, 22, 23, Color("6a4220"))
+	_rect(img, 5, 14, 22, 15, Color("d9a441"))  # pita emas atas
+	_rect(img, 5, 22, 22, 23, Color("b5822e"))
+	_rect(img, 5, 14, 6, 23, Color("d9a441"))
+	_rect(img, 21, 14, 22, 23, Color("b5822e"))
+	if open:
+		_rect(img, 6, 3, 21, 9, Color("6a4220"))  # tutup terangkat, terlihat bagian dalamnya
+		_rect(img, 6, 3, 21, 4, Color("d9a441"))
+		_rect(img, 7, 10, 20, 13, Color("3a2412"))
+		for p: Vector2i in [Vector2i(9, 11), Vector2i(12, 10), Vector2i(15, 11), Vector2i(18, 10), Vector2i(11, 12), Vector2i(17, 12)]:
+			_px(img, p.x, p.y, Color("ffe14a"))
+	else:
+		_rect(img, 5, 8, 22, 13, Color("a06a34"))  # tutup
+		_rect(img, 17, 8, 22, 13, Color("7c4f26"))
+		_rect(img, 5, 8, 22, 9, Color("d9a441"))
+		_rect(img, 12, 12, 15, 16, Color("ffe14a"))  # gembok
+		_px(img, 13, 14, Color("6a4220"))
+		_px(img, 14, 14, Color("6a4220"))
+	_outline(img, Color("2a1808"))
+	_shadow(img, 14, 24, 10, 3)
+	_save(img, sprite_name)
 
 
 ## Altar Cahaya: tumpuan batu dengan kristal biru bercahaya (32x34, jangkar 16,30).
