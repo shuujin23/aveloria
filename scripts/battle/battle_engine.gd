@@ -134,7 +134,10 @@ func resolve_targets(cmd: Dictionary) -> Array:
 		mode = Db.SKILLS[cmd.skill].target
 	match mode:
 		"enemy", "ally":
-			var target := _retarget(cmd.get("target"), _foes(actor) if mode == "enemy" else _allies(actor))
+			var pool: Array = _foes(actor) if mode == "enemy" else _allies(actor)
+			if cmd.kind == "skill" and Db.SKILLS[cmd.skill].kind == "mp":
+				pool = others(actor)
+			var target := _retarget(cmd.get("target"), pool)
 			cmd["target"] = target
 			return [target] if target != null else []
 		"all_enemies":
@@ -288,6 +291,11 @@ func grant_rewards() -> Dictionary:
 	return {"xp": xp, "gold": gold, "lines": lines, "drops": drops}
 
 
+## Rekan-rekan seorang petarung, tanpa dirinya sendiri.
+func others(actor: Battler) -> Array:
+	return _allies(actor).filter(func(b: Battler) -> bool: return b != actor)
+
+
 func _foes(actor: Battler) -> Array:
 	return party if actor.is_enemy else enemies
 
@@ -303,9 +311,9 @@ func _random_living(list: Array) -> Battler:
 	return alive[rng.randi() % alive.size()]
 
 
-## Kalau target sudah tumbang, pindah ke target hidup lain di sisi yang sama.
+## Kalau target sudah tumbang (atau bukan bagian dari pool), pindah ke target hidup lain di pool itu.
 func _retarget(target: Variant, pool: Array) -> Battler:
-	if target != null and (target as Battler).is_alive():
+	if target != null and (target as Battler).is_alive() and pool.has(target):
 		return target
 	return _random_living(pool)
 
@@ -323,7 +331,7 @@ func _use_skill(actor: Battler, skill_id: String, wanted: Variant, lines: Array)
 		"enemy":
 			targets = [_retarget(wanted, _foes(actor))]
 		"ally":
-			targets = [_retarget(wanted, _allies(actor))]
+			targets = [_retarget(wanted, others(actor) if sk.kind == "mp" else _allies(actor))]
 		"all_enemies":
 			targets = living(_foes(actor))
 		"all_allies":
@@ -349,6 +357,13 @@ func _use_skill(actor: Battler, skill_id: String, wanted: Variant, lines: Array)
 				amount = min(amount, t.max_hp - t.hp)
 				t.hp += amount
 				lines.append(Loc.t("HP %s pulih %d.") % [t.display_name, amount])
+			"mp":  # memulihkan MP rekan lain; tidak berlaku untuk pemakainya sendiri
+				if t == actor or t.mp >= t.max_mp:
+					lines.append(Loc.t("Tidak berpengaruh pada %s.") % t.display_name)
+				else:
+					var restored: int = min(int(float(sk.power) + actor.stat("mag") * 0.25), t.max_mp - t.mp)
+					t.mp += restored
+					lines.append(Loc.t("MP %s pulih %d.") % [t.display_name, restored])
 			"status":
 				apply_status(t, sk.status, lines)
 			"cleanse":

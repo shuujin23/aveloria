@@ -342,7 +342,8 @@ func _choose_skill(actor: Battler, skill_id: String) -> void:
 			_pick_target(Loc.t("%s ke siapa?") % Loc.t(sk.name), engine.living(engine.enemies), on_pick,
 				func() -> void: _skill_menu(actor))
 		"ally":
-			_pick_target(Loc.t("%s untuk siapa?") % Loc.t(sk.name), engine.living(engine.party), on_pick,
+			_pick_target(Loc.t("%s untuk siapa?") % Loc.t(sk.name),
+				engine.living(engine.others(actor) if sk.kind == "mp" else engine.party), on_pick,
 				func() -> void: _skill_menu(actor))
 		_:
 			_push(cmd)

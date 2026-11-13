@@ -132,3 +132,9 @@ wilayah sebelumnya kalah.
 - Enam peti baru di sudut-sudut wilayah (dua per wilayah). Petak peti di peta wilayah memakai bahan tanah petak tetangganya.
 - Posisi Mira, Selene, dan Kael ikut dipindah ke padanan tempat lamanya.
 - Simpanan: `SAVE_VERSION` 3. Simpanan versi lama yang posisinya di peta dunia atau Pegunungan Abu dimuat di penginapan terakhir (posisi lama tidak berlaku di peta baru); progres, party, dan barang tetap. Simpanan di permukiman, dungeon, dan kastil tidak terpengaruh.
+
+## Salur Jiwa (jurus pemulih MP)
+
+- Mira mempelajari **Salur Jiwa** di level 7: biaya 6 MP, memulihkan MP satu rekan lain sebesar 12 + seperempat MAG Mira (17 di level 7).
+- Jenis jurus baru `mp` di `Db.SKILLS`. Tidak bisa diarahkan ke pemakainya sendiri: daftar sasaran tidak memuat Mira, dan mesin battle mengalihkannya ke rekan lain (atau tidak berpengaruh kalau tidak ada rekan lain).
+- AI simulasi tidak memakai jurus ini, jadi angka simulasi bos tidak berubah.

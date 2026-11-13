@@ -127,6 +127,24 @@ func _init() -> void:
 	regen.end_round()
 	_expect(mage.mp == 5, "anggota yang tumbang tidak memulihkan MP")
 
+	# Salur Jiwa (Mira): memulihkan MP rekan lain, tidak untuk diri sendiri
+	_expect(not Battler.from_character("mira", 6).skills.has("salur_jiwa") and Battler.from_character("mira", 7).skills.has("salur_jiwa"), "Mira mempelajari Salur Jiwa di level 7")
+	var priest := Battler.from_character("mira", 7)
+	var caster := Battler.from_character("selene", 7)
+	var channel := BattleEngine.new([priest, caster], [Battler.from_enemy("kelelawar")])
+	caster.mp = 0
+	var priest_mp := priest.mp
+	var gain := int(12.0 + priest.mag * 0.25)
+	channel.execute({"actor": priest, "kind": "skill", "skill": "salur_jiwa", "target": caster})
+	_expect(caster.mp == gain and priest.mp == priest_mp - 6, "Salur Jiwa: MP rekan pulih %d, MP Mira berkurang 6" % caster.mp)
+	_expect(gain > 6, "Salur Jiwa memulihkan lebih banyak daripada biayanya (%d > 6)" % gain)
+	var self_cmd := {"actor": priest, "kind": "skill", "skill": "salur_jiwa", "target": priest}
+	_expect(channel.resolve_targets(self_cmd) == [caster], "Salur Jiwa yang diarahkan ke diri sendiri dialihkan ke rekan lain")
+	caster.hp = 0
+	priest.mp = 10
+	channel.execute({"actor": priest, "kind": "skill", "skill": "salur_jiwa", "target": priest})
+	_expect(priest.mp == 4, "tanpa rekan lain, Salur Jiwa tidak memulihkan MP Mira sendiri (MP %d)" % priest.mp)
+
 	print("HASIL: %s" % ("ADA YANG GAGAL" if _failed else "SEMUA LOLOS"))
 	quit(1 if _failed else 0)
 

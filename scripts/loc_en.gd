@@ -40,6 +40,8 @@ const TEXT := {
 	"Menghapus semua nerf dari party dan memberi Kebal selama 3 ronde.": "Removes all debuffs from the party and grants Immunity for 3 rounds.",
 	"Pulih Massal": "Mass Heal",
 	"Memulihkan HP seluruh party.": "Restores the whole party's HP.",
+	"Salur Jiwa": "Soul Channel",
+	"Memulihkan MP satu rekan lain. Tidak bisa untuk diri sendiri.": "Restores another ally's MP. Cannot be used on yourself.",
 	"Bidik Jitu": "Sure Shot",
 	"Panah terarah, peluang kritikal tinggi.": "A carefully aimed arrow with a high critical chance.",
 	"Panah Racun": "Poison Arrow",

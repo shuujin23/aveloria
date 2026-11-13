@@ -43,6 +43,7 @@ const MP_REGEN_DEFEND := 2.0
 #          heal    -> power = pemulihan dasar (+ MAG)
 #          status  -> hanya memberi efek status (lihat `status`)
 #          cleanse -> menghapus semua nerf dari sasaran, lalu memberi `status` kalau ada
+#          mp      -> power = MP yang dipulihkan (+ seperempat MAG); hanya untuk rekan lain, bukan pemakainya
 # target:  enemy, all_enemies, ally, all_allies, self (relatif terhadap pemakai)
 # status:  id efek status yang diberikan jurus bertipe status/cleanse
 # inflict: efek status tambahan pada jurus serangan: {"status": id, "chance": 0..1}
@@ -76,6 +77,8 @@ const SKILLS := {
 		"desc": "Menghapus semua nerf dari party dan memberi Kebal selama 3 ronde."},
 	"pulih_massal": {"name": "Pulih Massal", "mp": 9, "target": "all_allies", "kind": "heal", "power": 16,
 		"desc": "Memulihkan HP seluruh party."},
+	"salur_jiwa": {"name": "Salur Jiwa", "mp": 6, "target": "ally", "kind": "mp", "power": 12,
+		"desc": "Memulihkan MP satu rekan lain. Tidak bisa untuk diri sendiri."},
 	# --- Kael (Pemanah) ---
 	"bidik_jitu": {"name": "Bidik Jitu", "mp": 3, "target": "enemy", "kind": "phys", "power": 1.3, "crit": 0.4,
 		"desc": "Panah terarah, peluang kritikal tinggi."},
@@ -273,7 +276,7 @@ const REFORGE_GOLD := 0.3  # tempa ulang: x harga barang, ditambah 1 bahan rare 
 const SKILL_FX := {
 	"tebasan_kuat": "heavy_slash", "pasang_badan": "buff_self", "pekik_perang": "rally", "tebasan_berputar": "spin",
 	"bola_api": "fire", "lemahkan": "debuff", "badai_es": "ice_storm",
-	"pulih": "heal", "doa_pelindung": "bless", "cahaya_suci": "light", "berkat_suci": "heal_all", "pulih_massal": "heal_all",
+	"pulih": "heal", "doa_pelindung": "bless", "cahaya_suci": "light", "berkat_suci": "heal_all", "pulih_massal": "heal_all", "salur_jiwa": "bless",
 	"bidik_jitu": "arrow", "panah_racun": "arrow", "hujan_panah": "arrow_rain", "langkah_angin": "bless", "tipu_daya": "debuff",
 	"serangan_buas": "bite", "spora": "spore", "jeritan": "debuff", "raungan": "buff_self", "tipu_muslihat": "debuff",
 	"hantaman_bumi": "quake",
@@ -296,7 +299,7 @@ const CHARACTERS := {
 	"mira": {"name": "Mira", "job": "Pendeta",
 		"base": {"hp": 24, "mp": 14, "atk": 7, "defense": 6, "mag": 9, "agi": 5},
 		"growth": {"hp": 5.0, "mp": 3.5, "atk": 1.4, "defense": 1.6, "mag": 2.2, "agi": 1.0},
-		"learn": {1: ["pulih"], 3: ["doa_pelindung"], 4: ["cahaya_suci"], 5: ["berkat_suci"], 6: ["pulih_massal"]}},
+		"learn": {1: ["pulih"], 3: ["doa_pelindung"], 4: ["cahaya_suci"], 5: ["berkat_suci"], 6: ["pulih_massal"], 7: ["salur_jiwa"]}},
 	"kael": {"name": "Kael", "job": "Pemanah",
 		"base": {"hp": 26, "mp": 8, "atk": 10, "defense": 5, "mag": 3, "agi": 12},
 		"growth": {"hp": 5.5, "mp": 2.0, "atk": 2.3, "defense": 1.3, "mag": 0.5, "agi": 2.4},
