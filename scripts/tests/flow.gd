@@ -106,6 +106,41 @@ func _initialize() -> void:
 	await _skip_dialog()
 	_expect(not current_scene.get("_busy") and not current_scene.get("_shop_open"), "toko tertutup dan pemain bisa bergerak lagi")
 
+	# --- Pandai besi dan layar Perlengkapan ---
+	_game.gold = 200
+	_game.mats = {"serat_liar": 6, "taring_serigala": 2, "lendir_emas": 1}
+	current_scene.call("_talk", "gatot")
+	await _skip_dialog()
+	var forge: Control = current_scene.get("_forge_view")
+	_expect(current_scene.get("_forge_open") and forge.visible, "pandai besi terbuka setelah dialog Pak Gatot")
+	await create_timer(0.1).timeout
+	await _shot("pandai_beli.png")
+	_expect(_game.buy_gear("arlen_weapon_1") and _game.buy_gear("arlen_body_1") and _game.gold == 115, "membeli pedang dan zirah untuk Arlen (emas=%d)" % _game.gold)
+	_expect(_game.enhance(arlen, "weapon").ok and int(arlen.equip["weapon"].plus) == 1, "menempa pedang ke +1")
+	arlen.equip["weapon"]["trait"] = "poison"
+	forge.set("_tab", 1)
+	forge.call("_rebuild")
+	await create_timer(0.1).timeout
+	await _shot("pandai_tempa.png")
+	forge.set("_tab", 3)
+	forge.call("_rebuild")
+	await create_timer(0.1).timeout
+	await _shot("pandai_jual.png")
+	current_scene.emit_signal("forge_closed")
+	await _skip_dialog()
+	_expect(not current_scene.get("_busy") and not current_scene.get("_forge_open"), "pandai besi tertutup dan pemain bisa bergerak lagi")
+	current_scene.call("_toggle_gear")
+	_expect(current_scene.get("_gear_open") and current_scene.get("_busy"), "pintasan membuka layar Perlengkapan")
+	await create_timer(0.1).timeout
+	await _shot("perlengkapan.png")
+	current_scene.call("_toggle_gear")
+	_expect(not current_scene.get("_gear_open") and not current_scene.get("_busy"), "pintasan sekali lagi menutup layar Perlengkapan")
+	arlen.equip.clear()  # sisa uji memakai stat dasar
+	arlen.recalc()
+	arlen.hp = arlen.max_hp
+	_game.mats = {}
+	_game.gold = 2
+
 	# --- Pintasan tas: tombol ikon / tombol I membuka tas langsung dari peta ---
 	current_scene.call("_toggle_bag")
 	_expect(current_scene.get("_bag_open") and current_scene.get("_busy") and not current_scene.get("_menu_open"), "pintasan membuka tas tanpa lewat menu Esc")
@@ -605,7 +640,7 @@ func _skip_dialog() -> void:
 		await create_timer(0.05).timeout
 		if current_scene == null:
 			continue
-		if current_scene.name != "World" or not current_scene.get("_busy") or current_scene.get("_shop_open"):
+		if current_scene.name != "World" or not current_scene.get("_busy") or current_scene.get("_shop_open") or current_scene.get("_forge_open"):
 			return
 		var focus := root.gui_get_focus_owner()
 		if focus is Button and focus.is_visible_in_tree():

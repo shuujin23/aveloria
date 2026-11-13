@@ -95,6 +95,16 @@ func _initialize() -> void:
 	_icon_bottle("icon_ramuan_pelindung", ["d8b8ff", "a070e0", "7a4ab8", "56308a"], 4.0, true)
 	_icon_bottle("icon_ramuan_angin", ["c8fff0", "5fd0c0", "3aa69a", "277a72"], 4.0, true)
 	_icon_bag("icon_tas")
+	_gear_icons()
+	_material_icons()
+	# Pandai besi di tiap permukiman.
+	_hero("npc_gatot", {"h": "3a2c28", "H": "241a18", "b": "9a4a3a", "B": "7a342a", "c": "d8b890", "C": "b09068", "p": "4a4038"}, _dress_pandai)
+	_hero("npc_sena", {"h": "d8d8e0", "H": "a8a8b8", "b": "3a6a8a", "B": "2a4e6a", "c": "d8b890", "C": "b09068", "p": "3a4a5a"}, _dress_pandai)
+	_hero("npc_rekso", {"h": "5a4030", "H": "3a2818", "b": "5a5a5a", "B": "424242", "c": "d8b890", "C": "b09068", "p": "4a3a2a"}, _dress_pandai)
+	_monster_lendir_emas()
+	_monster_mata_kabut()
+	_monster_kura_magma()
+	_monster_peti_terkutuk()
 	_status_icons()
 	_logo()
 
@@ -1544,7 +1554,10 @@ func _preview(path: String) -> void:
 	var y := 2
 	var row_h := 0
 	for sprite_name: String in _made:
-		if not (sprite_name in ["monster_ksatria_kelam", "monster_bayangan", "monster_gargoyle", "monster_raja", "wall_block", "throne", "altar", "floor_0", "floor_dark_0", "carpet_0"]):
+		var wanted := false
+		for prefix: String in ["gear_", "mat_", "icon_perlengkapan", "monster_lendir", "monster_mata", "monster_kura", "monster_peti", "npc_gatot_front_stand", "npc_sena_front_stand", "npc_rekso_front_stand"]:
+			wanted = wanted or sprite_name.begins_with(prefix)
+		if not wanted:
 			continue
 		var img: Image = _made[sprite_name]
 		if x + img.get_width() > sheet.get_width() - 2:
@@ -1554,6 +1567,217 @@ func _preview(path: String) -> void:
 		sheet.blend_rect(img, Rect2i(Vector2i.ZERO, img.get_size()), Vector2i(x, y))
 		x += img.get_width() + 2
 		row_h = max(row_h, img.get_height())
-	sheet = sheet.get_region(Rect2i(0, 0, 240, 140))
+	sheet = sheet.get_region(Rect2i(0, 0, 240, 190))
 	sheet.resize(sheet.get_width() * 5, sheet.get_height() * 5, Image.INTERPOLATE_NEAREST)
 	sheet.save_png(path)
+
+
+# ---------------------------------------------------------------- perlengkapan dan bahan (ikon 16x16)
+
+## Pandai besi: ikat kepala merah, celemek kulit, palu di tangan.
+func _dress_pandai(img: Image, front: bool, _action: String) -> void:
+	_hrect(img, 4, 2, 11, 3, "c8503f")
+	if front:
+		_hrect(img, 5, 12, 10, 19, "6b4a2a")
+		_hrect(img, 5, 12, 10, 12, "86603a")
+	_hrect(img, 14, 12, 14, 18, "86603a")
+	_hrect(img, 13, 10, 15, 12, "9aa4b2")
+	_hrect(img, 13, 10, 15, 10, "d0d8e0")
+
+
+## Gambar ikon sebagai teks: 1/2/3 = bahan utama (terang/sedang/gelap), a/b = hiasan,
+## w/W = kayu atau kulit, s = tali. Baris yang lebih pendek dari 16 dianggap kosong di kanannya.
+const GEAR_ART := {
+	"sword": ["..............12", ".............123", "............123", "...........123", "..........123", ".........123",
+		"........123", "..a....123", "..ba..123", "...ba123", "....bab", "...wWbba", "..wW...b", ".wW", "aW"],
+	"staff_holy": ["......aaaa", ".....a....a", ".....a.12.a", ".....a.23.a", "......aaaa", ".......ab", ".......wW", ".......wW",
+		".......wW", ".......wW", ".......wW", ".......wW", ".......wW", ".......wW", ".......wW", ".......ab"],
+	"staff_orb": ["..........aaa", ".........a112a", ".........a122a", ".........a223a", "..........aaa", ".........wW", "........wW",
+		".......wW", "......wW", ".....wW", "....wW", "...wW", "..wW", ".wW", ".W"],
+	"bow": [".....s11", ".....s.12", ".....s..12", ".....s...23", ".....s...23", ".....s....a", ".....s....w", ".....s....W",
+		".....s....w", ".....s....a", ".....s...23", ".....s...23", ".....s..12", ".....s.12", ".....s11"],
+	"helm": ["", ".....111111", "....11222221", "...1122222231", "...1222222231", "...1222222231", "...aaaaaaaaab", "...12b....b31",
+		"...12b....b31", "...122b..b231", "...1222..2231", "...1222..2231", "....122..231", ".....33..33"],
+	"hood": ["", "......1111", "....11222211", "...1122222231", "...1222222223", "..122233332223", "..1223kkkk3223", "..123kkkkkk323",
+		"..123kkkkkk323", "..123kkkkkk323", "..1223kkkk3223", "..12223aa32223", "...12222a2223", "....33333333"],
+	"hat": ["", ".........11", "........122", ".......1223", ".......1223", "......12223", "......12223", ".....122223", ".....aaaaab",
+		"....1222223", "..11222222233", ".1122222222233", ".1222222222223", "..33333333333"],
+	"plate": ["", "..11........11", ".1221......1221", ".12221aaaa12221", ".12222122122231", "..122212212223", "...1221221223",
+		"...1222222223", "...1222aa2223", "...1222ab2223", "...1222222223", "...1222222223", "...aaaaaaaaab", "...1222222223", "....33333333"],
+	"robe": ["", ".....11..11", "....122aa221", "...12222a2223", "..1222222a2223", ".12212222a22123", ".1231222a222123", ".33.1222a2223.33",
+		"....1222a2223", "....aaaaaaaab", "...12222a22223", "...12222a22223", "..1222222a22223", "..1222222a22223", "..3333333333333"],
+	"vest": ["", "....11....11", "...1221..1223", "...122....223", "...1222..2223", "...1222aa2223", "...1222ww2223", "...1222aa2223",
+		"...1222ww2223", "...1222aa2223", "...aaaaaaaaab", "...1222222223", "....33333333"],
+	"boot": ["", "", "....11111", "....12223", "....12223", "....12223", "....aaaab", "....12223", "....12223", "....122223",
+		"....12222221", "....122222223", "....122222223", "....WWWWWWWWW"],
+	"sandal": ["", "", "", "", "", "", ".......11", "......1221..1", ".....12..21.12", "....12....2112", "...1222222222a",
+		"..wwwwwwwwwwwwW", "..WWWWWWWWWWWWW"],
+	"shoe": ["", "", "", "", "", ".........111", "........12223", "........12223", ".......1aaab", ".1....122223", ".11.11222223",
+		".12222222223", "..3333333333"],
+}
+const GEAR_ART_OF := {
+	"arlen": {"weapon": "sword", "head": "helm", "body": "plate", "feet": "boot"},
+	"mira": {"weapon": "staff_holy", "head": "hood", "body": "robe", "feet": "sandal"},
+	"selene": {"weapon": "staff_orb", "head": "hat", "body": "robe", "feet": "shoe"},
+	"kael": {"weapon": "bow", "head": "hood", "body": "vest", "feet": "boot"},
+}
+## Warna per tokoh dan tingkat: [utama terang, sedang, gelap, hiasan terang, hiasan gelap].
+const GEAR_PALETTES := {
+	"arlen": [["b8bcc4", "8a909c", "5e6470", "c8a040", "8a6a28"], ["e4eef8", "9ab4d0", "5e7a9c", "e0b040", "a87a28"],
+		["d0fff0", "7fe0d0", "3a9aa0", "ffe14a", "d09a20"]],
+	"mira": [["f0ece0", "c8c0ac", "968c78", "7fb7e0", "4a80b0"], ["f4f4ff", "c0c8ec", "8088c0", "f0d070", "c09a30"],
+		["fffbe0", "ffe890", "d8b040", "ffffff", "9ad0ff"]],
+	"selene": [["8a6ab8", "64489a", "42286e", "c8a040", "8a6a28"], ["7aa8f0", "4a70c8", "2c4690", "c0f0ff", "6ac0e8"],
+		["5a4ab0", "34288a", "1c1458", "ffe14a", "ffb030"]],
+	"kael": [["b08a5a", "86603a", "5e4024", "8a9a6a", "5a6a44"], ["6aa860", "468244", "2c5c2e", "c8a040", "8a6a28"],
+		["9ab4c8", "6a88a4", "44607c", "ffe14a", "c89a20"]],
+}
+const MATERIAL_ART := {
+	"common": ["", "", "....1.....1", "...12....12", "...123..123.1", "....123123.12", ".....1233.123", "....aaaaaaa3", "....abbbbbb",
+		".....1233123", "....123.12.23", "...123..12..3", "...12...1", "...1"],
+	"rare": ["", "", "......11111", ".....1222223", ".....1222223", ".....122223", "......12223", "......12223", ".......1223",
+		".......1223", "........123", "........123", ".........13", ".........3"],
+	"super": ["", "", ".....111111", "....11222223", "...1122222233", "..112222222233", "..122222222223", "...1222222223",
+		"....12222223", ".....122223", "......1223", ".......13"],
+	"ultra": ["", ".......1", ".......12", "......1123", ".a....1223....a", ".1b..112233..b3", "..1211222233123", "...12222222223",
+		"....122222223", "...11222222233", "..112233.223233", ".1123.....32233", ".13.........33"],
+}
+const MATERIAL_PALETTES := {1: ["d8e8a0", "9ac060", "5e8a3a"], 2: ["d8f4f4", "7cc4c0", "4a8088"],
+	3: ["ffd08a", "ff8a3a", "b04a1c"], 4: ["e0c0ff", "9a6ae0", "56308a"]}
+const MATERIAL_IDS := {
+	1: ["serat_liar", "taring_serigala", "lendir_emas", "tanduk_ogre"],
+	2: ["benang_kabut", "bara_roh", "lensa_kabut", "taring_ratu"],
+	3: ["sisik_bara", "inti_batu", "cangkang_magma", "jantung_lahar"],
+	4: ["serpih_kelam", "jiwa_bayangan", "permata_terkutuk", "mahkota_kelam"],
+}
+
+
+func _art(rows: Array, colors: Dictionary, outline_hex: String) -> Image:
+	var img := _new(16, 16)
+	if rows.size() > 16:
+		push_error("Gambar ikon lebih dari 16 baris")
+	for y in min(16, rows.size()):
+		var row: String = rows[y]
+		if row.length() > 16:
+			push_error("Baris ikon #%d panjangnya %d, maksimal 16" % [y, row.length()])
+		for x in min(16, row.length()):
+			if colors.has(row[x]):
+				_px(img, x, y, Color(String(colors[row[x]])))
+	_outline(img, Color(outline_hex))
+	return img
+
+
+func _gear_icons() -> void:
+	for hero_id: String in GEAR_ART_OF:
+		for slot: String in GEAR_ART_OF[hero_id]:
+			for tier in 3:
+				var pal: Array = GEAR_PALETTES[hero_id][tier]
+				var colors := {"1": pal[0], "2": pal[1], "3": pal[2], "a": pal[3], "b": pal[4],
+					"w": "a8794a", "W": "7a5028", "s": "e8ecf2", "k": "2a2434"}
+				var img := _art(GEAR_ART[GEAR_ART_OF[hero_id][slot]], colors, "2a1f2e")
+				_save(img, "gear_%s_%s_%d" % [hero_id, slot, tier + 1])
+				if hero_id == "arlen" and slot == "body" and tier == 1:
+					_save(img, "icon_perlengkapan")  # tombol pintasan layar Perlengkapan
+
+
+func _material_icons() -> void:
+	var kinds := ["common", "rare", "super", "ultra"]
+	for region: int in MATERIAL_IDS:
+		var pal: Array = MATERIAL_PALETTES[region]
+		for i in kinds.size():
+			var colors := {"1": pal[0], "2": pal[1], "3": pal[2], "a": "f0d070", "b": "a87a28"}
+			var img := _art(MATERIAL_ART[kinds[i]], colors, "2a1f2e")
+			if i >= 2:  # kilau untuk bahan langka
+				for p: Vector2i in [Vector2i(13, 2), Vector2i(2, 12)] if i == 2 else [Vector2i(13, 1), Vector2i(1, 2), Vector2i(14, 13)]:
+					_px(img, p.x, p.y, Color("fff6c0"))
+			_save(img, "mat_%s" % MATERIAL_IDS[region][i])
+
+
+# ---------------------------------------------------------------- monster super rare
+
+## Lendir Emas: lendir keemasan bermahkota perak.
+func _monster_lendir_emas() -> void:
+	var img := _new(32, 28)
+	var gold := _pal(["fff0a0", "f0c040", "c89020", "8a5e14"])
+	var dark := Color("4a3010")
+	var silver := Color("f0f4ff")
+	_blob(img, 16, 19, 13, 10, gold, 25)
+	_blob(img, 16, 12, 8, 7, gold)
+	_rect(img, 5, 25, 26, 25, gold[3])
+	_rect(img, 10, 11, 11, 12, Color.WHITE)
+	_rect(img, 11, 17, 12, 19, dark)
+	_rect(img, 19, 17, 20, 19, dark)
+	_px(img, 11, 17, Color.WHITE)
+	_px(img, 19, 17, Color.WHITE)
+	_rect(img, 14, 22, 17, 22, dark)
+	_px(img, 13, 21, dark)
+	_px(img, 18, 21, dark)
+	_rect(img, 12, 3, 19, 5, silver)
+	for x: int in [12, 15, 16, 19]:
+		_rect(img, x, 1, x, 2, silver)
+	_rect(img, 15, 4, 16, 4, Color("e04848"))
+	_finish(img, "monster_lendir_emas", "4a3010", [16, 26, 11, 2.5])
+
+
+## Mata Kabut: bola mata raksasa melayang dengan sulur-sulur.
+func _monster_mata_kabut() -> void:
+	var img := _new(32, 38)
+	var skin := _pal(["d8f4f0", "9cd0cc", "6aa0a8", "44707c"])
+	var white := _pal(["ffffff", "f0f8ff", "d0e0f0", "a8bcd8"])
+	var iris := _pal(["e0b0ff", "a060e0", "7038b0", "44207a"])
+	for t: Array in [[9, 22, 6, 33], [14, 25, 13, 35], [19, 25, 20, 35], [24, 22, 27, 32]]:
+		_line(img, Vector2(t[0], t[1]), Vector2(t[2], t[3]), skin[2], 2)
+	_blob(img, 16, 14, 13, 13, skin)
+	_blob(img, 15, 14, 9, 8, white)
+	_blob(img, 13, 14, 5, 5, iris)
+	_rect(img, 11, 12, 13, 15, Color("1c1030"))
+	_px(img, 11, 12, Color.WHITE)
+	_finish(img, "monster_mata_kabut", "244a58", [16, 36, 9, 2])
+
+
+## Kura-kura Magma: tempurung batu dengan retakan lahar; menghadap kiri.
+func _monster_kura_magma() -> void:
+	var img := _new(46, 30)
+	var shell := _pal(["8a6258", "5e4038", "44302a", "2c1e1a"])
+	var skin := _pal(["d8a070", "b07a4a", "86562e", "5e3a1c"])
+	var lava := Color("ff8a2a")
+	for x: int in [14, 22, 32, 38]:
+		_blob(img, x, 25, 3.5, 4, skin)
+	_blob(img, 41, 21, 4, 2, skin)
+	_blob(img, 7, 19, 6, 5, skin)
+	_blob(img, 25, 14, 16, 12, shell, 21)
+	_rect(img, 10, 21, 40, 22, shell[3])
+	for seg: Array in [[14, 12, 22, 6], [22, 6, 30, 10], [30, 10, 37, 14], [22, 6, 24, 16], [30, 10, 28, 19], [14, 12, 17, 19]]:
+		_line(img, Vector2(seg[0], seg[1]), Vector2(seg[2], seg[3]), lava, 1)
+	for p: Vector2i in [Vector2i(22, 6), Vector2i(30, 10), Vector2i(14, 12)]:
+		_px(img, p.x, p.y, Color("ffd23a"))
+	_rect(img, 4, 17, 5, 18, Color("1c1030"))
+	_px(img, 4, 17, Color("ffd23a"))
+	_finish(img, "monster_kura_magma", "241814", [24, 28, 17, 2.5])
+
+
+## Peti Terkutuk: peti harta yang ternyata hidup, bergigi dan berlidah.
+func _monster_peti_terkutuk() -> void:
+	var img := _new(34, 32)
+	var wood := _pal(["b8824a", "8e5e30", "6a4220", "462a14"])
+	var gold := Color("e0b040")
+	var gold_dark := Color("a87a28")
+	_rect(img, 3, 11, 30, 16, Color("1c1030"))  # rongga mulut
+	for span: Array in [[3, 10], [17, 29]]:  # tutup dan badan peti
+		for y in range(span[0], span[1] + 1):
+			for x in range(3, 31):
+				_px(img, x, y, wood[1] if x < 20 else wood[2])
+		_rect(img, 3, span[0], 30, span[0], wood[0])
+		_rect(img, 7, span[0], 8, span[1], gold_dark)
+		_rect(img, 25, span[0], 26, span[1], gold_dark)
+	_rect(img, 3, 9, 30, 10, gold)
+	_rect(img, 3, 17, 30, 18, gold)
+	_rect(img, 3, 29, 30, 29, wood[3])
+	for x in range(5, 30, 4):
+		_rect(img, x, 11, x + 1, 12, Color.WHITE)
+	for x in range(7, 30, 4):
+		_rect(img, x, 15, x + 1, 16, Color.WHITE)
+	_rect(img, 10, 13, 11, 14, Color("ffe14a"))
+	_rect(img, 21, 13, 22, 14, Color("ffe14a"))
+	_blob(img, 16, 21, 3, 6, _pal(["ff9ab0", "e0607a", "b83e5a", "8a2a44"]))
+	_finish(img, "monster_peti_terkutuk", "1c1030", [17, 30, 14, 2.5])

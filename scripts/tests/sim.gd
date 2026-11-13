@@ -33,14 +33,24 @@ const EVENTS := {
 }
 
 
+## Untuk mencoba angka bos tanpa mengubah Db: "-- ogre:1.3:1.2;ratu:1.2:1.1" = pengali HP dan ATK/MAG.
+var _scale := {}
+
+
 func _init() -> void:
-	for rest_every: int in [1, 2]:
-		_run(rest_every)
+	for arg: String in OS.get_cmdline_user_args():
+		for part: String in arg.split(";", false):
+			var bits := part.split(":")
+			_scale[bits[0]] = [float(bits[1]), float(bits[2])]
+	for geared: int in [0, 1, 2]:
+		_run(1, geared)
 	quit()
 
 
 ## rest_every = menginap di desa setiap N pertarungan (selalu sebelum battle cerita dan semi-bos).
-func _run(rest_every: int) -> void:
+## geared: 0 = tanpa perlengkapan sama sekali; 1 = wajar: membeli perlengkapan wilayahnya saat rekan baru
+## bergabung dan menempanya ke +1 sebelum semi-bos; 2 = rajin: +1 saat bergabung, +3 dengan sifat sebelum semi-bos.
+func _run(rest_every: int, geared: int) -> void:
 	var cleared := 0
 	var defeats := 0
 	var rounds_sum := 0
@@ -63,7 +73,20 @@ func _run(rest_every: int) -> void:
 				ids = Db.BOSSES[stage.trim_prefix("boss:")]
 			else:
 				ids = Db.random_group(stage).slice(0, party.size() + 1)
+			if geared > 0 and retries == 0 and stage.contains(":"):
+				var tier := 1
+				for i2 in step:
+					if (ROUTE[i2] as String).begins_with("boss:"):
+						tier += 1
+				var boss_plus := 1 if geared == 1 else 3
+				_equip(party, min(tier, Db.GEAR_TIERS), boss_plus if stage.begins_with("boss:") else geared - 1)
 			var eng := BattleEngine.new(party, BattleEngine.make_encounter(ids))
+			for e: Battler in eng.enemies:
+				if _scale.has(e.id):
+					e.max_hp = int(e.max_hp * float(_scale[e.id][0]))
+					e.hp = e.max_hp
+					e.atk = int(e.atk * float(_scale[e.id][1]))
+					e.mag = int(e.mag * float(_scale[e.id][1]))
 			level_at[stage] = level_at.get(stage, 0.0) + (party[0] as Battler).level
 			var rounds := _fight(eng)
 			battles += 1
@@ -87,13 +110,22 @@ func _run(rest_every: int) -> void:
 		if step == ROUTE.size():
 			cleared += 1
 
-	print("=== Menginap tiap %d battle ===" % rest_every)
+	print("=== %s ===" % ["Tanpa perlengkapan", "Perlengkapan wajar (+1 di semi-bos)", "Perlengkapan rajin (+3 dan sifat di semi-bos)"][geared])
 	print("  tamat sampai Raja Monster : %.0f%%" % (100.0 * cleared / RUNS))
 	print("  rata-rata ronde per battle: %.1f" % (float(rounds_sum) / battles))
 	print("  rata-rata kalah per permainan: %.1f" % (float(defeats) / RUNS))
 	for stage: String in tries:
 		print("  %-14s menang %4d/%4d (%3.0f%%)   level Arlen rata-rata %.1f" % [stage, won.get(stage, 0), tries[stage],
 			100.0 * won.get(stage, 0) / tries[stage], level_at[stage] / tries[stage]])
+
+
+func _equip(party: Array, tier: int, plus: int) -> void:
+	for m: Battler in party:
+		for slot: String in Db.GEAR_SLOTS:
+			var id := Db.gear_id(m.id, slot, tier)
+			m.equip[slot] = {"id": id, "plus": plus, "trait": Db.trait_pool(id)[0] if plus >= 3 else ""}
+		m.recalc()
+		m.full_restore()
 
 
 ## Mengembalikan jumlah ronde; negatif kalau party kalah.

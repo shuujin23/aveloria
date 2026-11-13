@@ -10,6 +10,7 @@ extends RefCounted
 ##   {"do": "pay", "gold": 10}               bayar emas
 ##   {"do": "rest"}                          pulihkan party, simpan permainan, jadikan tempat ini titik kembali
 ##   {"do": "shop", "stock": [id barang], "name": "Nama toko"}   buka toko dengan daftar barang itu
+##   {"do": "forge", "tier": 1, "name": "Nama bengkel"}   buka pandai besi yang menjual perlengkapan tingkat itu
 ##   {"do": "battle", "ids": [...], "backdrop": "hutan", "after": "kunci_adegan"}
 ##   {"do": "credits"}                       simpan permainan lalu buka layar penutup
 
@@ -27,11 +28,13 @@ const NPCS := {
 		{"id": "sari", "name": "Bu Sari", "sprite": "npc_sari", "tile": Vector2i(6, 10)},
 		{"id": "dimas", "name": "Dimas", "sprite": "npc_dimas", "tile": Vector2i(8, 5)},
 		{"id": "joko", "name": "Pak Joko", "sprite": "npc_joko", "tile": Vector2i(12, 6)},
+		{"id": "gatot", "name": "Pak Gatot", "sprite": "npc_gatot", "tile": Vector2i(13, 8)},
 	],
 	"dusun": [
 		{"id": "laras", "name": "Nyi Laras", "sprite": "npc_laras", "tile": Vector2i(3, 2)},
 		{"id": "wiryo", "name": "Pak Wiryo", "sprite": "npc_wiryo", "tile": Vector2i(9, 3)},
 		{"id": "rumi", "name": "Mbok Rumi", "sprite": "npc_rumi", "tile": Vector2i(11, 5)},
+		{"id": "sena", "name": "Mpu Sena", "sprite": "npc_sena", "tile": Vector2i(4, 5)},
 	],
 	"dunia": [
 		{"id": "mira", "name": "Mira", "sprite": "mira", "tile": Vector2i(12, 2), "hide_flag": "mira_joined"},
@@ -41,6 +44,7 @@ const NPCS := {
 		{"id": "darma", "name": "Ki Darma", "sprite": "npc_darma", "tile": Vector2i(3, 2)},
 		{"id": "ningsih", "name": "Bu Ningsih", "sprite": "npc_ningsih", "tile": Vector2i(9, 3)},
 		{"id": "sabar", "name": "Pak Sabar", "sprite": "npc_sabar", "tile": Vector2i(11, 5)},
+		{"id": "rekso", "name": "Bang Rekso", "sprite": "npc_rekso", "tile": Vector2i(4, 5)},
 	],
 	"abu": [
 		{"id": "kael", "name": "Kael", "sprite": "kael", "tile": Vector2i(19, 3), "hide_flag": "kael_joined"},
@@ -172,6 +176,7 @@ static func talk(npc_id: String, flags: Dictionary, gold: int) -> Array:
 					{"who": "Tetua Bram", "text": "Syukurlah Mira selamat. Berdua, kalian punya harapan."},
 					{"who": "Tetua Bram", "text": "Ogre Penjaga bersarang di ujung jalan utara. Selama dia hidup, gerbang timur tetap tertutup."},
 					{"who": "Tetua Bram", "text": "Jangan terburu-buru. Berlatihlah dulu di padang, dan beristirahatlah di penginapan Bu Sari."},
+					{"who": "Tetua Bram", "text": "Dan jangan menghadapinya dengan tangan kosong. Pak Gatot, pandai besi di sisi timur desa, bisa membuatkan senjata dan zirah untuk kalian berdua."},
 				]
 			if flags.has("quest_mira"):
 				return [{"who": "Tetua Bram", "text": "Mira pergi ke tepi hutan di utara. Keluar dari desa, lalu ikuti padang ke arah utara."}]
@@ -218,6 +223,25 @@ static func talk(npc_id: String, flags: Dictionary, gold: int) -> Array:
 				{"who": "Pak Joko", "text": "Kiriman dari timur tertahan sejak Ogre itu menutup gerbang. Tapi ramuan racikanku sendiri masih ada."},
 				{"do": "shop", "name": "Toko Pak Joko", "stock": ["ramuan", "penawar"]},
 				{"who": "Pak Joko", "text": "Kalau gerbangnya terbuka lagi, daganganku akan lebih lengkap."},
+			]
+		"gatot":
+			return [
+				{"who": "Pak Gatot", "text": "Mau berangkat tanpa zirah? Sini, kubuatkan yang pas untuk tiap orang."},
+				{"who": "Pak Gatot", "text": "Bawakan juga bahan dari monster. Dengan itu perlengkapanmu bisa kutempa lebih kuat, dan kadang muncul sifat istimewa."},
+				{"do": "forge", "tier": 1, "name": "Bengkel Pak Gatot"},
+				{"who": "Pak Gatot", "text": "Jaga baik-baik barang buatanku."},
+			]
+		"sena":
+			return [
+				{"who": "Mpu Sena", "text": "Baja dusun ini ditempa dengan embun pagi. Lebih kuat daripada besi lembah."},
+				{"do": "forge", "tier": 2, "name": "Tungku Mpu Sena"},
+				{"who": "Mpu Sena", "text": "Benang laba-laba dan bara roh kabut adalah bahan tempa yang bagus. Jangan dibuang."},
+			]
+		"rekso":
+			return [
+				{"who": "Bang Rekso", "text": "Mitril dari perut gunung. Mahal, tapi tidak ada yang lebih baik sebelum Kastil Kelam."},
+				{"do": "forge", "tier": 3, "name": "Tungku Bang Rekso"},
+				{"who": "Bang Rekso", "text": "Kalau ketemu kura-kura magma, jangan lari. Cangkangnya bahan tempa langka."},
 			]
 		"mira":
 			return [

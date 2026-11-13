@@ -9,6 +9,7 @@ extends Node2D
 signal advance  # pemain menekan lanjut saat dialog
 signal chosen(index: int)  # pemain memilih salah satu pilihan dialog
 signal shop_closed  # pemain selesai berbelanja
+signal forge_closed  # pemain selesai di pandai besi
 
 const HALF_W := 32  # setengah lebar belah ketupat petak
 const HALF_H := 16  # setengah tingginya
@@ -82,6 +83,11 @@ var _bag_open := false
 var _bag_from_menu := false  # tas dibuka dari menu Esc (bukan lewat pintasan)
 var _shop_view: PanelContainer  # tampilan toko (scripts/ui/shop_view.gd)
 var _shop_stock: Array = []
+var _forge_view: PanelContainer  # tampilan pandai besi (scripts/ui/forge_view.gd)
+var _forge_open := false
+var _gear_view: PanelContainer  # layar Perlengkapan (scripts/ui/gear_view.gd)
+var _gear_open := false
+var _gear_from_menu := false
 var _fade: ColorRect
 
 
@@ -186,13 +192,17 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		_toggle_bag()
 		return
+	if key != null and key.pressed and not key.echo and key.keycode == KEY_E:  # E: buka/tutup layar Perlengkapan
+		get_viewport().set_input_as_handled()
+		_toggle_gear()
+		return
 	if event.is_action_pressed("ui_cancel"):  # Esc: buka/tutup menu
 		get_viewport().set_input_as_handled()
 		if _shop_open:
 			Audio.sfx("ui_cancel")
 			shop_closed.emit()
-		elif _bag_open:
-			pass  # tampilan tas menangani Esc sendiri
+		elif _bag_open or _gear_open or _forge_open:
+			pass  # tampilan itu menangani Esc sendiri
 		elif _menu_open:
 			Audio.sfx("ui_cancel")
 			_close_menu()
@@ -345,7 +355,7 @@ func _on_step() -> void:
 		_run_scene(Story.scene(_zone_intro(tile.zone)))
 	elif tile.has("rate") and _steps > GRACE_STEPS and randf() < float(tile.rate):
 		# Jumlah monster menyesuaikan besar party, supaya awal permainan (Arlen sendirian) tetap adil.
-		var group: Array = Db.random_group(tile.table)
+		var group: Array = Db.random_group(tile.table, Game.party.size() >= 2)
 		_start_battle(group.slice(0, Game.party.size() + 1), BACKDROPS[_material(_tile)])
 	elif _path.is_empty() and _talk_after != "":
 		var npc_id := _talk_after
@@ -497,6 +507,8 @@ func _run_steps(steps: Array) -> bool:
 				"shop":
 					_shop_view.set_shop_name(step.get("name", "Toko Pak Joko"))
 					await _shop(step.stock)
+				"forge":  # pandai besi: beli perlengkapan, tempa, jual bahan
+					await _forge(int(step.tier), step.get("name", "Pandai Besi"))
 				"rest":  # menginap: pulih, jadi titik kembali, dan menyimpan permainan
 					Game.rest_at_inn()
 					Game.save_game()
@@ -552,6 +564,9 @@ func _open_menu() -> void:
 		{"text": "Barang", "cb": func() -> void:
 			_bag_from_menu = true
 			_open_bag()},
+		{"text": "Perlengkapan", "cb": func() -> void:
+			_gear_from_menu = true
+			_open_gear()},
 		{"text": "Simpan permainan", "cb": _menu_save},
 		{"text": "Muat simpanan terakhir", "cb": _menu_load, "disabled": not Game.has_save()},
 		{"text": "Kembali ke layar judul", "cb": func() -> void: get_tree().change_scene_to_file(Game.TITLE_SCENE)},
@@ -639,6 +654,44 @@ func _menu_discard(item_id: String) -> void:
 	_open_bag(item_id, "Membuang 1 %s." % Db.ITEMS[item_id].name)
 
 
+## Pintasan layar Perlengkapan (tombol ikon zirah atau tombol E).
+func _toggle_gear() -> void:
+	if _gear_open:
+		_close_gear()
+	elif not _busy and not _moving:
+		_busy = true
+		_cancel_path()
+		_gear_from_menu = false
+		_open_gear()
+
+
+func _open_gear() -> void:
+	_menu_panel.visible = false
+	_gear_open = true
+	_gear_view.open()
+
+
+func _close_gear() -> void:
+	_gear_view.visible = false
+	_gear_open = false
+	if _gear_from_menu:
+		_open_menu()
+	else:
+		_dir_held = -0.25
+		_busy = false
+
+
+## Buka pandai besi dan tunggu sampai pemain selesai.
+func _forge(tier: int, shop_name: String) -> void:
+	_dialog_panel.visible = false
+	_dialog_open = false
+	_forge_open = true
+	_forge_view.open(tier, shop_name)
+	await forge_closed
+	_forge_view.visible = false
+	_forge_open = false
+
+
 ## Buka toko dan tunggu sampai pemain selesai berbelanja.
 func _shop(stock: Array) -> void:
 	_dialog_panel.visible = false
@@ -678,7 +731,7 @@ func _update_hud() -> void:
 	var zone: String = WorldMap.tile_at(_tile).zone
 	if zone == "":
 		zone = WorldMap.map_name() if WorldMap.is_settlement(Game.map_id) else "Jalan"
-	_zone_label.text = "%s\nEmas: %d\nEsc: menu   I: tas" % [zone, Game.gold]
+	_zone_label.text = "%s\nEmas: %d\nEsc: menu   I: tas   E: perlengkapan" % [zone, Game.gold]
 	var lines: Array = []
 	for m: Battler in Game.party:
 		lines.append("%-7s Lv %d   HP %d/%d   MP %d/%d" % [m.display_name, m.level, m.hp, m.max_hp, m.mp, m.max_mp])
@@ -1040,6 +1093,27 @@ func _build_hud() -> void:
 	bag_key.position = Vector2(49, 43)
 	bag_key.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bag_button.add_child(bag_key)
+
+	# Tombol pintasan layar Perlengkapan, di sebelah tombol tas.
+	var gear_button := bag_button.duplicate(0) as Button
+	gear_button.tooltip_text = "Perlengkapan (E)"
+	gear_button.offset_left = 88
+	gear_button.offset_right = 152
+	(gear_button.get_child(0) as TextureRect).texture = _tex("icon_perlengkapan")
+	(gear_button.get_child(1) as Label).text = "E"
+	gear_button.pressed.connect(func() -> void:
+		Audio.sfx("ui_ok")
+		_toggle_gear())
+	root.add_child(gear_button)
+
+	_forge_view = (load("res://scripts/ui/forge_view.gd") as GDScript).new()
+	_forge_view.changed.connect(_update_hud)
+	_forge_view.closed.connect(func() -> void: forge_closed.emit())
+	root.add_child(_forge_view)
+
+	_gear_view = (load("res://scripts/ui/gear_view.gd") as GDScript).new()
+	_gear_view.closed.connect(_close_gear)
+	root.add_child(_gear_view)
 
 	_shop_view = (load("res://scripts/ui/shop_view.gd") as GDScript).new()
 	_shop_view.buy.connect(_shop_buy)

@@ -70,3 +70,15 @@ wilayah sebelumnya kalah.
 - `tools/gen_sprites.gd` — pembuat sprite pixel art; hasilnya di `assets/sprites/` (jalankan ulang setelah mengubah gambar)
 - `scripts/tests/sim.gd` — simulasi balancing otomatis
 - `scripts/tests/flow.gd` — uji otomatis alur peta -> battle -> peta
+
+
+## Armory: perlengkapan, bahan, dan tempa
+
+- **Perlengkapan**: 4 slot per tokoh (senjata, kepala, dada, kaki), 3 tingkat. Tiap barang milik satu tokoh, langsung dipakai saat dibeli, dan tidak memakan slot tas. Dijual pandai besi: Pak Gatot (Desa Rindu, tingkat 1), Mpu Sena (Dusun Embun, tingkat 2), Bang Rekso (Pos Pemburu, tingkat 3).
+- **Kategori monster**: common, rare, super rare (satu per wilayah, peluang muncul 7%, hanya saat party berisi 2 orang atau lebih), ultra rare (semi-bos dan bos).
+- **Bahan**: satu bahan per kategori di tiap wilayah (16 macam), disimpan di kantong bahan tanpa batas. Bos selalu menjatuhkan 3 ultra, 2 super, 3 rare, 4 common. Bahan Kastil Kelam tidak dipakai menempa; hanya untuk dijual.
+- **Tempa**: +1 sampai +5 dengan emas dan bahan dari wilayah yang sama dengan tingkat barang (+1/+2 common, +3 rare, +4 super rare, +5 ultra rare). Stat andalan naik di tiap tingkat.
+- **Sifat**: tiap tempa berpeluang memberi satu efek status (20%, 20%, 35%, 50%, pasti di +5). Di battle sifat aktif dengan peluang 15% (+1) sampai 35% (+5). Senjata: nerf ke musuh yang diserang atau ATK Naik ke pemakai; kepala: Kebal di awal battle; dada: DEF Naik saat terkena serangan; kaki: Cepat di awal battle.
+- **Tempa ulang**: mengacak sifat senjata dengan emas dan 1 bahan rare.
+- **Keseimbangan**: angka semi-bos dan bos disetel dengan anggapan party memakai perlengkapan wilayahnya (`scripts/tests/sim.gd`).
+- Semua angka ada di `scripts/db.gd`; ujinya di `scripts/tests/gear_test.gd`.

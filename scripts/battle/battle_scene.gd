@@ -32,6 +32,7 @@ const COLOR_PANEL := Color("0f1622")
 const COLOR_BORDER := Color("c9a85c")
 const COLOR_ACTIVE := Color("ffd866")
 const COLOR_DOWN := Color("d0655a")
+const GearIcon := preload("res://scripts/ui/gear_icon.gd")
 
 # Posisi berdiri dalam koordinat petak arena (0,0 = tengah). Urutan = urutan anggota party.
 const PARTY_SLOTS := [Vector2(0, 1), Vector2(0, 4), Vector2(-3, 4), Vector2(-3, 1)]
@@ -49,6 +50,7 @@ const MONSTER_ANCHOR := {
 	"laba_laba": Vector2(24, 29), "roh_kabut": Vector2(16, 36), "ratu": Vector2(40, 55),
 	"kadal_bara": Vector2(26, 26), "elang_abu": Vector2(26, 34), "golem_batu": Vector2(22, 44), "lahar": Vector2(36, 73),
 	"ksatria_kelam": Vector2(22, 44), "bayangan": Vector2(16, 36), "gargoyle": Vector2(26, 34), "raja": Vector2(34, 78),
+	"lendir_emas": Vector2(18, 29), "mata_kabut": Vector2(18, 39), "kura_magma": Vector2(26, 31), "peti_terkutuk": Vector2(19, 33),
 }
 # Per latar: bahan tanah, jumlah variannya, hiasan di belakang arena, dan kerapatannya.
 const ARENAS := {
@@ -152,6 +154,8 @@ func _unit_at(pos: Vector2) -> Battler:
 ## Keterangan singkat seorang petarung: HP/MP untuk rekan, stat untuk musuh, plus efek status.
 func _describe(b: Battler) -> String:
 	var text := "%s   ATK %d  DEF %d  SPD %d" % [b.display_name, roundi(b.stat("atk")), roundi(b.stat("defense")), roundi(b.stat("agi"))]
+	if b.is_enemy and Db.rarity_of(b.id) != "common":
+		text = "[%s]  %s" % [Db.RARITIES[Db.rarity_of(b.id)].name, text]
 	if not b.is_enemy:
 		text = "%s   HP %d/%d  MP %d/%d" % [b.display_name, b.hp, b.max_hp, b.mp, b.max_mp]
 	var tags := _status_tags(b)
@@ -265,6 +269,14 @@ func _new_battle() -> void:
 		await _say("%s menghadang jalan!" % boss.display_name)
 	else:
 		await _say("Segerombolan monster muncul!")
+		for e: Battler in engine.enemies:
+			if Db.rarity_of(e.id) == "super":
+				Audio.sfx("buff")
+				await _say("Monster super rare: %s! Bahannya sangat langka." % e.display_name)
+	if not engine.opening_lines.is_empty():  # sifat perlengkapan yang aktif di awal pertarungan
+		_refresh()
+		for line: String in engine.opening_lines:
+			await _say(line)
 	_start_round()
 
 
@@ -496,6 +508,7 @@ func _victory() -> void:
 			"stats": {"HP": m.max_hp, "MP": m.max_mp, "ATK": m.atk, "DEF": m.defense, "MAG": m.mag, "SPD": m.agi}})
 	var reward := engine.grant_rewards()
 	Game.gold += reward.gold
+	Game.add_mats(reward.drops)
 	Game.wins += 1
 	if was_boss:
 		for e: Battler in engine.enemies:
@@ -543,6 +556,24 @@ func _show_results(reward: Dictionary, before: Array, was_boss: bool) -> void:
 	summary.text = "+%d XP untuk tiap anggota yang bertahan        +%d emas  (total %d)" % [reward.xp, reward.gold, Game.gold]
 	summary.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	column.add_child(summary)
+	if not (reward.drops as Dictionary).is_empty():  # bahan yang dijatuhkan monster
+		var drop_row := HBoxContainer.new()
+		drop_row.alignment = BoxContainer.ALIGNMENT_CENTER
+		drop_row.add_theme_constant_override("separation", 14)
+		var drop_title := Label.new()
+		drop_title.text = "Bahan:"
+		drop_row.add_child(drop_title)
+		for mat_id: String in Db.MATERIALS:
+			if not reward.drops.has(mat_id):
+				continue
+			var mat: Dictionary = Db.MATERIALS[mat_id]
+			drop_row.add_child(GearIcon.material(mat_id, int(reward.drops[mat_id]), 32.0))
+			var mat_name := Label.new()
+			mat_name.text = mat.name
+			mat_name.add_theme_font_size_override("font_size", 14)
+			mat_name.add_theme_color_override("font_color", Color(String(Db.RARITIES[mat.rarity].color)))
+			drop_row.add_child(mat_name)
+		column.add_child(drop_row)
 	column.add_child(HSeparator.new())
 
 	var rows: Array = []

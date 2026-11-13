@@ -24,6 +24,10 @@ var defending := false
 var statuses := {}  # id efek status (lihat Db.STATUSES) -> sisa ronde
 var immune: Array = []  # id efek status yang tidak mempan pada petarung ini
 
+## Perlengkapan yang dipakai (khusus anggota party): slot -> {"id", "plus", "trait"}.
+## plus = tingkat tempa; trait = id efek status sifatnya ("" kalau belum punya).
+var equip := {}
+
 var xp_reward := 0
 var gold_reward := 0
 
@@ -75,6 +79,11 @@ func recalc() -> void:
 	defense = int(base.defense + growth.defense * n)
 	mag = int(base.mag + growth.mag * n)
 	agi = int(base.agi + growth.agi * n)
+	for slot: String in equip:
+		var bonus := Db.gear_stats(equip[slot].id, int(equip[slot].plus))
+		for stat_name: String in bonus:
+			set(stat_name, int(get(stat_name)) + int(bonus[stat_name]))
+	hp = min(hp, max_hp)
 	skills.clear()
 	var learn: Dictionary = c.learn
 	var levels: Array = learn.keys()
@@ -82,6 +91,15 @@ func recalc() -> void:
 	for lv: int in levels:
 		if lv <= level:
 			skills.append_array(learn[lv])
+
+
+## Sifat perlengkapan di sebuah slot: {"status", "chance"}; kosong kalau tidak ada.
+func gear_trait(slot: String) -> Dictionary:
+	var entry: Dictionary = equip.get(slot, {})
+	var status_id: String = entry.get("trait", "")
+	if status_id == "":
+		return {}
+	return {"status": status_id, "chance": Db.trait_chance(int(entry.plus))}
 
 
 func is_alive() -> bool:

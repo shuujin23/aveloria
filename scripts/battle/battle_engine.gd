@@ -13,6 +13,8 @@ var rng := RandomNumberGenerator.new()
 ## Isi tas party (id barang -> jumlah). Layar battle mengisinya dengan Game.items, jadi barang
 ## yang terpakai langsung berkurang dari tas yang sebenarnya.
 var items := {}
+## Pesan pembuka: sifat perlengkapan (kepala, kaki) yang aktif di awal pertarungan.
+var opening_lines: Array = []
 
 
 func _init(p_party: Array, p_enemies: Array) -> void:
@@ -20,6 +22,31 @@ func _init(p_party: Array, p_enemies: Array) -> void:
 	enemies = p_enemies
 	for b: Battler in party + enemies:
 		b.reset_battle_state()
+	for m: Battler in party:
+		for slot: String in ["head", "feet"]:
+			_gear_buff(m, slot, opening_lines)
+
+
+## Sifat buff sebuah perlengkapan: berpeluang memberi efeknya ke pemakainya sendiri.
+func _gear_buff(b: Battler, slot: String, lines: Array) -> void:
+	var gear_trait := b.gear_trait(slot)
+	if gear_trait.is_empty() or not b.is_alive() or Db.STATUSES[gear_trait.status].kind != "buff":
+		return
+	if b.has_status(gear_trait.status) or rng.randf() >= float(gear_trait.chance):
+		return
+	lines.append("Sifat %s milik %s aktif!" % [Db.gear_title(b.equip[slot]), b.display_name])
+	apply_status(b, gear_trait.status, lines)
+
+
+## Sifat nerf senjata: berpeluang mengenai musuh yang baru saja diserang pemakainya.
+func _weapon_nerf(actor: Battler, target: Battler, lines: Array) -> void:
+	var gear_trait := actor.gear_trait("weapon")
+	if gear_trait.is_empty() or not target.is_alive() or Db.STATUSES[gear_trait.status].kind != "nerf":
+		return
+	if target.immune.has(gear_trait.status) or target.blocks_nerf() or rng.randf() >= float(gear_trait.chance):
+		return
+	lines.append("Sifat %s milik %s aktif!" % [Db.gear_title(actor.equip["weapon"]), actor.display_name])
+	apply_status(target, gear_trait.status, lines)
 
 
 ## Buat petarung musuh dari daftar id monster; yang kembar diberi akhiran A, B, C.
@@ -139,6 +166,8 @@ func execute(cmd: Dictionary) -> Array:
 			if target != null:
 				lines.append("%s menyerang %s!" % [actor.display_name, target.display_name])
 				_phys_hit(actor, target, 1.0, 0.0, lines)
+				_weapon_nerf(actor, target, lines)
+				_gear_buff(actor, "weapon", lines)
 		"skill":
 			_use_skill(actor, cmd.skill, cmd.get("target"), lines)
 		"item":
@@ -242,6 +271,11 @@ func grant_rewards() -> Dictionary:
 	for e: Battler in enemies:
 		xp += e.xp_reward
 		gold += e.gold_reward
+	var drops := {}  # bahan yang dijatuhkan monster: id -> jumlah
+	for e: Battler in enemies:
+		var dropped := Db.roll_drops(e.id, rng)
+		for mat_id: String in dropped:
+			drops[mat_id] = int(drops.get(mat_id, 0)) + int(dropped[mat_id])
 	var lines: Array = ["Party mendapat %d XP dan %d emas." % [xp, gold]]
 	for m: Battler in party:
 		if m.is_alive():
@@ -249,7 +283,7 @@ func grant_rewards() -> Dictionary:
 		else:
 			m.hp = 1
 		m.reset_battle_state()
-	return {"xp": xp, "gold": gold, "lines": lines}
+	return {"xp": xp, "gold": gold, "lines": lines, "drops": drops}
 
 
 func _foes(actor: Battler) -> Array:
@@ -302,10 +336,12 @@ func _use_skill(actor: Battler, skill_id: String, wanted: Variant, lines: Array)
 			"phys":
 				_phys_hit(actor, t, sk.power, sk.get("crit", 0.0), lines)
 				_inflict(sk, t, lines)
+				_weapon_nerf(actor, t, lines)
 			"magic":
 				var dmg := (float(sk.power) + actor.stat("mag") * 0.5) * rng.randf_range(0.85, 1.15)
 				_apply_damage(t, dmg, lines)
 				_inflict(sk, t, lines)
+				_weapon_nerf(actor, t, lines)
 			"heal":
 				var amount := int((float(sk.power) + actor.stat("mag") * 0.5) * rng.randf_range(0.9, 1.1))
 				amount = min(amount, t.max_hp - t.hp)
@@ -323,6 +359,8 @@ func _use_skill(actor: Battler, skill_id: String, wanted: Variant, lines: Array)
 					lines.append("Semua nerf pada %s hilang." % t.display_name)
 				if sk.has("status"):
 					apply_status(t, sk.status, lines)
+	if sk.kind in ["phys", "magic"]:
+		_gear_buff(actor, "weapon", lines)
 
 
 ## Efek status tambahan dari jurus serangan, dengan peluang tertentu.
@@ -350,3 +388,5 @@ func _apply_damage(target: Battler, amount: float, lines: Array) -> void:
 	lines.append("%s menerima %d kerusakan." % [target.display_name, dmg])
 	if not target.is_alive():
 		lines.append("%s %s!" % [target.display_name, "dikalahkan" if target.is_enemy else "tumbang"])
+	else:
+		_gear_buff(target, "body", lines)
