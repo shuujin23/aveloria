@@ -82,3 +82,9 @@ wilayah sebelumnya kalah.
 - **Tempa ulang**: mengacak sifat senjata dengan emas dan 1 bahan rare.
 - **Keseimbangan**: angka semi-bos dan bos disetel dengan anggapan party memakai perlengkapan wilayahnya (`scripts/tests/sim.gd`).
 - Semua angka ada di `scripts/db.gd`; ujinya di `scripts/tests/gear_test.gd`.
+
+## Pemberitahuan versi baru
+
+- Layar judul menampilkan nomor versi (dari `application/config/version` di `project.godot`) dan, pada game hasil ekspor, bertanya ke GitHub rilis terbaru. Kalau ada yang lebih baru, muncul tombol yang membuka halaman unduhan. Tanpa internet tidak terjadi apa-apa.
+- Saat merilis: naikkan `config/version` di `project.godot` dan versi di `export_presets.cfg`, lalu beri tag rilis yang sama (mis. `v1.3`).
+- Kode di `scripts/update_check.gd`; ujinya `scripts/tests/update_test.gd`. Untuk mencoba dari editor: jalankan dengan `-- --cek-versi`.

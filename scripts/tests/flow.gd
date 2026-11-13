@@ -232,7 +232,7 @@ func _initialize() -> void:
 	_expect(not (current_scene.get("_npc_at") as Dictionary).has(Vector2i(12, 2)), "Mira hilang dari peta setelah bergabung")
 
 	# --- Ogre Penjaga dan gerbang ---
-	_set_levels(8)
+	_set_levels(16)  # sejak Ogre diperkuat (v1.2), level 8 tanpa perlengkapan kadang kalah
 	await _open_world("dunia", WorldMap.find_in("dunia", "B") + Vector2i(-1, 0))
 	_expect(not WorldMap.is_walkable(WorldMap.find("G"), _game.flags), "gerbang tertutup sebelum Ogre kalah")
 	current_scene.call("_walk_to", WorldMap.find("B"))
@@ -258,6 +258,7 @@ func _initialize() -> void:
 	await _shot("menu.png")
 	var saved_tile: Vector2i = _game.player_tile
 	var saved_xp: int = (_game.party[0] as Battler).xp
+	var saved_level: int = (_game.party[0] as Battler).level
 	(_game.party[1] as Battler).hp = 7
 	_game.gold = 123
 	_game.items = {"ramuan": 3, "eter": 1}
@@ -267,7 +268,7 @@ func _initialize() -> void:
 	_game.new_game()
 	_expect(_game.party.size() == 1 and _game.gold == 0 and _game.flags.is_empty(), "keadaan direset sebelum dimuat")
 	_expect(_game.load_game(), "simpanan bisa dimuat")
-	_expect(_game.party.size() == 2 and (_game.party[0] as Battler).level == 8 and (_game.party[1] as Battler).id == "mira", "party dan level kembali seperti saat disimpan")
+	_expect(_game.party.size() == 2 and (_game.party[0] as Battler).level == saved_level and (_game.party[1] as Battler).id == "mira", "party dan level kembali seperti saat disimpan")
 	_expect((_game.party[1] as Battler).hp == 7 and (_game.party[0] as Battler).xp == saved_xp, "HP dan XP ikut tersimpan")
 	_expect(_game.items == {"ramuan": 3, "eter": 1} and _game.bag_slots == 10, "isi dan kapasitas tas ikut tersimpan")
 	_expect(_game.gold == 123 and _game.flags.has("ogre") and _game.flags.has("mira_joined") and _game.flags.has("kabut_intro"), "emas dan kemajuan cerita kembali")
@@ -333,7 +334,7 @@ func _initialize() -> void:
 	_expect((current_scene.get("_npc_at") as Dictionary).is_empty(), "Selene hilang dari peta setelah bergabung")
 
 	# --- Ratu Laba-laba dan Celah Abu ---
-	_set_levels(20)  # cukup tinggi supaya menang pasti walau uji hanya menekan Serang
+	_set_levels(30)  # cukup tinggi supaya menang pasti walau uji hanya menekan Serang
 	var pass_tile := WorldMap.find_in("dunia", "P")
 	await _open_world("dunia", nest + Vector2i(-1, 0))
 	_expect(not WorldMap.is_walkable(pass_tile, _game.flags), "Celah Abu tertutup sebelum Ratu kalah")
@@ -415,7 +416,7 @@ func _initialize() -> void:
 	_expect((current_scene.get("_npc_at") as Dictionary).is_empty(), "Kael hilang dari peta setelah bergabung")
 
 	# --- Raksasa Lahar dan jalan ke Kastil Kelam ---
-	_set_levels(26)  # level 18 masih kalah sekitar 13% kalau hanya menekan Serang
+	_set_levels(38)  # sejak bos diperkuat (v1.2), level 26 tanpa perlengkapan kadang kalah
 	var lava_gate := WorldMap.find_in("abu", "R")
 	await _open_world("abu", crater + Vector2i(-1, 0))
 	_expect(not WorldMap.is_walkable(lava_gate, _game.flags), "jalan lahar tertutup sebelum Raksasa kalah")
@@ -468,7 +469,7 @@ func _initialize() -> void:
 	_expect((_game.party[0] as Battler).hp == (_game.party[0] as Battler).max_hp and _game.respawn_map == "kastil", "berdoa di altar memulihkan party dan menjadi titik kembali")
 
 	# --- Raja Monster, adegan penutup, layar tamat ---
-	_set_levels(45)
+	_set_levels(55)
 	var throne := WorldMap.find_in("kastil", "M")
 	await _open_world("kastil", throne + Vector2i(0, 1))
 	current_scene.call("_walk_to", throne)
