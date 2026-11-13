@@ -65,11 +65,11 @@ func _initialize() -> void:
 	_expect(current_scene.get("_dialog_open"), "klik NPC: Arlen menghampiri lalu dialog terbuka")
 	await _skip_dialog()
 
-	# --- Toko Pak Joko ---
+	# --- Toko Doran ---
 	_game.gold = 30
 	current_scene.call("_talk", "joko")
 	await _skip_dialog()
-	_expect(current_scene.get("_shop_open"), "toko terbuka setelah dialog Pak Joko")
+	_expect(current_scene.get("_shop_open"), "toko terbuka setelah dialog Doran")
 	_expect(current_scene.get("_shop_stock") == ["ramuan", "penawar"], "sebelum Ogre kalah toko hanya menjual Ramuan dan Penawar")
 	_expect((current_scene.get("_shop_view") as Control).visible, "toko tampil sebagai kartu berikon")
 	await _shot("toko.png")
@@ -112,7 +112,7 @@ func _initialize() -> void:
 	current_scene.call("_talk", "gatot")
 	await _skip_dialog()
 	var forge: Control = current_scene.get("_forge_view")
-	_expect(current_scene.get("_forge_open") and forge.visible, "pandai besi terbuka setelah dialog Pak Gatot")
+	_expect(current_scene.get("_forge_open") and forge.visible, "pandai besi terbuka setelah dialog Garrick")
 	await create_timer(0.1).timeout
 	await _shot("pandai_beli.png")
 	_expect(_game.buy_gear("arlen_weapon_1") and _game.buy_gear("arlen_body_1") and _game.gold == 115, "membeli pedang dan zirah untuk Arlen (emas=%d)" % _game.gold)
@@ -297,7 +297,7 @@ func _initialize() -> void:
 	await _shot("dusun.png")
 	current_scene.call("_talk", "laras")
 	await _skip_dialog()
-	_expect(_game.flags.has("quest_selene"), "Nyi Laras memberi tugas mencari Selene")
+	_expect(_game.flags.has("quest_selene"), "Tetua Elowen memberi tugas mencari Selene")
 	_game.gold = 100
 	(_game.party[0] as Battler).hp = 3
 	current_scene.call("_talk", "wiryo")
@@ -306,7 +306,7 @@ func _initialize() -> void:
 	_expect(_game.respawn_map == "dusun", "menginap di dusun menjadikannya titik kembali")
 	current_scene.call("_talk", "rumi")
 	await _skip_dialog()
-	_expect(current_scene.get("_shop_open") and (current_scene.get("_shop_stock") as Array).size() == Db.ITEMS.size(), "warung Mbok Rumi menjual semua barang")
+	_expect(current_scene.get("_shop_open") and (current_scene.get("_shop_stock") as Array).size() == Db.ITEMS.size(), "warung Nessa menjual semua barang")
 	current_scene.emit_signal("shop_closed")
 	await _skip_dialog()
 	current_scene.call("_walk_to", WorldMap.find("X"))
@@ -382,14 +382,14 @@ func _initialize() -> void:
 	await _shot("pos.png")
 	current_scene.call("_talk", "darma")
 	await _skip_dialog()
-	_expect(_game.flags.has("quest_kael"), "Ki Darma memberi tugas mencari Kael")
+	_expect(_game.flags.has("quest_kael"), "Tetua Aldric memberi tugas mencari Kael")
 	_game.gold = 100
 	current_scene.call("_talk", "ningsih")
 	await _skip_dialog()
 	_expect(_game.gold == 70 and _game.respawn_map == "pos", "pondok singgah: 30 emas dan menjadi titik kembali (emas=%d)" % _game.gold)
 	current_scene.call("_talk", "sabar")
 	await _skip_dialog()
-	_expect(current_scene.get("_shop_open"), "lapak Pak Sabar terbuka")
+	_expect(current_scene.get("_shop_open"), "lapak Tobin terbuka")
 	current_scene.emit_signal("shop_closed")
 	await _skip_dialog()
 	current_scene.call("_walk_to", WorldMap.find("X"))

@@ -33,6 +33,11 @@ const STATUSES := {
 ## Semi-bos dan bos hanya menerima separuh kerusakan dari terbakar/racun.
 const BOSS_DOT_FACTOR := 0.5
 
+## MP tiap anggota party pulih di akhir tiap ronde battle: bagian dari MP maksimum (minimal 1).
+## Yang memilih Bertahan di ronde itu pulih MP_REGEN_DEFEND kali lebih banyak.
+const MP_REGEN := 0.08
+const MP_REGEN_DEFEND := 2.0
+
 # kind:    phys    -> power = pengali ATK
 #          magic   -> power = kerusakan dasar (+ MAG)
 #          heal    -> power = pemulihan dasar (+ MAG)
@@ -483,7 +488,7 @@ static func gear(id: String) -> Dictionary:
 	var parts := id.split("_")
 	var tier := int(parts[2])
 	return {"id": id, "owner": parts[0], "slot": parts[1], "tier": tier,
-		"name": GEAR_NAMES[parts[0]][parts[1]][tier - 1], "price": GEAR_PRICES[parts[1]][tier - 1]}
+		"name": Loc.t(GEAR_NAMES[parts[0]][parts[1]][tier - 1]), "price": GEAR_PRICES[parts[1]][tier - 1]}
 
 
 ## Bonus stat sebuah perlengkapan pada tingkat tempa `plus`: nama stat -> nilai.
@@ -552,15 +557,15 @@ static func trait_text(entry: Dictionary) -> String:
 	var slot: String = gear(entry.id).slot
 	var who := ""
 	if slot == "weapon":
-		who = " (ke musuh)" if STATUSES[status_id].kind == "nerf" else " (ke diri sendiri)"
-	return "%s %d%% %s%s" % [STATUSES[status_id].name, roundi(trait_chance(int(entry.plus)) * 100.0), TRAIT_WHEN[slot], who]
+		who = Loc.t(" (ke musuh)") if STATUSES[status_id].kind == "nerf" else Loc.t(" (ke diri sendiri)")
+	return "%s %d%% %s%s" % [Loc.t(STATUSES[status_id].name), roundi(trait_chance(int(entry.plus)) * 100.0), Loc.t(TRAIT_WHEN[slot]), who]
 
 
 ## Teks biaya bahan dengan jumlah yang dimiliki, mis. "Serat Liar 1/2, Taring Serigala 3/2".
 static func mats_text(mats: Dictionary, owned: Dictionary) -> String:
 	var parts: Array = []
 	for mat_id: String in mats:
-		parts.append("%s %d/%d" % [MATERIALS[mat_id].name, int(owned.get(mat_id, 0)), mats[mat_id]])
+		parts.append("%s %d/%d" % [Loc.t(MATERIALS[mat_id].name), int(owned.get(mat_id, 0)), mats[mat_id]])
 	return ", ".join(parts)
 
 

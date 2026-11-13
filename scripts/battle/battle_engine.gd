@@ -15,6 +15,8 @@ var rng := RandomNumberGenerator.new()
 var items := {}
 ## Pesan pembuka: sifat perlengkapan (kepala, kaki) yang aktif di awal pertarungan.
 var opening_lines: Array = []
+## Bagian MP maksimum yang pulih tiap akhir ronde (lihat Db.MP_REGEN); simulasi bisa mengubahnya.
+var mp_regen := Db.MP_REGEN
 
 
 func _init(p_party: Array, p_enemies: Array) -> void:
@@ -34,7 +36,7 @@ func _gear_buff(b: Battler, slot: String, lines: Array) -> void:
 		return
 	if b.has_status(gear_trait.status) or rng.randf() >= float(gear_trait.chance):
 		return
-	lines.append("Sifat %s milik %s aktif!" % [Db.gear_title(b.equip[slot]), b.display_name])
+	lines.append(Loc.t("Sifat %s milik %s aktif!") % [Db.gear_title(b.equip[slot]), b.display_name])
 	apply_status(b, gear_trait.status, lines)
 
 
@@ -45,7 +47,7 @@ func _weapon_nerf(actor: Battler, target: Battler, lines: Array) -> void:
 		return
 	if target.immune.has(gear_trait.status) or target.blocks_nerf() or rng.randf() >= float(gear_trait.chance):
 		return
-	lines.append("Sifat %s milik %s aktif!" % [Db.gear_title(actor.equip["weapon"]), actor.display_name])
+	lines.append(Loc.t("Sifat %s milik %s aktif!") % [Db.gear_title(actor.equip["weapon"]), actor.display_name])
 	apply_status(target, gear_trait.status, lines)
 
 
@@ -160,11 +162,11 @@ func execute(cmd: Dictionary) -> Array:
 		return lines
 	match cmd.kind:
 		"defend":
-			lines.append("%s bersiaga menahan serangan." % actor.display_name)
+			lines.append(Loc.t("%s bersiaga menahan serangan.") % actor.display_name)
 		"attack":
 			var target := _retarget(cmd.get("target"), _foes(actor))
 			if target != null:
-				lines.append("%s menyerang %s!" % [actor.display_name, target.display_name])
+				lines.append(Loc.t("%s menyerang %s!") % [actor.display_name, target.display_name])
 				_phys_hit(actor, target, 1.0, 0.0, lines)
 				_weapon_nerf(actor, target, lines)
 				_gear_buff(actor, "weapon", lines)
@@ -172,9 +174,9 @@ func execute(cmd: Dictionary) -> Array:
 			_use_skill(actor, cmd.skill, cmd.get("target"), lines)
 		"item":
 			var item: Dictionary = Db.ITEMS[cmd.item]
-			lines.append("%s memakai %s!" % [actor.display_name, item.name])
+			lines.append(Loc.t("%s memakai %s!") % [actor.display_name, Loc.t(item.name)])
 			if int(items.get(cmd.item, 0)) <= 0:
-				lines.append("Tetapi %s sudah habis!" % item.name)
+				lines.append(Loc.t("Tetapi %s sudah habis!") % Loc.t(item.name))
 			elif apply_item(cmd.item, cmd.target, lines):
 				items[cmd.item] -= 1
 				if items[cmd.item] <= 0:
@@ -191,13 +193,13 @@ static func apply_item(item_id: String, target: Battler, lines: Array) -> bool:
 			if target.is_alive() and target.hp < target.max_hp:
 				var amount: int = min(int(item.power), target.max_hp - target.hp)
 				target.hp += amount
-				lines.append("HP %s pulih %d." % [target.display_name, amount])
+				lines.append(Loc.t("HP %s pulih %d.") % [target.display_name, amount])
 				return true
 		"mp":
 			if target.is_alive() and target.mp < target.max_mp:
 				var amount: int = min(int(item.power), target.max_mp - target.mp)
 				target.mp += amount
-				lines.append("MP %s pulih %d." % [target.display_name, amount])
+				lines.append(Loc.t("MP %s pulih %d.") % [target.display_name, amount])
 				return true
 		"cure":
 			var removed := false
@@ -206,7 +208,7 @@ static func apply_item(item_id: String, target: Battler, lines: Array) -> bool:
 					target.statuses.erase(status_id)
 					removed = true
 			if removed:
-				lines.append("Semua nerf pada %s hilang." % target.display_name)
+				lines.append(Loc.t("Semua nerf pada %s hilang.") % target.display_name)
 				return true
 		"status":
 			if target.is_alive():
@@ -214,14 +216,14 @@ static func apply_item(item_id: String, target: Battler, lines: Array) -> bool:
 				if st.has("cancels"):
 					target.statuses.erase(st.cancels)
 				target.statuses[item.status] = max(int(target.statuses.get(item.status, 0)), int(st.turns))
-				lines.append("%s mendapat %s!" % [target.display_name, st.name])
+				lines.append(Loc.t("%s mendapat %s!") % [target.display_name, Loc.t(st.name)])
 				return true
 		"revive":
 			if not target.is_alive():
 				target.hp = max(1, int(target.max_hp * float(item.power)))
-				lines.append("%s bangkit kembali!" % target.display_name)
+				lines.append(Loc.t("%s bangkit kembali!") % target.display_name)
 				return true
-	lines.append("Tidak berpengaruh pada %s." % target.display_name)
+	lines.append(Loc.t("Tidak berpengaruh pada %s.") % target.display_name)
 	return false
 
 
@@ -229,6 +231,9 @@ static func apply_item(item_id: String, target: Battler, lines: Array) -> bool:
 ## Bisa menumbangkan petarung, jadi pemanggil perlu memeriksa menang/kalah sesudahnya.
 func end_round() -> Array:
 	var lines: Array = []
+	for m: Battler in party:  # MP pulih sedikit tiap ronde; lebih banyak untuk yang bertahan
+		if m.is_alive():
+			m.mp = min(m.max_mp, m.mp + mp_gain(m))
 	for b: Battler in party + enemies:
 		b.defending = false
 		for status_id: String in b.statuses.keys():
@@ -237,17 +242,23 @@ func end_round() -> Array:
 				var dmg := float(b.max_hp) * float(st.dot) * (Db.BOSS_DOT_FACTOR if b.is_boss else 1.0)
 				var dealt: int = max(1, int(round(dmg)))
 				b.hp = max(0, b.hp - dealt)
-				lines.append("%s menderita %s: %d kerusakan." % [b.display_name, st.name, dealt])
+				lines.append(Loc.t("%s menderita %s: %d kerusakan.") % [b.display_name, Loc.t(st.name), dealt])
 				if not b.is_alive():
-					lines.append("%s %s!" % [b.display_name, "dikalahkan" if b.is_enemy else "tumbang"])
+					lines.append((Loc.t("%s dikalahkan!") if b.is_enemy else Loc.t("%s tumbang!")) % b.display_name)
 			b.statuses[status_id] -= 1
 			if b.statuses[status_id] <= 0:
 				b.statuses.erase(status_id)
 				if b.is_alive():
-					lines.append("%s pada %s berakhir." % [st.name, b.display_name])
+					lines.append(Loc.t("%s pada %s berakhir.") % [Loc.t(st.name), b.display_name])
 		if not b.is_alive():
 			b.statuses.clear()
 	return lines
+
+
+## MP yang pulih untuk seorang anggota party di akhir ronde ini.
+func mp_gain(m: Battler) -> int:
+	var gain: int = max(1, roundi(m.max_mp * mp_regen)) if mp_regen > 0.0 else 0
+	return roundi(gain * Db.MP_REGEN_DEFEND) if m.defending else gain
 
 
 ## Beri efek status ke sasaran. Nerf bisa ditolak oleh kekebalan bawaan atau efek Kebal.
@@ -256,12 +267,12 @@ func apply_status(target: Battler, status_id: String, lines: Array) -> void:
 		return
 	var st: Dictionary = Db.STATUSES[status_id]
 	if st.kind == "nerf" and (target.immune.has(status_id) or target.blocks_nerf()):
-		lines.append("%s kebal terhadap %s." % [target.display_name, st.name])
+		lines.append(Loc.t("%s kebal terhadap %s.") % [target.display_name, Loc.t(st.name)])
 		return
 	if st.has("cancels"):
 		target.statuses.erase(st.cancels)
 	target.statuses[status_id] = max(int(target.statuses.get(status_id, 0)), int(st.turns))
-	lines.append("%s %s %s!" % [target.display_name, "terkena" if st.kind == "nerf" else "mendapat", st.name])
+	lines.append((Loc.t("%s terkena %s!") if st.kind == "nerf" else Loc.t("%s mendapat %s!")) % [target.display_name, Loc.t(st.name)])
 
 
 ## Bagikan XP dan emas setelah menang. Anggota yang tumbang tidak dapat XP, lalu bangkit dengan 1 HP.
@@ -276,7 +287,7 @@ func grant_rewards() -> Dictionary:
 		var dropped := Db.roll_drops(e.id, rng)
 		for mat_id: String in dropped:
 			drops[mat_id] = int(drops.get(mat_id, 0)) + int(dropped[mat_id])
-	var lines: Array = ["Party mendapat %d XP dan %d emas." % [xp, gold]]
+	var lines: Array = [Loc.t("Party mendapat %d XP dan %d emas.") % [xp, gold]]
 	for m: Battler in party:
 		if m.is_alive():
 			lines.append_array(m.gain_xp(xp))
@@ -310,9 +321,9 @@ func _retarget(target: Variant, pool: Array) -> Battler:
 
 func _use_skill(actor: Battler, skill_id: String, wanted: Variant, lines: Array) -> void:
 	var sk: Dictionary = Db.SKILLS[skill_id]
-	lines.append("%s menggunakan %s!" % [actor.display_name, sk.name])
+	lines.append(Loc.t("%s menggunakan %s!") % [actor.display_name, Loc.t(sk.name)])
 	if actor.mp < sk.mp:
-		lines.append("Tetapi MP tidak cukup!")
+		lines.append(Loc.t("Tetapi MP tidak cukup!"))
 		return
 	actor.mp -= sk.mp
 
@@ -346,7 +357,7 @@ func _use_skill(actor: Battler, skill_id: String, wanted: Variant, lines: Array)
 				var amount := int((float(sk.power) + actor.stat("mag") * 0.5) * rng.randf_range(0.9, 1.1))
 				amount = min(amount, t.max_hp - t.hp)
 				t.hp += amount
-				lines.append("HP %s pulih %d." % [t.display_name, amount])
+				lines.append(Loc.t("HP %s pulih %d.") % [t.display_name, amount])
 			"status":
 				apply_status(t, sk.status, lines)
 			"cleanse":
@@ -356,7 +367,7 @@ func _use_skill(actor: Battler, skill_id: String, wanted: Variant, lines: Array)
 						t.statuses.erase(status_id)
 						removed += 1
 				if removed > 0:
-					lines.append("Semua nerf pada %s hilang." % t.display_name)
+					lines.append(Loc.t("Semua nerf pada %s hilang.") % t.display_name)
 				if sk.has("status"):
 					apply_status(t, sk.status, lines)
 	if sk.kind in ["phys", "magic"]:
@@ -373,7 +384,7 @@ func _phys_hit(actor: Battler, target: Battler, power: float, crit_bonus: float,
 	var raw := actor.stat("atk") * power
 	var dmg: float
 	if rng.randf() < CRIT_CHANCE + crit_bonus:
-		lines.append("Serangan kritikal!")
+		lines.append(Loc.t("Serangan kritikal!"))
 		dmg = raw * 1.5
 	else:
 		dmg = raw - target.stat("defense") * 0.5
@@ -385,8 +396,8 @@ func _apply_damage(target: Battler, amount: float, lines: Array) -> void:
 		amount *= 0.5
 	var dmg: int = max(1, int(round(amount)))
 	target.hp = max(0, target.hp - dmg)
-	lines.append("%s menerima %d kerusakan." % [target.display_name, dmg])
+	lines.append(Loc.t("%s menerima %d kerusakan.") % [target.display_name, dmg])
 	if not target.is_alive():
-		lines.append("%s %s!" % [target.display_name, "dikalahkan" if target.is_enemy else "tumbang"])
+		lines.append((Loc.t("%s dikalahkan!") if target.is_enemy else Loc.t("%s tumbang!")) % target.display_name)
 	else:
 		_gear_buff(target, "body", lines)

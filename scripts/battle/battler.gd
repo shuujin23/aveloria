@@ -51,7 +51,7 @@ static func from_enemy(enemy_id: String, suffix: String = "") -> Battler:
 	b.id = enemy_id
 	b.is_enemy = true
 	b.is_boss = e.get("boss", false)
-	b.display_name = String(e.name) + suffix
+	b.display_name = Loc.t(String(e.name)) + suffix
 	b.max_hp = e.hp
 	b.hp = e.hp
 	b.max_mp = e.mp
@@ -151,8 +151,8 @@ func gain_xp(amount: int) -> Array:
 		recalc()
 		hp += max_hp - old_hp
 		mp += max_mp - old_mp
-		lines.append("%s naik ke Level %d!" % [display_name, level])
+		lines.append(Loc.t("%s naik ke Level %d!") % [display_name, level])
 		for s: String in skills:
 			if not old_skills.has(s):
-				lines.append("%s mempelajari jurus %s!" % [display_name, Db.SKILLS[s].name])
+				lines.append(Loc.t("%s mempelajari jurus %s!") % [display_name, Loc.t(Db.SKILLS[s].name)])
 	return lines

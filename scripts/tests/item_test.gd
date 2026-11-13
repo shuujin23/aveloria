@@ -63,7 +63,7 @@ func _init() -> void:
 	_expect(arlen.has_status("speed_up") and not arlen.has_status("slow"), "Ramuan Angin memberi Cepat dan menghapus Lambat")
 	_expect(buffs.is_empty(), "ketiga ramuan buff terpakai")
 
-	# Tas awal dan dagangan Pak Joko
+	# Tas awal dan dagangan Doran
 	_expect(Db.START_ITEMS == {"ramuan": 2}, "permainan baru dimulai dengan 2 Ramuan")
 	_expect(_stock({}) == ["ramuan", "penawar"], "sebelum Ogre kalah: toko menjual Ramuan dan Penawar")
 	_expect(_stock({"ogre": true}).size() == Db.ITEMS.size(), "setelah Ogre kalah: toko menjual semua barang")

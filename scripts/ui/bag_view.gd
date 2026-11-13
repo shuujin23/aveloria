@@ -64,13 +64,13 @@ func _init() -> void:
 	var actions := HBoxContainer.new()
 	actions.add_theme_constant_override("separation", 8)
 	column.add_child(actions)
-	_use = _action(actions, "Pakai", func() -> void:
+	_use = _action(actions, Loc.t("Pakai"), func() -> void:
 		if _selected != "":
 			picked.emit(_selected))
-	_drop = _action(actions, "Buang 1", func() -> void:
+	_drop = _action(actions, Loc.t("Buang 1"), func() -> void:
 		if _selected != "":
 			discarded.emit(_selected))
-	_action(actions, "Tutup", func() -> void: closed.emit())
+	_action(actions, Loc.t("Tutup"), func() -> void: closed.emit())
 
 
 func _action(parent: Control, text: String, callback: Callable) -> Button:
@@ -108,7 +108,7 @@ func open(counts: Dictionary, capacity: int, usable: Callable, allow_discard: bo
 		child.queue_free()
 
 	var stacks := Db.stacks_of(counts)
-	_title.text = "Tas   %d / %d slot   (tiap slot memuat %d barang sejenis)" % [min(stacks.size(), capacity), capacity, Db.STACK_MAX]
+	_title.text = Loc.t("Tas   %d / %d slot   (tiap slot memuat %d barang sejenis)") % [min(stacks.size(), capacity), capacity, Db.STACK_MAX]
 	var first: Button = null
 	var wanted: Button = null
 	for i in max(capacity, stacks.size()):
@@ -137,8 +137,8 @@ func open(counts: Dictionary, capacity: int, usable: Callable, allow_discard: bo
 
 	visible = true
 	_selected = ""
-	_name.text = "Tas kosong" if first == null else ""
-	_desc.text = "Pak Joko di desa menjual ramuan." if first == null else ""
+	_name.text = Loc.t("Tas kosong") if first == null else ""
+	_desc.text = Loc.t("Doran di desa menjual ramuan.") if first == null else ""
 	_use.disabled = true
 	_drop.disabled = true
 	if wanted != null:
@@ -196,7 +196,7 @@ func _select(item_id: String) -> void:
 	_selected = item_id
 	var item: Dictionary = Db.ITEMS[item_id]
 	var can_use: bool = _usable.call(item_id)
-	_name.text = "%s   (punya %d)" % [item.name, int(_counts.get(item_id, 0))]
-	_desc.text = item.desc if can_use else "%s (Tidak bisa dipakai sekarang.)" % item.desc
+	_name.text = Loc.t("%s   (punya %d)") % [Loc.t(item.name), int(_counts.get(item_id, 0))]
+	_desc.text = Loc.t(item.desc) if can_use else Loc.t("%s (Tidak bisa dipakai sekarang.)") % Loc.t(item.desc)
 	_use.disabled = not can_use
 	_drop.disabled = false

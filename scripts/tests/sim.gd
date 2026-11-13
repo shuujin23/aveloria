@@ -35,10 +35,14 @@ const EVENTS := {
 
 ## Untuk mencoba angka bos tanpa mengubah Db: "-- ogre:1.3:1.2;ratu:1.2:1.1" = pengali HP dan ATK/MAG.
 var _scale := {}
+var _regen := Db.MP_REGEN  # "-- regen=0.05" untuk mencoba angka pemulihan MP lain
 
 
 func _init() -> void:
 	for arg: String in OS.get_cmdline_user_args():
+		if arg.begins_with("regen="):
+			_regen = float(arg.trim_prefix("regen="))
+			continue
 		for part: String in arg.split(";", false):
 			var bits := part.split(":")
 			_scale[bits[0]] = [float(bits[1]), float(bits[2])]
@@ -81,6 +85,7 @@ func _run(rest_every: int, geared: int) -> void:
 				var boss_plus := 1 if geared == 1 else 3
 				_equip(party, min(tier, Db.GEAR_TIERS), boss_plus if stage.begins_with("boss:") else geared - 1)
 			var eng := BattleEngine.new(party, BattleEngine.make_encounter(ids))
+			eng.mp_regen = _regen
 			for e: Battler in eng.enemies:
 				if _scale.has(e.id):
 					e.max_hp = int(e.max_hp * float(_scale[e.id][0]))

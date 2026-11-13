@@ -23,8 +23,8 @@ func _ready() -> void:
 	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(backdrop)
 
-	_label("TAMAT", 60, 84, Color("ffd866"), 16)
-	_label("Aveloria kembali damai.", 170, 24, Color.WHITE, 6)
+	_label(Loc.t("TAMAT"), 60, 84, Color("ffd866"), 16)
+	_label(Loc.t("Aveloria kembali damai."), 170, 24, Color.WHITE, 6)
 
 	for i in HEROES.size():
 		var hero := TextureRect.new()
@@ -35,14 +35,14 @@ func _ready() -> void:
 		hero.position = Vector2(640 - HEROES.size() * 70 + i * 140 + 10, 235)
 		add_child(hero)
 
-	var stats := "Level akhir: %s        Kemenangan: %d" % [
+	var stats := Loc.t("Level akhir: %s        Kemenangan: %d") % [
 		",  ".join(Game.party.map(func(m: Battler) -> String: return "%s %d" % [m.display_name, m.level])), Game.wins]
 	_label(stats, 420, 18, Color.WHITE, 5)
 	for i in CREDITS.size():
-		_label(CREDITS[i], 470 + i * 26, 15, Color(1, 1, 1, 0.9), 4)
+		_label(Loc.t(CREDITS[i]), 470 + i * 26, 15, Color(1, 1, 1, 0.9), 4)
 
 	var button := Button.new()
-	button.text = "Kembali ke layar judul"
+	button.text = Loc.t("Kembali ke layar judul")
 	button.anchor_left = 0.5
 	button.anchor_right = 0.5
 	button.offset_left = -170

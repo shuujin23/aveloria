@@ -40,7 +40,7 @@ func _init() -> void:
 	var header := HBoxContainer.new()
 	column.add_child(header)
 	_title = Label.new()
-	_title.text = "Toko"
+	_title.text = Loc.t("Toko")
 	_title.add_theme_color_override("font_color", COLOR_GOLD)
 	_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(_title)
@@ -60,7 +60,7 @@ func _init() -> void:
 	column.add_child(_detail)
 
 	var done := Button.new()
-	done.text = "Selesai"
+	done.text = Loc.t("Selesai")
 	done.focus_entered.connect(func() -> void: Audio.sfx("ui_move"))
 	done.pressed.connect(func() -> void:
 		Audio.sfx("ui_ok")
@@ -85,7 +85,7 @@ func open(stock: Array, focus_id: String = "", message: String = "") -> void:
 	for child in _grid.get_children():
 		_grid.remove_child(child)
 		child.queue_free()
-	_purse.text = "Emas: %d      Tas %d/%d slot" % [Game.gold, Game.slots_used(), Game.bag_slots]
+	_purse.text = Loc.t("Emas: %d      Tas %d/%d slot") % [Game.gold, Game.slots_used(), Game.bag_slots]
 
 	var wanted: Button = null
 	var first: Button = null
@@ -93,11 +93,11 @@ func open(stock: Array, focus_id: String = "", message: String = "") -> void:
 		var item: Dictionary = Db.ITEMS[item_id]
 		var reason := ""
 		if not Game.can_add(item_id):
-			reason = "Tas penuh. Pakai atau buang barang, atau perbesar tas."
+			reason = Loc.t("Tas penuh. Pakai atau buang barang, atau perbesar tas.")
 		elif Game.gold < int(item.price):
-			reason = "Emas belum cukup."
-		var card := _card("icon_%s" % item_id, item.name, "%d emas" % item.price,
-			"punya %d" % int(Game.items.get(item_id, 0)), item.desc, reason,
+			reason = Loc.t("Emas belum cukup.")
+		var card := _card("icon_%s" % item_id, Loc.t(item.name), Loc.t("%d emas") % item.price,
+			Loc.t("punya %d") % int(Game.items.get(item_id, 0)), Loc.t(item.desc), reason,
 			func() -> void: buy.emit(item_id))
 		if first == null:
 			first = card
@@ -106,16 +106,16 @@ func open(stock: Array, focus_id: String = "", message: String = "") -> void:
 
 	var price := Db.bag_upgrade_price(Game.bag_slots)
 	if price >= 0:
-		var card := _card("icon_tas", "Perbesar tas", "%d emas" % price,
-			"%d -> %d slot" % [Game.bag_slots, min(Db.BAG_MAX, Game.bag_slots + Db.BAG_STEP)],
-			"Menambah %d slot tas. Tiap slot memuat %d barang sejenis; maksimal %d slot." % [Db.BAG_STEP, Db.STACK_MAX, Db.BAG_MAX],
-			"Emas belum cukup." if Game.gold < price else "",
+		var card := _card("icon_tas", Loc.t("Perbesar tas"), Loc.t("%d emas") % price,
+			Loc.t("%d -> %d slot") % [Game.bag_slots, min(Db.BAG_MAX, Game.bag_slots + Db.BAG_STEP)],
+			Loc.t("Menambah %d slot tas. Tiap slot memuat %d barang sejenis; maksimal %d slot.") % [Db.BAG_STEP, Db.STACK_MAX, Db.BAG_MAX],
+			Loc.t("Emas belum cukup.") if Game.gold < price else "",
 			func() -> void: upgrade.emit())
 		if focus_id == UPGRADE:
 			wanted = card
 
 	visible = true
-	_detail.text = "Sorot barang untuk melihat khasiatnya; tekan untuk membeli."
+	_detail.text = Loc.t("Sorot barang untuk melihat khasiatnya; tekan untuk membeli.")
 	(wanted if wanted != null else first).grab_focus()
 	if message != "":
 		_detail.text = message

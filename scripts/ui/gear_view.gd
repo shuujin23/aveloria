@@ -35,7 +35,7 @@ func _init() -> void:
 	add_child(column)
 
 	var title := Label.new()
-	title.text = "Perlengkapan"
+	title.text = Loc.t("Perlengkapan")
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_color_override("font_color", COLOR_GOLD)
 	column.add_child(title)
@@ -61,7 +61,7 @@ func _init() -> void:
 	column.add_child(_detail)
 
 	_close = Button.new()
-	_close.text = "Tutup"
+	_close.text = Loc.t("Tutup")
 	_close.focus_entered.connect(func() -> void: Audio.sfx("ui_move"))
 	_close.pressed.connect(func() -> void:
 		Audio.sfx("ui_ok")
@@ -86,7 +86,7 @@ func open() -> void:
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 8)
 		var who := Label.new()
-		who.text = "%s\n%s  Lv %d" % [m.display_name, m.job, m.level]
+		who.text = "%s\n%s  Lv %d" % [m.display_name, Loc.t(m.job), m.level]
 		who.custom_minimum_size.x = 130
 		who.add_theme_font_size_override("font_size", 15)
 		row.add_child(who)
@@ -106,22 +106,22 @@ func open() -> void:
 			continue
 		total += count
 		var mat: Dictionary = Db.MATERIALS[mat_id]
-		var cell := _cell(GearIcon.material(mat_id, count), "%s   (%s, %s)   punya %d\nBahan tempa. Harga jual %d emas." % [
-			mat.name, Db.RARITIES[mat.rarity].name, Db.REGION_NAMES[mat.region], count, mat.sell])
+		var cell := _cell(GearIcon.material(mat_id, count), Loc.t("%s   (%s, %s)   punya %d\nBahan tempa. Harga jual %d emas.") % [
+			Loc.t(mat.name), Db.RARITIES[mat.rarity].name, Loc.t(Db.REGION_NAMES[mat.region]), count, mat.sell])
 		_mats.add_child(cell)
-	_mats_title.text = "Kantong bahan" if total > 0 else "Kantong bahan: kosong. Monster menjatuhkan bahan tempa saat dikalahkan."
+	_mats_title.text = Loc.t("Kantong bahan") if total > 0 else Loc.t("Kantong bahan: kosong. Monster menjatuhkan bahan tempa saat dikalahkan.")
 
-	_detail.text = "Sorot perlengkapan atau bahan untuk melihat keterangannya. Beli dan tempa di pandai besi."
+	_detail.text = Loc.t("Sorot perlengkapan atau bahan untuk melihat keterangannya. Beli dan tempa di pandai besi.")
 	visible = true
 	_close.grab_focus()
 
 
 func _slot(m: Battler, slot: String) -> Button:
 	if not m.equip.has(slot):
-		var empty := _cell(null, "%s %s: kosong. Pandai besi menjual perlengkapan untuk tiap tokoh." % [
-			Db.GEAR_SLOT_NAMES[slot], m.display_name])
+		var empty := _cell(null, Loc.t("%s %s: kosong. Pandai besi menjual perlengkapan untuk tiap tokoh.") % [
+			Loc.t(Db.GEAR_SLOT_NAMES[slot]), m.display_name])
 		var label := Label.new()
-		label.text = Db.GEAR_SLOT_NAMES[slot]
+		label.text = Loc.t(Db.GEAR_SLOT_NAMES[slot])
 		label.add_theme_font_size_override("font_size", 12)
 		label.add_theme_color_override("font_color", Color(1, 1, 1, 0.35))
 		label.size = SLOT_SIZE
@@ -131,10 +131,10 @@ func _slot(m: Battler, slot: String) -> Button:
 		empty.add_child(label)
 		return empty
 	var entry: Dictionary = m.equip[slot]
-	var text := "%s   (%s %s)   %s" % [Db.gear_title(entry), Db.GEAR_SLOT_NAMES[slot], m.display_name,
+	var text := "%s   (%s %s)   %s" % [Db.gear_title(entry), Loc.t(Db.GEAR_SLOT_NAMES[slot]), m.display_name,
 		Db.gear_stat_text(entry.id, int(entry.plus))]
 	var trait_text := Db.trait_text(entry)
-	text += "\nSifat: %s" % trait_text if trait_text != "" else "\nBelum punya sifat. Menempa berpeluang memberinya sifat."
+	text += Loc.t("\nSifat: %s") % trait_text if trait_text != "" else Loc.t("\nBelum punya sifat. Menempa berpeluang memberinya sifat.")
 	return _cell(GearIcon.gear(entry), text)
 
 

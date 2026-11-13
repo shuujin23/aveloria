@@ -98,6 +98,33 @@ func _init() -> void:
 				users.append(sk.name)
 		_expect(not users.is_empty(), "%s (%s) dipakai oleh: %s" % [st.name, st.kind, ", ".join(users)])
 
+	# Pemulihan MP tiap akhir ronde (hanya anggota party)
+	var mage := Battler.from_character("selene", 5)  # MP maksimum 32 -> pulih 3 per ronde
+	var knight := Battler.from_character("arlen", 1)  # MP maksimum 6 -> pulih minimal 1
+	var regen_bat := Battler.from_enemy("kelelawar")
+	var regen := BattleEngine.new([mage, knight], [regen_bat])
+	mage.mp = 10
+	knight.mp = 0
+	regen_bat.mp = 0
+	regen.begin_round([])
+	regen.end_round()
+	_expect(mage.mp == 10 + roundi(mage.max_mp * Db.MP_REGEN), "MP pulih %d%% MP maksimum tiap ronde (+%d)" % [roundi(Db.MP_REGEN * 100), mage.mp - 10])
+	_expect(knight.mp == 1, "MP pulih minimal 1 tiap ronde")
+	_expect(regen_bat.mp == 0, "MP monster tidak pulih")
+	mage.mp = 10
+	regen.begin_round([{"actor": mage, "kind": "defend"}])
+	regen.end_round()
+	_expect(mage.mp == 10 + roundi(roundi(mage.max_mp * Db.MP_REGEN) * Db.MP_REGEN_DEFEND), "Bertahan melipatgandakan pemulihan MP (+%d)" % (mage.mp - 10))
+	mage.mp = mage.max_mp - 1
+	regen.begin_round([])
+	regen.end_round()
+	_expect(mage.mp == mage.max_mp, "MP tidak melebihi maksimum")
+	mage.hp = 0
+	mage.mp = 5
+	regen.begin_round([])
+	regen.end_round()
+	_expect(mage.mp == 5, "anggota yang tumbang tidak memulihkan MP")
+
 	print("HASIL: %s" % ("ADA YANG GAGAL" if _failed else "SEMUA LOLOS"))
 	quit(1 if _failed else 0)
 

@@ -650,7 +650,7 @@ func _dress_tetua(img: Image, front: bool, _action: String) -> void:
 	_hrect(img, 14, 10, 15, 10, "6b4a2a")
 
 
-## Bu Sari, pemilik penginapan: gaun hijau dengan celemek putih, rambut disanggul.
+## Marla, pemilik penginapan: gaun hijau dengan celemek putih, rambut disanggul.
 func _dress_sari(img: Image, front: bool, _action: String) -> void:
 	_robe(img, "4a8a6a", "346a50", "f0f0f8")
 	_hrect(img, 6, -1, 9, 0, "6a4028")
@@ -659,7 +659,7 @@ func _dress_sari(img: Image, front: bool, _action: String) -> void:
 		_hrect(img, 5, 12, 5, 20, "c8ccdc")
 
 
-## Dimas, anak desa: topi merah.
+## Finn, anak desa: topi merah.
 func _dress_dimas(img: Image, front: bool, _action: String) -> void:
 	_hrect(img, 5, 1, 10, 1, "c8503f")
 	_hrect(img, 4, 2, 11, 3, "c8503f")
@@ -667,7 +667,7 @@ func _dress_dimas(img: Image, front: bool, _action: String) -> void:
 		_hrect(img, 8, 4, 13, 4, "96392d")
 
 
-## Pak Joko, pedagang: sorban kuning, kumis, tas selempang.
+## Doran, pedagang: sorban kuning, kumis, tas selempang.
 func _dress_joko(img: Image, front: bool, _action: String) -> void:
 	_hrect(img, 5, 0, 10, 0, "e0b040")
 	_hrect(img, 4, 1, 11, 3, "e0b040")
@@ -679,7 +679,7 @@ func _dress_joko(img: Image, front: bool, _action: String) -> void:
 		_hrect(img, 10, 14, 12, 16, "86603a")
 
 
-## Ki Darma, kepala pemburu: topi bulu, jubah kulit, tombak.
+## Tetua Aldric, kepala pemburu: topi bulu, jubah kulit, tombak.
 func _dress_darma(img: Image, front: bool, _action: String) -> void:
 	_hrect(img, 5, 0, 10, 0, "7a5a3a")
 	_hrect(img, 4, 1, 11, 3, "7a5a3a")
@@ -692,7 +692,7 @@ func _dress_darma(img: Image, front: bool, _action: String) -> void:
 	_hp(img, 17, -3, "c9d1dc")
 
 
-## Bu Ningsih, penjaga pondok singgah: gaun merah bata, kerudung putih.
+## Brenna, penjaga pondok singgah: gaun merah bata, kerudung putih.
 func _dress_ningsih(img: Image, front: bool, _action: String) -> void:
 	_robe(img, "9a4a3a", "7a342a", "e8e0d0")
 	_hrect(img, 5, 1, 10, 1, "e8e0d0")
@@ -701,7 +701,7 @@ func _dress_ningsih(img: Image, front: bool, _action: String) -> void:
 	_hrect(img, 12, 3, 12, 9, "c8c0b0")
 
 
-## Pak Sabar, pedagang lapak: caping jerami, rompi hijau.
+## Tobin, pedagang lapak: caping jerami, rompi hijau.
 func _dress_sabar(img: Image, front: bool, _action: String) -> void:
 	_hrect(img, 6, -1, 9, 0, "d8b860")
 	_hrect(img, 4, 1, 11, 1, "d8b860")
@@ -711,7 +711,7 @@ func _dress_sabar(img: Image, front: bool, _action: String) -> void:
 		_hrect(img, 6, 12, 9, 14, "e8e0d0")
 
 
-## Nyi Laras, tetua dusun: jubah hijau-biru, rambut putih disanggul, tongkat jalan.
+## Tetua Elowen, tetua dusun: jubah hijau-biru, rambut putih disanggul, tongkat jalan.
 func _dress_laras(img: Image, _front: bool, _action: String) -> void:
 	_robe(img, "3a7a78", "2a5a5c", "c8a040")
 	_hrect(img, 6, -1, 9, 0, "d8d8e0")
@@ -719,14 +719,14 @@ func _dress_laras(img: Image, _front: bool, _action: String) -> void:
 	_hrect(img, 14, 10, 15, 10, "6b4a2a")
 
 
-## Pak Wiryo, pemilik penginapan dusun: rompi cokelat, celemek, kumis.
+## Osric, pemilik penginapan dusun: rompi cokelat, celemek, kumis.
 func _dress_wiryo(img: Image, front: bool, _action: String) -> void:
 	if front:
 		_hrect(img, 6, 12, 9, 17, "e8e0d0")
 		_hrect(img, 6, 8, 9, 8, "3a2818")
 
 
-## Mbok Rumi, penjaga warung: kerudung kuning, gaun ungu panjang.
+## Nessa, penjaga warung: kerudung kuning, gaun ungu panjang.
 func _dress_rumi(img: Image, front: bool, _action: String) -> void:
 	_robe(img, "8a4a8a", "6a346a", "e0b040")
 	_hrect(img, 5, 1, 10, 1, "e0b040")

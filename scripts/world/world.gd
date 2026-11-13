@@ -215,7 +215,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if _npc_at.has(target):
 			_walk_to_npc(target)
 		elif not _walk_to(target):
-			_show_message("Tidak ada jalan ke sana.")
+			_show_message(Loc.t("Tidak ada jalan ke sana."))
 
 
 ## Mulai berjalan otomatis ke petak tujuan. Mengembalikan false kalau tidak terjangkau.
@@ -244,7 +244,7 @@ func _walk_to_npc(target: Vector2i) -> void:
 		if not path.is_empty() and (best.is_empty() or path.size() < best.size()):
 			best = path
 	if best.is_empty():
-		_show_message("Tidak ada jalan ke sana.")
+		_show_message(Loc.t("Tidak ada jalan ke sana."))
 		return
 	_path = best
 	_talk_after = npc.id
@@ -326,7 +326,7 @@ func _resolve_step(dir: Vector2i) -> Vector2i:
 			_talk(_npc_at[_tile + option].id)
 			break
 		if WorldMap.tile_at(_tile + option).has("gate"):
-			_show_message(WorldMap.tile_at(_tile + option).locked)
+			_show_message(Loc.t(WorldMap.tile_at(_tile + option).locked))
 			break
 	return Vector2i.ZERO
 
@@ -344,7 +344,7 @@ func _on_step() -> void:
 	elif tile.has("boss"):
 		var rule: Dictionary = Db.BOSS_RULES[tile.boss]
 		if Game.flags.has(tile.boss):
-			_show_message("Tidak ada apa-apa lagi di sini.")
+			_show_message(Loc.t("Tidak ada apa-apa lagi di sini."))
 		elif not Game.flags.has(rule.need):  # belum punya rekan yang dibutuhkan
 			_run_scene(Story.scene(rule.blocked))
 		else:
@@ -460,9 +460,9 @@ func _type_text() -> void:
 func _run_steps(steps: Array) -> bool:
 	for step: Dictionary in steps:
 		if step.has("text"):
-			_dialog_name.text = step.get("who", "")
+			_dialog_name.text = Loc.t(step.get("who", ""))
 			_dialog_name.visible = _dialog_name.text != ""
-			_dialog_text.text = step.text
+			_dialog_text.text = Loc.t(step.text) % step.args if step.has("args") else Loc.t(step.text)
 			_dialog_hint.visible = true
 			_dialog_choices.visible = false
 			_dialog_panel.visible = true
@@ -478,7 +478,7 @@ func _run_steps(steps: Array) -> bool:
 				child.queue_free()
 			for i in options.size():
 				var button := Button.new()
-				button.text = options[i].text
+				button.text = Loc.t(options[i].text)
 				button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 				button.focus_entered.connect(func() -> void: Audio.sfx("ui_move"))
 				button.pressed.connect(func() -> void: Audio.sfx("ui_ok"))
@@ -505,10 +505,10 @@ func _run_steps(steps: Array) -> bool:
 					Audio.sfx("coin")
 					_update_hud()
 				"shop":
-					_shop_view.set_shop_name(step.get("name", "Toko Pak Joko"))
+					_shop_view.set_shop_name(Loc.t(step.get("name", Loc.t("Toko Doran"))))
 					await _shop(step.stock)
 				"forge":  # pandai besi: beli perlengkapan, tempa, jual bahan
-					await _forge(int(step.tier), step.get("name", "Pandai Besi"))
+					await _forge(int(step.tier), Loc.t(step.get("name", Loc.t("Pandai Besi"))))
 				"rest":  # menginap: pulih, jadi titik kembali, dan menyimpan permainan
 					Game.rest_at_inn()
 					Game.save_game()
@@ -560,16 +560,19 @@ func _open_menu() -> void:
 	_menu_open = true
 	_cancel_path()
 	_fill_menu("Menu", [
-		{"text": "Lanjut bermain", "cb": _close_menu},
-		{"text": "Barang", "cb": func() -> void:
+		{"text": Loc.t("Lanjut bermain"), "cb": _close_menu},
+		{"text": Loc.t("Barang"), "cb": func() -> void:
 			_bag_from_menu = true
 			_open_bag()},
-		{"text": "Perlengkapan", "cb": func() -> void:
+		{"text": Loc.t("Perlengkapan"), "cb": func() -> void:
 			_gear_from_menu = true
 			_open_gear()},
-		{"text": "Simpan permainan", "cb": _menu_save},
-		{"text": "Muat simpanan terakhir", "cb": _menu_load, "disabled": not Game.has_save()},
-		{"text": "Kembali ke layar judul", "cb": func() -> void: get_tree().change_scene_to_file(Game.TITLE_SCENE)},
+		{"text": Loc.t("Simpan permainan"), "cb": _menu_save},
+		{"text": Loc.t("Muat simpanan terakhir"), "cb": _menu_load, "disabled": not Game.has_save()},
+		{"text": Loc.label(), "cb": func() -> void:  # ganti bahasa lalu muat ulang peta supaya semua tulisan ikut
+			Loc.toggle()
+			get_tree().change_scene_to_file(Game.WORLD_SCENE)},
+		{"text": Loc.t("Kembali ke layar judul"), "cb": func() -> void: get_tree().change_scene_to_file(Game.TITLE_SCENE)},
 	])
 
 
@@ -585,7 +588,7 @@ func _menu_save() -> void:
 	if saved:
 		Audio.sfx("save")
 	_close_menu()
-	_show_message("Permainan disimpan." if saved else "Gagal menyimpan permainan.")
+	_show_message(Loc.t("Permainan disimpan.") if saved else Loc.t("Gagal menyimpan permainan."))
 
 
 func _menu_load() -> void:
@@ -593,7 +596,7 @@ func _menu_load() -> void:
 		get_tree().change_scene_to_file(Game.WORLD_SCENE)
 	else:
 		_close_menu()
-		_show_message("Simpanan tidak bisa dibaca.")
+		_show_message(Loc.t("Simpanan tidak bisa dibaca."))
 
 
 ## Pintasan tas (tombol ikon tas atau tombol I): buka langsung dari peta, atau tutup kalau sedang terbuka.
@@ -636,8 +639,8 @@ func _menu_item_target(item_id: String) -> void:
 	for m: Battler in Game.party:
 		items.append({"text": "%s   HP %d/%d   MP %d/%d" % [m.display_name, m.hp, m.max_hp, m.mp, m.max_mp],
 			"cb": func() -> void: _menu_use_item(item_id, m)})
-	items.append({"text": "< Kembali", "cb": func() -> void: _open_bag(item_id)})
-	_fill_menu("%s untuk siapa?" % item.name, items, item.desc)
+	items.append({"text": Loc.t("< Kembali"), "cb": func() -> void: _open_bag(item_id)})
+	_fill_menu(Loc.t("%s untuk siapa?") % Loc.t(item.name), items, Loc.t(item.desc))
 
 
 func _menu_use_item(item_id: String, target: Battler) -> void:
@@ -651,7 +654,7 @@ func _menu_use_item(item_id: String, target: Battler) -> void:
 
 func _menu_discard(item_id: String) -> void:
 	Game.remove_item(item_id)
-	_open_bag(item_id, "Membuang 1 %s." % Db.ITEMS[item_id].name)
+	_open_bag(item_id, Loc.t("Membuang 1 %s.") % Loc.t(Db.ITEMS[item_id].name))
 
 
 ## Pintasan layar Perlengkapan (tombol ikon zirah atau tombol E).
@@ -711,7 +714,7 @@ func _shop_buy(item_id: String) -> void:
 	Game.gold -= int(item.price)
 	Audio.sfx("coin")
 	_update_hud()
-	_shop_view.open(_shop_stock, item_id, "Membeli %s." % item.name)
+	_shop_view.open(_shop_stock, item_id, Loc.t("Membeli %s.") % Loc.t(item.name))
 
 
 func _shop_upgrade() -> void:
@@ -719,7 +722,7 @@ func _shop_upgrade() -> void:
 		return
 	Audio.sfx("coin")
 	_update_hud()
-	_shop_view.open(_shop_stock, "__tas", "Tas diperbesar menjadi %d slot." % Game.bag_slots)
+	_shop_view.open(_shop_stock, "__tas", Loc.t("Tas diperbesar menjadi %d slot.") % Game.bag_slots)
 
 func _show_message(text: String) -> void:
 	_msg_label.text = text
@@ -730,8 +733,8 @@ func _show_message(text: String) -> void:
 func _update_hud() -> void:
 	var zone: String = WorldMap.tile_at(_tile).zone
 	if zone == "":
-		zone = WorldMap.map_name() if WorldMap.is_settlement(Game.map_id) else "Jalan"
-	_zone_label.text = "%s\nEmas: %d\nEsc: menu   I: tas   E: perlengkapan" % [zone, Game.gold]
+		zone = WorldMap.map_name() if WorldMap.is_settlement(Game.map_id) else Loc.t("Jalan")
+	_zone_label.text = Loc.t("%s\nEmas: %d\nEsc: menu   I: tas   E: perlengkapan") % [Loc.t(zone), Game.gold]
 	var lines: Array = []
 	for m: Battler in Game.party:
 		lines.append("%-7s Lv %d   HP %d/%d   MP %d/%d" % [m.display_name, m.level, m.hp, m.max_hp, m.mp, m.max_mp])
@@ -1026,7 +1029,7 @@ func _build_hud() -> void:
 	_dialog_choices = VBoxContainer.new()
 	column.add_child(_dialog_choices)
 	_dialog_hint = Label.new()
-	_dialog_hint.text = "Spasi / Enter / klik untuk lanjut"
+	_dialog_hint.text = Loc.t("Spasi / Enter / klik untuk lanjut")
 	_dialog_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_dialog_hint.add_theme_font_size_override("font_size", 13)
 	_dialog_hint.add_theme_color_override("font_color", Color(1, 1, 1, 0.55))
@@ -1060,7 +1063,7 @@ func _build_hud() -> void:
 	# Tombol pintasan tas di pojok kiri bawah.
 	var bag_button := Button.new()
 	bag_button.focus_mode = Control.FOCUS_NONE  # supaya Spasi/Enter tidak memicunya
-	bag_button.tooltip_text = "Tas (I)"
+	bag_button.tooltip_text = Loc.t("Tas (I)")
 	bag_button.anchor_top = 1.0
 	bag_button.anchor_bottom = 1.0
 	bag_button.offset_left = 16
@@ -1096,7 +1099,7 @@ func _build_hud() -> void:
 
 	# Tombol pintasan layar Perlengkapan, di sebelah tombol tas.
 	var gear_button := bag_button.duplicate(0) as Button
-	gear_button.tooltip_text = "Perlengkapan (E)"
+	gear_button.tooltip_text = Loc.t("Perlengkapan (E)")
 	gear_button.offset_left = 88
 	gear_button.offset_right = 152
 	(gear_button.get_child(0) as TextureRect).texture = _tex("icon_perlengkapan")

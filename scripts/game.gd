@@ -104,7 +104,7 @@ func defeat_to_respawn() -> void:
 	gold = gold / 2
 	map_id = respawn_map
 	player_tile = respawn_tile
-	return_to_world("Party siuman di penginapan. Separuh emas hilang di perjalanan...")
+	return_to_world(Loc.t("Party siuman di penginapan. Separuh emas hilang di perjalanan..."))
 
 
 # ---------------------------------------------------------------- tas
@@ -180,11 +180,11 @@ func gear_block(gear_id: String) -> String:
 	var g := Db.gear(gear_id)
 	var m := member(g.owner)
 	if m == null:
-		return "%s belum bergabung." % Db.CHARACTERS[g.owner].name
+		return Loc.t("%s belum bergabung.") % Loc.t(Db.CHARACTERS[g.owner].name)
 	if m.equip.has(g.slot) and int(Db.gear(m.equip[g.slot].id).tier) >= int(g.tier):
-		return "Sudah memakai yang setara atau lebih baik."
+		return Loc.t("Sudah memakai yang setara atau lebih baik.")
 	if gold < int(g.price):
-		return "Emas belum cukup."
+		return Loc.t("Emas belum cukup.")
 	return ""
 
 
@@ -222,14 +222,14 @@ func enhance(m: Battler, slot: String) -> Dictionary:
 ## Alasan sebuah perlengkapan tidak bisa ditempa ulang; kosong kalau bisa.
 func reforge_block(m: Battler, slot: String) -> String:
 	if not m.equip.has(slot):
-		return "Slot ini kosong."
+		return Loc.t("Slot ini kosong.")
 	var entry: Dictionary = m.equip[slot]
 	if entry["trait"] == "":
-		return "Belum punya sifat. Sifat didapat saat menempa."
+		return Loc.t("Belum punya sifat. Sifat didapat saat menempa.")
 	if Db.trait_pool(entry.id).size() < 2:
-		return "Perlengkapan ini hanya punya satu macam sifat."
+		return Loc.t("Perlengkapan ini hanya punya satu macam sifat.")
 	if not can_pay(Db.reforge_cost(entry.id)):
-		return "Emas atau bahan belum cukup."
+		return Loc.t("Emas atau bahan belum cukup.")
 	return ""
 
 
@@ -300,7 +300,7 @@ func save_summary() -> String:
 		return ""
 	var lead: Dictionary = members[0]
 	var place: String = WorldMap.MAPS.get(data.get("map", ""), {}).get("name", "?")
-	return "%s Lv %d  ·  %d anggota  ·  %s" % [Db.CHARACTERS[lead.id].name, int(lead.level), members.size(), place]
+	return Loc.t("%s Lv %d  ·  %d anggota  ·  %s") % [Db.CHARACTERS[lead.id].name, int(lead.level), members.size(), Loc.t(place)]
 
 
 ## Muat simpanan. Mengembalikan false (dan tidak mengubah apa pun) kalau file tidak ada atau rusak.
@@ -372,7 +372,7 @@ func load_game() -> bool:
 	encounter = []
 	after_battle_scene = ""
 	pending_scene = ""
-	world_message = "Permainan dimuat."
+	world_message = Loc.t("Permainan dimuat.")
 	return true
 
 

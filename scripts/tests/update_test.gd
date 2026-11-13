@@ -16,7 +16,7 @@ func _initialize() -> void:
 	_expect(not UpdateCheck.is_newer("v1.1", "1.2"), "versi lama bukan versi baru")
 	_expect(UpdateCheck.latest_tag('{"tag_name": "v1.3", "name": "Aveloria v1.3"}') == "v1.3", "tag dibaca dari jawaban GitHub")
 	_expect(UpdateCheck.latest_tag("<html>rusak</html>") == "" and UpdateCheck.latest_tag("[]") == "", "jawaban yang tidak terbaca diabaikan")
-	_expect(UpdateCheck.current_version() == "1.2.1", "versi game ini tercatat di project.godot (%s)" % UpdateCheck.current_version())
+	_expect(UpdateCheck.current_version() == "1.3", "versi game ini tercatat di project.godot (%s)" % UpdateCheck.current_version())
 
 	AudioServer.set_bus_mute(0, true)
 	change_scene_to_file("res://scenes/title.tscn")
@@ -33,8 +33,34 @@ func _initialize() -> void:
 		await create_timer(0.2).timeout
 		root.get_texture().get_image().save_png(args[0].path_join("judul_versi_baru.png"))
 
+	# Tombol bahasa di layar judul: menekannya mengganti bahasa dan menyusun ulang layar.
+	_expect(Loc.lang() == "id" and _find_button("Bahasa: Indonesia") != null, "layar judul: tombol bahasa tampil")
+	_find_button("Bahasa: Indonesia").pressed.emit()
+	await create_timer(0.3).timeout
+	_expect(Loc.lang() == "en" and _find_button("Language: English") != null and _find_button("New Game") != null,
+		"menekan tombol bahasa mengubah layar judul ke bahasa Inggris")
+	if args.size() > 0:
+		await create_timer(0.2).timeout
+		root.get_texture().get_image().save_png(args[0].path_join("judul_inggris.png"))
+	_find_button("Language: English").pressed.emit()
+	await create_timer(0.3).timeout
+	_expect(Loc.lang() == "id" and _find_button("Permainan Baru") != null, "menekannya lagi kembali ke bahasa Indonesia")
+
 	print("HASIL: %s" % ("ADA YANG GAGAL" if _failed else "SEMUA LOLOS"))
 	quit(1 if _failed else 0)
+
+
+## Tombol di layar yang sedang tampil dengan tulisan tertentu; null kalau tidak ada.
+func _find_button(text: String, node: Node = null) -> Button:
+	if node == null:
+		node = current_scene
+	if node is Button and (node as Button).text == text:
+		return node
+	for child in node.get_children():
+		var found := _find_button(text, child)
+		if found != null:
+			return found
+	return null
 
 
 func _expect(ok: bool, what: String) -> void:

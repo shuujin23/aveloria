@@ -1,5 +1,5 @@
 extends Control
-## Layar judul: Lanjutkan (kalau ada simpanan), Permainan Baru, Keluar.
+## Layar judul: Lanjutkan (kalau ada simpanan), Permainan Baru, pilihan bahasa, Keluar.
 
 const SPRITES := "res://assets/sprites/"
 const HEROES := ["selene", "arlen", "mira", "kael"]
@@ -48,21 +48,24 @@ func _ready() -> void:
 	menu.anchor_right = 0.5
 	menu.offset_left = -190
 	menu.offset_right = 190
-	menu.offset_top = 450
-	menu.add_theme_constant_override("separation", 10)
+	menu.offset_top = 425
+	menu.add_theme_constant_override("separation", 8)
 	add_child(menu)
 
-	_continue = _add_button(menu, "Lanjutkan", _on_continue)
+	_continue = _add_button(menu, Loc.t("Lanjutkan"), _on_continue)
 	_continue.disabled = not Game.has_save()
 	var summary := Game.save_summary()
 	if summary != "":
-		_continue.text = "Lanjutkan\n%s" % summary
-	_new_game = _add_button(menu, "Permainan Baru", _on_new_game)
-	_add_button(menu, "Keluar", func() -> void: get_tree().quit())
+		_continue.text = Loc.t("Lanjutkan\n%s") % summary
+	_new_game = _add_button(menu, Loc.t("Permainan Baru"), _on_new_game)
+	_add_button(menu, Loc.label(), func() -> void:  # ganti bahasa lalu susun ulang layar ini
+		Loc.toggle()
+		get_tree().reload_current_scene())
+	_add_button(menu, Loc.t("Keluar"), func() -> void: get_tree().quit())
 	(_new_game if _continue.disabled else _continue).grab_focus()
 
 	var credit := Label.new()
-	credit.text = "Musik: AVGVSTA (CC-BY 4.0)   -   Efek suara: Kenney, artisticdude, rubberduck (CC0)   -   opengameart.org"
+	credit.text = Loc.t("Musik: AVGVSTA (CC-BY 4.0)   -   Efek suara: Kenney, artisticdude, rubberduck (CC0)   -   opengameart.org")
 	credit.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	credit.anchor_top = 1.0
 	credit.anchor_right = 1.0
@@ -104,7 +107,7 @@ func _offer_update(tag: String) -> void:
 	if tag == "" or not UpdateCheck.is_newer(tag, UpdateCheck.current_version()) or _update_button != null:
 		return
 	_update_button = Button.new()
-	_update_button.text = "Versi %s tersedia  -  buka halaman unduhan" % tag.trim_prefix("v")
+	_update_button.text = Loc.t("Versi %s tersedia  -  buka halaman unduhan") % tag.trim_prefix("v")
 	_update_button.add_theme_font_size_override("font_size", 16)
 	_update_button.add_theme_color_override("font_color", Color("ffd866"))
 	_update_button.anchor_left = 1.0
@@ -122,7 +125,7 @@ func _offer_update(tag: String) -> void:
 func _add_button(parent: Control, text: String, callback: Callable) -> Button:
 	var button := Button.new()
 	button.text = text
-	button.custom_minimum_size.y = 44
+	button.custom_minimum_size.y = 40
 	button.focus_entered.connect(func() -> void: Audio.sfx("ui_move"))
 	button.pressed.connect(func() -> void: Audio.sfx("ui_ok"))
 	button.pressed.connect(callback)
@@ -134,7 +137,7 @@ func _on_continue() -> void:
 	if Game.load_game():
 		get_tree().change_scene_to_file(Game.WORLD_SCENE)
 	else:
-		_continue.text = "Simpanan tidak bisa dibaca"
+		_continue.text = Loc.t("Simpanan tidak bisa dibaca")
 		_continue.disabled = true
 
 
@@ -142,7 +145,7 @@ func _on_continue() -> void:
 func _on_new_game() -> void:
 	if Game.has_save() and not _confirming:
 		_confirming = true
-		_new_game.text = "Mulai dari awal? Tekan sekali lagi\n(simpanan lama tertimpa saat menyimpan)"
+		_new_game.text = Loc.t("Mulai dari awal? Tekan sekali lagi\n(simpanan lama tertimpa saat menyimpan)")
 		return
 	Game.new_game()
 	get_tree().change_scene_to_file(Game.WORLD_SCENE)

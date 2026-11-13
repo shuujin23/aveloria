@@ -3,7 +3,7 @@ extends RefCounted
 ## Cerita: daftar NPC per peta, dialog mereka, dan adegan (scene) yang dipicu peristiwa.
 ##
 ## Sebuah adegan adalah daftar langkah yang dijalankan berurutan oleh scene peta:
-##   {"who": "Nama", "text": "..."}          dialog (who kosong = narasi)
+##   {"who": "Nama", "text": "..."}          dialog (who kosong = narasi); "args": [..] mengisi %d di teks
 ##   {"choice": [{"text": "...", "steps": [...]}, ...]}   pilihan pemain
 ##   {"do": "flag", "flag": "nama"}          catat penanda progres
 ##   {"do": "join", "id": "mira"}            tokoh bergabung ke party
@@ -25,26 +25,26 @@ const ZONE_INTROS := {"Hutan Kabut": "kabut_intro", "Pegunungan Abu": "abu_intro
 const NPCS := {
 	"desa": [
 		{"id": "tetua", "name": "Tetua Bram", "sprite": "npc_tetua", "tile": Vector2i(3, 2)},
-		{"id": "sari", "name": "Bu Sari", "sprite": "npc_sari", "tile": Vector2i(6, 10)},
-		{"id": "dimas", "name": "Dimas", "sprite": "npc_dimas", "tile": Vector2i(8, 5)},
-		{"id": "joko", "name": "Pak Joko", "sprite": "npc_joko", "tile": Vector2i(12, 6)},
-		{"id": "gatot", "name": "Pak Gatot", "sprite": "npc_gatot", "tile": Vector2i(13, 8)},
+		{"id": "sari", "name": "Marla", "sprite": "npc_sari", "tile": Vector2i(6, 10)},
+		{"id": "dimas", "name": "Finn", "sprite": "npc_dimas", "tile": Vector2i(8, 5)},
+		{"id": "joko", "name": "Doran", "sprite": "npc_joko", "tile": Vector2i(12, 6)},
+		{"id": "gatot", "name": "Garrick", "sprite": "npc_gatot", "tile": Vector2i(13, 8)},
 	],
 	"dusun": [
-		{"id": "laras", "name": "Nyi Laras", "sprite": "npc_laras", "tile": Vector2i(3, 2)},
-		{"id": "wiryo", "name": "Pak Wiryo", "sprite": "npc_wiryo", "tile": Vector2i(9, 3)},
-		{"id": "rumi", "name": "Mbok Rumi", "sprite": "npc_rumi", "tile": Vector2i(11, 5)},
-		{"id": "sena", "name": "Mpu Sena", "sprite": "npc_sena", "tile": Vector2i(4, 5)},
+		{"id": "laras", "name": "Tetua Elowen", "sprite": "npc_laras", "tile": Vector2i(3, 2)},
+		{"id": "wiryo", "name": "Osric", "sprite": "npc_wiryo", "tile": Vector2i(9, 3)},
+		{"id": "rumi", "name": "Nessa", "sprite": "npc_rumi", "tile": Vector2i(11, 5)},
+		{"id": "sena", "name": "Halvard", "sprite": "npc_sena", "tile": Vector2i(4, 5)},
 	],
 	"dunia": [
 		{"id": "mira", "name": "Mira", "sprite": "mira", "tile": Vector2i(12, 2), "hide_flag": "mira_joined"},
 		{"id": "selene", "name": "Selene", "sprite": "selene", "tile": Vector2i(34, 5), "hide_flag": "selene_joined"},
 	],
 	"pos": [
-		{"id": "darma", "name": "Ki Darma", "sprite": "npc_darma", "tile": Vector2i(3, 2)},
-		{"id": "ningsih", "name": "Bu Ningsih", "sprite": "npc_ningsih", "tile": Vector2i(9, 3)},
-		{"id": "sabar", "name": "Pak Sabar", "sprite": "npc_sabar", "tile": Vector2i(11, 5)},
-		{"id": "rekso", "name": "Bang Rekso", "sprite": "npc_rekso", "tile": Vector2i(4, 5)},
+		{"id": "darma", "name": "Tetua Aldric", "sprite": "npc_darma", "tile": Vector2i(3, 2)},
+		{"id": "ningsih", "name": "Brenna", "sprite": "npc_ningsih", "tile": Vector2i(9, 3)},
+		{"id": "sabar", "name": "Tobin", "sprite": "npc_sabar", "tile": Vector2i(11, 5)},
+		{"id": "rekso", "name": "Varek", "sprite": "npc_rekso", "tile": Vector2i(4, 5)},
 	],
 	"abu": [
 		{"id": "kael", "name": "Kael", "sprite": "kael", "tile": Vector2i(19, 3), "hide_flag": "kael_joined"},
@@ -175,8 +175,8 @@ static func talk(npc_id: String, flags: Dictionary, gold: int) -> Array:
 				return [
 					{"who": "Tetua Bram", "text": "Syukurlah Mira selamat. Berdua, kalian punya harapan."},
 					{"who": "Tetua Bram", "text": "Ogre Penjaga bersarang di ujung jalan utara. Selama dia hidup, gerbang timur tetap tertutup."},
-					{"who": "Tetua Bram", "text": "Jangan terburu-buru. Berlatihlah dulu di padang, dan beristirahatlah di penginapan Bu Sari."},
-					{"who": "Tetua Bram", "text": "Dan jangan menghadapinya dengan tangan kosong. Pak Gatot, pandai besi di sisi timur desa, bisa membuatkan senjata dan zirah untuk kalian berdua."},
+					{"who": "Tetua Bram", "text": "Jangan terburu-buru. Berlatihlah dulu di padang, dan beristirahatlah di penginapan Marla."},
+					{"who": "Tetua Bram", "text": "Dan jangan menghadapinya dengan tangan kosong. Garrick, pandai besi di sisi timur desa, bisa membuatkan senjata dan zirah untuk kalian berdua."},
 				]
 			if flags.has("quest_mira"):
 				return [{"who": "Tetua Bram", "text": "Mira pergi ke tepi hutan di utara. Keluar dari desa, lalu ikuti padang ke arah utara."}]
@@ -190,58 +190,58 @@ static func talk(npc_id: String, flags: Dictionary, gold: int) -> Array:
 		"sari":
 			var stay: Array = [
 				{"do": "pay", "gold": INN_PRICE}, {"do": "rest"},
-				{"who": "Bu Sari", "text": "Selamat beristirahat. (HP dan MP seluruh party pulih. Permainan disimpan.)"},
+				{"who": "Marla", "text": "Selamat beristirahat. (HP dan MP seluruh party pulih. Permainan disimpan.)"},
 			]
 			if gold < INN_PRICE:
 				stay = [
-					{"who": "Bu Sari", "text": "Emasmu belum cukup? Ah, untuk ksatria desa sendiri, malam ini gratis."},
+					{"who": "Marla", "text": "Emasmu belum cukup? Ah, untuk ksatria desa sendiri, malam ini gratis."},
 					{"do": "rest"},
 					{"text": "HP dan MP seluruh party pulih. Permainan disimpan."},
 				]
 			return [
-				{"who": "Bu Sari", "text": "Selamat datang di Penginapan Rindu. Menginap semalam %d emas." % INN_PRICE},
+				{"who": "Marla", "text": "Selamat datang di Penginapan Rindu. Menginap semalam %d emas.", "args": [INN_PRICE]},
 				{"choice": [
 					{"text": "Menginap", "steps": stay},
-					{"text": "Tidak sekarang", "steps": [{"who": "Bu Sari", "text": "Mampirlah kalau lelah."}]},
+					{"text": "Tidak sekarang", "steps": [{"who": "Marla", "text": "Mampirlah kalau lelah."}]},
 				]},
 			]
 		"dimas":
 			if flags.has("mira_joined"):
-				return [{"who": "Dimas", "text": "Kak Mira hebat, ya! Lukaku waktu jatuh dulu langsung sembuh."}]
+				return [{"who": "Finn", "text": "Kak Mira hebat, ya! Lukaku waktu jatuh dulu langsung sembuh."}]
 			return [
-				{"who": "Dimas", "text": "Kak Arlen! Kata Ayah, monster cuma muncul di rumput dan hutan. Di jalan tanah aman!"},
-				{"who": "Dimas", "text": "Tapi di hutan ada serigala. Jangan ke sana sendirian, ya."},
+				{"who": "Finn", "text": "Kak Arlen! Kata Ayah, monster cuma muncul di rumput dan hutan. Di jalan tanah aman!"},
+				{"who": "Finn", "text": "Tapi di hutan ada serigala. Jangan ke sana sendirian, ya."},
 			]
 		"joko":
 			if flags.has("ogre"):
 				return [
-					{"who": "Pak Joko", "text": "Gerbang terbuka, kiriman dari timur datang lagi! Silakan lihat daganganku."},
+					{"who": "Doran", "text": "Gerbang terbuka, kiriman dari timur datang lagi! Silakan lihat daganganku."},
 					{"do": "shop", "stock": ["ramuan", "penawar", "ramuan_besar", "eter", "air_kehidupan", "ramuan_kekuatan", "ramuan_pelindung", "ramuan_angin"]},
-					{"who": "Pak Joko", "text": "Hati-hati di Hutan Kabut."},
+					{"who": "Doran", "text": "Hati-hati di Hutan Kabut."},
 				]
 			return [
-				{"who": "Pak Joko", "text": "Kiriman dari timur tertahan sejak Ogre itu menutup gerbang. Tapi ramuan racikanku sendiri masih ada."},
-				{"do": "shop", "name": "Toko Pak Joko", "stock": ["ramuan", "penawar"]},
-				{"who": "Pak Joko", "text": "Kalau gerbangnya terbuka lagi, daganganku akan lebih lengkap."},
+				{"who": "Doran", "text": "Kiriman dari timur tertahan sejak Ogre itu menutup gerbang. Tapi ramuan racikanku sendiri masih ada."},
+				{"do": "shop", "name": "Toko Doran", "stock": ["ramuan", "penawar"]},
+				{"who": "Doran", "text": "Kalau gerbangnya terbuka lagi, daganganku akan lebih lengkap."},
 			]
 		"gatot":
 			return [
-				{"who": "Pak Gatot", "text": "Mau berangkat tanpa zirah? Sini, kubuatkan yang pas untuk tiap orang."},
-				{"who": "Pak Gatot", "text": "Bawakan juga bahan dari monster. Dengan itu perlengkapanmu bisa kutempa lebih kuat, dan kadang muncul sifat istimewa."},
-				{"do": "forge", "tier": 1, "name": "Bengkel Pak Gatot"},
-				{"who": "Pak Gatot", "text": "Jaga baik-baik barang buatanku."},
+				{"who": "Garrick", "text": "Mau berangkat tanpa zirah? Sini, kubuatkan yang pas untuk tiap orang."},
+				{"who": "Garrick", "text": "Bawakan juga bahan dari monster. Dengan itu perlengkapanmu bisa kutempa lebih kuat, dan kadang muncul sifat istimewa."},
+				{"do": "forge", "tier": 1, "name": "Bengkel Garrick"},
+				{"who": "Garrick", "text": "Jaga baik-baik barang buatanku."},
 			]
 		"sena":
 			return [
-				{"who": "Mpu Sena", "text": "Baja dusun ini ditempa dengan embun pagi. Lebih kuat daripada besi lembah."},
-				{"do": "forge", "tier": 2, "name": "Tungku Mpu Sena"},
-				{"who": "Mpu Sena", "text": "Benang laba-laba dan bara roh kabut adalah bahan tempa yang bagus. Jangan dibuang."},
+				{"who": "Halvard", "text": "Baja dusun ini ditempa dengan embun pagi. Lebih kuat daripada besi lembah."},
+				{"do": "forge", "tier": 2, "name": "Tungku Halvard"},
+				{"who": "Halvard", "text": "Benang laba-laba dan bara roh kabut adalah bahan tempa yang bagus. Jangan dibuang."},
 			]
 		"rekso":
 			return [
-				{"who": "Bang Rekso", "text": "Mitril dari perut gunung. Mahal, tapi tidak ada yang lebih baik sebelum Kastil Kelam."},
-				{"do": "forge", "tier": 3, "name": "Tungku Bang Rekso"},
-				{"who": "Bang Rekso", "text": "Kalau ketemu kura-kura magma, jangan lari. Cangkangnya bahan tempa langka."},
+				{"who": "Varek", "text": "Mitril dari perut gunung. Mahal, tapi tidak ada yang lebih baik sebelum Kastil Kelam."},
+				{"do": "forge", "tier": 3, "name": "Tungku Varek"},
+				{"who": "Varek", "text": "Kalau ketemu kura-kura magma, jangan lari. Cangkangnya bahan tempa langka."},
 			]
 		"mira":
 			return [
@@ -255,52 +255,52 @@ static func talk(npc_id: String, flags: Dictionary, gold: int) -> Array:
 		"laras":
 			if flags.has("ratu"):
 				return [
-					{"who": "Nyi Laras", "text": "Kabutnya menipis! Sudah lama sekali aku tidak melihat cahaya sejernih ini."},
-					{"who": "Nyi Laras", "text": "Celah Abu di ujung timur kini terbuka. Di baliknya Pegunungan Abu, lalu Kastil Kelam."},
+					{"who": "Tetua Elowen", "text": "Kabutnya menipis! Sudah lama sekali aku tidak melihat cahaya sejernih ini."},
+					{"who": "Tetua Elowen", "text": "Celah Abu di ujung timur kini terbuka. Di baliknya Pegunungan Abu, lalu Kastil Kelam."},
 				]
 			if flags.has("selene_joined"):
 				return [
-					{"who": "Nyi Laras", "text": "Selene selamat. Syukurlah."},
-					{"who": "Nyi Laras", "text": "Sarang Ratu Laba-laba ada di rimba timur. Gigitannya beracun dan jaringnya melambatkan; bawalah Penawar."},
+					{"who": "Tetua Elowen", "text": "Selene selamat. Syukurlah."},
+					{"who": "Tetua Elowen", "text": "Sarang Ratu Laba-laba ada di rimba timur. Gigitannya beracun dan jaringnya melambatkan; bawalah Penawar."},
 				]
 			if flags.has("quest_selene"):
-				return [{"who": "Nyi Laras", "text": "Altar tua ada di rimba utara, di tengah pepohonan paling rapat."}]
+				return [{"who": "Tetua Elowen", "text": "Altar tua ada di rimba utara, di tengah pepohonan paling rapat."}]
 			return [
-				{"who": "Nyi Laras", "text": "Pendatang dari lembah? Jarang ada yang sampai ke Dusun Embun sejak gerbang ditutup."},
-				{"who": "Nyi Laras", "text": "Kabut ini bukan kabut biasa. Ia datang sejak Ratu Laba-laba bersarang di rimba timur."},
-				{"who": "Nyi Laras", "text": "Selene, penyihir muda dusun ini, pergi ke altar tua di rimba utara mencari cara mengusirnya. Sudah tiga hari belum kembali."},
-				{"who": "Nyi Laras", "text": "Kalau kalian memang hendak ke timur, tolong cari dia."},
+				{"who": "Tetua Elowen", "text": "Pendatang dari lembah? Jarang ada yang sampai ke Dusun Embun sejak gerbang ditutup."},
+				{"who": "Tetua Elowen", "text": "Kabut ini bukan kabut biasa. Ia datang sejak Ratu Laba-laba bersarang di rimba timur."},
+				{"who": "Tetua Elowen", "text": "Selene, penyihir muda dusun ini, pergi ke altar tua di rimba utara mencari cara mengusirnya. Sudah tiga hari belum kembali."},
+				{"who": "Tetua Elowen", "text": "Kalau kalian memang hendak ke timur, tolong cari dia."},
 				{"do": "flag", "flag": "quest_selene"},
 			]
 		"wiryo":
 			var night: Array = [
 				{"do": "pay", "gold": DUSUN_INN_PRICE}, {"do": "rest"},
-				{"who": "Pak Wiryo", "text": "Tidurlah yang nyenyak. (HP dan MP seluruh party pulih. Permainan disimpan.)"},
+				{"who": "Osric", "text": "Tidurlah yang nyenyak. (HP dan MP seluruh party pulih. Permainan disimpan.)"},
 			]
 			if gold < DUSUN_INN_PRICE:
 				night = [
-					{"who": "Pak Wiryo", "text": "Kurang emas? Bayar saja nanti kalau kabut ini sudah hilang."},
+					{"who": "Osric", "text": "Kurang emas? Bayar saja nanti kalau kabut ini sudah hilang."},
 					{"do": "rest"},
 					{"text": "HP dan MP seluruh party pulih. Permainan disimpan."},
 				]
 			return [
-				{"who": "Pak Wiryo", "text": "Penginapan Embun. Semalam %d emas, sudah termasuk bubur hangat." % DUSUN_INN_PRICE},
+				{"who": "Osric", "text": "Penginapan Embun. Semalam %d emas, sudah termasuk bubur hangat.", "args": [DUSUN_INN_PRICE]},
 				{"choice": [
 					{"text": "Menginap", "steps": night},
-					{"text": "Tidak sekarang", "steps": [{"who": "Pak Wiryo", "text": "Pintu selalu terbuka."}]},
+					{"text": "Tidak sekarang", "steps": [{"who": "Osric", "text": "Pintu selalu terbuka."}]},
 				]},
 			]
 		"rumi":
 			return [
-				{"who": "Mbok Rumi", "text": "Mau apa, Nak? Di hutan ini Penawar lebih berharga daripada emas."},
-				{"do": "shop", "name": "Warung Mbok Rumi", "stock": ["ramuan", "penawar", "ramuan_besar", "eter", "air_kehidupan", "ramuan_kekuatan", "ramuan_pelindung", "ramuan_angin"]},
-				{"who": "Mbok Rumi", "text": "Awas laba-laba. Racunnya menggerogoti pelan-pelan."},
+				{"who": "Nessa", "text": "Mau apa, Nak? Di hutan ini Penawar lebih berharga daripada emas."},
+				{"do": "shop", "name": "Warung Nessa", "stock": ["ramuan", "penawar", "ramuan_besar", "eter", "air_kehidupan", "ramuan_kekuatan", "ramuan_pelindung", "ramuan_angin"]},
+				{"who": "Nessa", "text": "Awas laba-laba. Racunnya menggerogoti pelan-pelan."},
 			]
 		"selene":
 			return [
 				{"who": "Selene", "text": "Jangan mendekat! ...Oh, manusia. Kukira laba-laba lagi."},
 				{"who": "Selene", "text": "Aku Selene. Jaring-jaring ini mengepungku di altar sejak kemarin, dan sihirku hampir habis."},
-				{"who": "Mira", "text": "Nyi Laras meminta kami mencarimu."},
+				{"who": "Mira", "text": "Tetua Elowen meminta kami mencarimu."},
 				{"who": "Selene", "text": "Kalau begitu bantu aku sekarang. Mereka datang!"},
 				{"do": "join", "id": "selene"},
 				{"do": "flag", "flag": "selene_joined"},
@@ -310,52 +310,52 @@ static func talk(npc_id: String, flags: Dictionary, gold: int) -> Array:
 		"darma":
 			if flags.has("lahar"):
 				return [
-					{"who": "Ki Darma", "text": "Gunungnya tenang. Seumur hidupku belum pernah sesunyi ini."},
-					{"who": "Ki Darma", "text": "Jalan lahar di timur sudah mengeras. Kastil Kelam ada di ujungnya. Semoga langkah kalian ringan."},
+					{"who": "Tetua Aldric", "text": "Gunungnya tenang. Seumur hidupku belum pernah sesunyi ini."},
+					{"who": "Tetua Aldric", "text": "Jalan lahar di timur sudah mengeras. Kastil Kelam ada di ujungnya. Semoga langkah kalian ringan."},
 				]
 			if flags.has("kael_joined"):
 				return [
-					{"who": "Ki Darma", "text": "Kael ikut kalian? Anak itu memang tidak betah diam."},
-					{"who": "Ki Darma", "text": "Raksasa Lahar berdiam di kawah timur laut. Semburannya membakar, dan hantamannya meruntuhkan pertahanan. Bawa Penawar yang banyak."},
+					{"who": "Tetua Aldric", "text": "Kael ikut kalian? Anak itu memang tidak betah diam."},
+					{"who": "Tetua Aldric", "text": "Raksasa Lahar berdiam di kawah timur laut. Semburannya membakar, dan hantamannya meruntuhkan pertahanan. Bawa Penawar yang banyak."},
 				]
 			if flags.has("quest_kael"):
-				return [{"who": "Ki Darma", "text": "Punggung bukit utara, di antara dua lereng berbatu. Di situ Kael biasa mengintai."}]
+				return [{"who": "Tetua Aldric", "text": "Punggung bukit utara, di antara dua lereng berbatu. Di situ Kael biasa mengintai."}]
 			return [
-				{"who": "Ki Darma", "text": "Orang lembah sampai ke sini? Kalian pasti yang mengusir kabut di barat."},
-				{"who": "Ki Darma", "text": "Gunung ini mengamuk sejak Raksasa Lahar bangkit di kawah. Lahar menutup satu-satunya jalan ke timur."},
-				{"who": "Ki Darma", "text": "Kael, pemanah terbaik kami, pergi mengintainya dari punggung bukit utara. Sudah tiga hari tidak ada kabar."},
-				{"who": "Ki Darma", "text": "Kalau kalian bertemu dia, bilang pos ini masih menunggunya."},
+				{"who": "Tetua Aldric", "text": "Orang lembah sampai ke sini? Kalian pasti yang mengusir kabut di barat."},
+				{"who": "Tetua Aldric", "text": "Gunung ini mengamuk sejak Raksasa Lahar bangkit di kawah. Lahar menutup satu-satunya jalan ke timur."},
+				{"who": "Tetua Aldric", "text": "Kael, pemanah terbaik kami, pergi mengintainya dari punggung bukit utara. Sudah tiga hari tidak ada kabar."},
+				{"who": "Tetua Aldric", "text": "Kalau kalian bertemu dia, bilang pos ini masih menunggunya."},
 				{"do": "flag", "flag": "quest_kael"},
 			]
 		"ningsih":
 			var bed: Array = [
 				{"do": "pay", "gold": POS_INN_PRICE}, {"do": "rest"},
-				{"who": "Bu Ningsih", "text": "Selimutnya tebal, tidurlah. (HP dan MP seluruh party pulih. Permainan disimpan.)"},
+				{"who": "Brenna", "text": "Selimutnya tebal, tidurlah. (HP dan MP seluruh party pulih. Permainan disimpan.)"},
 			]
 			if gold < POS_INN_PRICE:
 				bed = [
-					{"who": "Bu Ningsih", "text": "Tidak ada emas? Pemburu saling menolong. Masuklah."},
+					{"who": "Brenna", "text": "Tidak ada emas? Pemburu saling menolong. Masuklah."},
 					{"do": "rest"},
 					{"text": "HP dan MP seluruh party pulih. Permainan disimpan."},
 				]
 			return [
-				{"who": "Bu Ningsih", "text": "Pondok singgah para pemburu. Semalam %d emas, sup daging rusa sepuasnya." % POS_INN_PRICE},
+				{"who": "Brenna", "text": "Pondok singgah para pemburu. Semalam %d emas, sup daging rusa sepuasnya.", "args": [POS_INN_PRICE]},
 				{"choice": [
 					{"text": "Menginap", "steps": bed},
-					{"text": "Tidak sekarang", "steps": [{"who": "Bu Ningsih", "text": "Apinya selalu menyala."}]},
+					{"text": "Tidak sekarang", "steps": [{"who": "Brenna", "text": "Apinya selalu menyala."}]},
 				]},
 			]
 		"sabar":
 			return [
-				{"who": "Pak Sabar", "text": "Bekal untuk naik gunung? Kadal bara menyulut, elang abu merobek zirah. Siapkan Penawar."},
-				{"do": "shop", "name": "Lapak Pak Sabar", "stock": ["ramuan", "penawar", "ramuan_besar", "eter", "air_kehidupan", "ramuan_kekuatan", "ramuan_pelindung", "ramuan_angin"]},
-				{"who": "Pak Sabar", "text": "Jangan dekat-dekat lahar."},
+				{"who": "Tobin", "text": "Bekal untuk naik gunung? Kadal bara menyulut, elang abu merobek zirah. Siapkan Penawar."},
+				{"do": "shop", "name": "Lapak Tobin", "stock": ["ramuan", "penawar", "ramuan_besar", "eter", "air_kehidupan", "ramuan_kekuatan", "ramuan_pelindung", "ramuan_angin"]},
+				{"who": "Tobin", "text": "Jangan dekat-dekat lahar."},
 			]
 		"kael":
 			return [
 				{"who": "Kael", "text": "Ssst. Merunduk."},
 				{"who": "Kael", "text": "Aku Kael. Tiga hari aku mengintai Raksasa Lahar dari sini... dan baru saja elang-elang itu menemukanku."},
-				{"who": "Arlen", "text": "Ki Darma mencarimu."},
+				{"who": "Arlen", "text": "Tetua Aldric mencarimu."},
 				{"who": "Kael", "text": "Nanti saja ceritanya. Mereka menukik!"},
 				{"do": "join", "id": "kael"},
 				{"do": "flag", "flag": "kael_joined"},

@@ -74,7 +74,7 @@ wilayah sebelumnya kalah.
 
 ## Armory: perlengkapan, bahan, dan tempa
 
-- **Perlengkapan**: 4 slot per tokoh (senjata, kepala, dada, kaki), 3 tingkat. Tiap barang milik satu tokoh, langsung dipakai saat dibeli, dan tidak memakan slot tas. Dijual pandai besi: Pak Gatot (Desa Rindu, tingkat 1), Mpu Sena (Dusun Embun, tingkat 2), Bang Rekso (Pos Pemburu, tingkat 3).
+- **Perlengkapan**: 4 slot per tokoh (senjata, kepala, dada, kaki), 3 tingkat. Tiap barang milik satu tokoh, langsung dipakai saat dibeli, dan tidak memakan slot tas. Dijual pandai besi: Garrick (Desa Rindu, tingkat 1), Halvard (Dusun Embun, tingkat 2), Varek (Pos Pemburu, tingkat 3).
 - **Kategori monster**: common, rare, super rare (satu per wilayah, peluang muncul 7%, hanya saat party berisi 2 orang atau lebih), ultra rare (semi-bos dan bos).
 - **Bahan**: satu bahan per kategori di tiap wilayah (16 macam), disimpan di kantong bahan tanpa batas. Bos selalu menjatuhkan 3 ultra, 2 super, 3 rare, 4 common. Bahan Kastil Kelam tidak dipakai menempa; hanya untuk dijual.
 - **Tempa**: +1 sampai +5 dengan emas dan bahan dari wilayah yang sama dengan tingkat barang (+1/+2 common, +3 rare, +4 super rare, +5 ultra rare). Stat andalan naik di tiap tingkat.
@@ -88,3 +88,19 @@ wilayah sebelumnya kalah.
 - Layar judul menampilkan nomor versi (dari `application/config/version` di `project.godot`) dan, pada game hasil ekspor, bertanya ke GitHub rilis terbaru. Kalau ada yang lebih baru, muncul tombol yang membuka halaman unduhan. Tanpa internet tidak terjadi apa-apa.
 - Saat merilis: naikkan `config/version` di `project.godot` dan versi di `export_presets.cfg`, lalu beri tag rilis yang sama (mis. `v1.3`).
 - Kode di `scripts/update_check.gd`; ujinya `scripts/tests/update_test.gd`. Untuk mencoba dari editor: jalankan dengan `-- --cek-versi`.
+
+## Bahasa (Inggris dan Indonesia)
+
+- Bahasa bawaan **Inggris**; pemain bisa pindah ke **Indonesia** lewat tombol di layar judul atau di menu Esc pada peta. Pilihannya disimpan di `user://settings.json`, terpisah dari simpanan permainan.
+- Semua teks sumber di kode dan data tetap ditulis dalam bahasa Indonesia. `Loc.t("...")` (`scripts/loc.gd`) mengembalikan teks itu apa adanya atau padanan Inggrisnya dari kamus `LocEn.TEXT` (`scripts/loc_en.gd`). Teks yang tidak ada di kamus tampil apa adanya, jadi nama diri (Arlen, Garrick) tidak perlu didaftarkan.
+- Data (`Db`, `Story`, `WorldMap`) tidak diubah; terjemahan terjadi saat ditampilkan. Nama zona dipakai juga oleh logika (`ZONE_INTROS`), jadi jangan diterjemahkan di data.
+- Kalimat dengan angka memakai `Loc.t("... %d ...") % nilai`; di adegan cerita, isi `"args": [..]` pada langkah dialognya.
+- Menambah teks baru: tulis dalam bahasa Indonesia, bungkus dengan `Loc.t`, lalu tambahkan padanannya di `loc_en.gd`. `scripts/tests/loc_test.gd` gagal kalau ada teks tampil yang belum punya padanan atau kalau penanda format (`%s`, `%d`) tidak cocok.
+- Uji otomatis (dijalankan dengan `-s`) selalu berbahasa Indonesia dan tidak menulis file pengaturan; tambahkan `-- <folder> --lang=en` pada `flow.gd` untuk melihat tangkapan layar versi Inggris.
+- Nama tokoh dan NPC memakai nama fantasi yang sama di kedua bahasa (Marla, Finn, Doran, Garrick, Elowen, Osric, Nessa, Halvard, Aldric, Brenna, Tobin, Varek). Gelar ikut diterjemahkan (Tetua -> Elder), begitu juga nama tempat (Desa Rindu -> Willowmere Village).
+
+## Pemulihan MP di pertarungan
+
+- Di akhir tiap ronde, tiap anggota party yang masih berdiri memulihkan `Db.MP_REGEN` (8%) dari MP maksimumnya, minimal 1. Yang memilih **Bertahan** di ronde itu pulih dua kali lipat (`Db.MP_REGEN_DEFEND`).
+- Monster tidak memulihkan MP, supaya bos tetap kehabisan jurus di pertarungan panjang.
+- Simulasi (`sim.gd -- regen=0.05`) bisa mencoba angka lain. Dengan 8%, peluang menang melawan semi-bos naik sekitar 4-8 poin dibanding tanpa pemulihan, jadi angka bos tidak diubah.

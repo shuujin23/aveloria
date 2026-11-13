@@ -168,22 +168,22 @@ func _cmd_text(cmd: Dictionary) -> String:
 	var to := "" if target == null else " > %s" % target.display_name
 	match cmd.kind:
 		"attack":
-			return "Serang" + to
+			return Loc.t("Serang") + to
 		"defend":
-			return "Bertahan"
+			return Loc.t("Bertahan")
 		"item":
-			return String(Db.ITEMS[cmd.item].name) + to
+			return String(Loc.t(Db.ITEMS[cmd.item].name)) + to
 		"skill":
 			var sk: Dictionary = Db.SKILLS[cmd.skill]
 			var is_enemy: bool = (cmd.actor as Battler).is_enemy
 			match sk.target:
 				"all_enemies":
-					to = " > seluruh party" if is_enemy else " > semua musuh"
+					to = Loc.t(" > seluruh party") if is_enemy else Loc.t(" > semua musuh")
 				"all_allies":
-					to = " > semua monster" if is_enemy else " > seluruh party"
+					to = Loc.t(" > semua monster") if is_enemy else Loc.t(" > seluruh party")
 				"self":
 					to = ""
-			return String(sk.name) + to
+			return String(Loc.t(sk.name)) + to
 	return ""
 
 
@@ -266,13 +266,13 @@ func _new_battle() -> void:
 		for e: Battler in engine.enemies:
 			if e.is_boss:
 				boss = e
-		await _say("%s menghadang jalan!" % boss.display_name)
+		await _say(Loc.t("%s menghadang jalan!") % boss.display_name)
 	else:
-		await _say("Segerombolan monster muncul!")
+		await _say(Loc.t("Segerombolan monster muncul!"))
 		for e: Battler in engine.enemies:
 			if Db.rarity_of(e.id) == "super":
 				Audio.sfx("buff")
-				await _say("Monster super rare: %s! Bahannya sangat langka." % e.display_name)
+				await _say(Loc.t("Monster super rare: %s! Bahannya sangat langka.") % e.display_name)
 	if not engine.opening_lines.is_empty():  # sifat perlengkapan yang aktif di awal pertarungan
 		_refresh()
 		for line: String in engine.opening_lines:
@@ -295,36 +295,36 @@ func _ask_command() -> void:
 	var actor: Battler = _actors[_cmd_index]
 	var foes := engine.living(engine.enemies)
 	var items: Array = [
-		{"text": "Serang", "hint": "Serangan biasa ke satu musuh.", "unit": actor,
-			"cb": func() -> void: _pick_target("Serang siapa?", foes,
+		{"text": Loc.t("Serang"), "hint": Loc.t("Serangan biasa ke satu musuh."), "unit": actor,
+			"cb": func() -> void: _pick_target(Loc.t("Serang siapa?"), foes,
 				func(t: Battler) -> void: _push({"actor": actor, "kind": "attack", "target": t}))},
-		{"text": "Jurus", "hint": "Gunakan jurus khusus (memakai MP).", "disabled": actor.skills.is_empty(), "unit": actor,
+		{"text": Loc.t("Jurus"), "hint": Loc.t("Gunakan jurus khusus (memakai MP)."), "disabled": actor.skills.is_empty(), "unit": actor,
 			"cb": func() -> void: _skill_menu(actor)},
-		{"text": "Barang", "hint": "Pakai barang dari tas.", "disabled": not _has_items(), "unit": actor,
+		{"text": Loc.t("Barang"), "hint": Loc.t("Pakai barang dari tas."), "disabled": not _has_items(), "unit": actor,
 			"cb": func() -> void: _item_menu(actor)},
-		{"text": "Bertahan", "hint": "Kerusakan yang diterima ronde ini jadi setengah.", "unit": actor,
+		{"text": Loc.t("Bertahan"), "hint": Loc.t("Kerusakan yang diterima ronde ini jadi setengah, dan MP pulih dua kali lipat."), "unit": actor,
 			"cb": func() -> void: _push({"actor": actor, "kind": "defend"})},
 	]
 	var back := Callable()
 	if _cmd_index == 0:
-		items.append({"text": "Kabur", "hint": "Coba melarikan diri dari pertarungan.", "unit": actor,
+		items.append({"text": Loc.t("Kabur"), "hint": Loc.t("Coba melarikan diri dari pertarungan."), "unit": actor,
 			"disabled": not engine.can_flee(), "cb": _attempt_flee})
 	else:
 		back = _undo_command
-	_show_menu("Giliran %s (%s)" % [actor.display_name, actor.job], items, back)
+	_show_menu(Loc.t("Giliran %s (%s)") % [actor.display_name, Loc.t(actor.job)], items, back)
 	_order_box.visible = false
-	_set_banner("Pilih perintah untuk %s   (%d dari %d)" % [actor.display_name, _cmd_index + 1, _actors.size()])
+	_set_banner(Loc.t("Pilih perintah untuk %s   (%d dari %d)") % [actor.display_name, _cmd_index + 1, _actors.size()])
 	_update_plans()
 
 
 func _skill_menu(actor: Battler) -> void:
-	_set_banner("%s: pilih jurus" % actor.display_name)
+	_set_banner(Loc.t("%s: pilih jurus") % actor.display_name)
 	var items: Array = []
 	for skill_id: String in actor.skills:
 		var sk: Dictionary = Db.SKILLS[skill_id]
-		items.append({"text": "%s  (%d MP)" % [sk.name, sk.mp], "hint": sk.desc, "disabled": actor.mp < sk.mp, "unit": actor,
+		items.append({"text": "%s  (%d MP)" % [Loc.t(sk.name), sk.mp], "hint": Loc.t(sk.desc), "disabled": actor.mp < sk.mp, "unit": actor,
 			"cb": func() -> void: _choose_skill(actor, skill_id)})
-	_show_menu("Jurus %s" % actor.display_name, items, _ask_command)
+	_show_menu(Loc.t("Jurus %s") % actor.display_name, items, _ask_command)
 
 
 func _choose_skill(actor: Battler, skill_id: String) -> void:
@@ -335,10 +335,10 @@ func _choose_skill(actor: Battler, skill_id: String) -> void:
 		_push(cmd)
 	match sk.target:
 		"enemy":
-			_pick_target("%s ke siapa?" % sk.name, engine.living(engine.enemies), on_pick,
+			_pick_target(Loc.t("%s ke siapa?") % Loc.t(sk.name), engine.living(engine.enemies), on_pick,
 				func() -> void: _skill_menu(actor))
 		"ally":
-			_pick_target("%s untuk siapa?" % sk.name, engine.living(engine.party), on_pick,
+			_pick_target(Loc.t("%s untuk siapa?") % Loc.t(sk.name), engine.living(engine.party), on_pick,
 				func() -> void: _skill_menu(actor))
 		_:
 			_push(cmd)
@@ -373,7 +373,7 @@ func _item_targets(item_id: String) -> Array:
 ## Buka tampilan tas untuk memilih barang yang dipakai `actor` ronde ini.
 func _item_menu(actor: Battler) -> void:
 	_bag_actor = actor
-	_show_menu("Barang", [])
+	_show_menu(Loc.t("Barang"), [])
 	var counts := {}
 	for item_id: String in Db.ITEMS:
 		if _available(item_id) > 0:
@@ -385,7 +385,7 @@ func _item_menu(actor: Battler) -> void:
 func _on_bag_picked(item_id: String) -> void:
 	_bag.visible = false
 	var actor := _bag_actor
-	_pick_target("%s untuk siapa?" % Db.ITEMS[item_id].name, _item_targets(item_id),
+	_pick_target(Loc.t("%s untuk siapa?") % Loc.t(Db.ITEMS[item_id].name), _item_targets(item_id),
 		func(t: Battler) -> void: _push({"actor": actor, "kind": "item", "item": item_id, "target": t}),
 		func() -> void: _item_menu(actor))
 
@@ -403,7 +403,7 @@ func _pick_target(title: String, list: Array, on_pick: Callable, back: Callable 
 	_show_menu(title, items, back)
 	_pick_list = list
 	_pick_cb = on_pick
-	_set_banner("%s   Klik sasaran di arena, atau pilih dari daftar." % title)
+	_set_banner(Loc.t("%s   Klik sasaran di arena, atau pilih dari daftar.") % title)
 	if not list.is_empty():
 		_point_at(list[0])
 
@@ -424,14 +424,14 @@ func _attempt_flee() -> void:
 	_cmd_index = -1
 	_show_menu("", [])
 	_refresh()
-	await _say("Party mencoba kabur...")
+	await _say(Loc.t("Party mencoba kabur..."))
 	if engine.try_flee():
 		Audio.sfx("flee")
-		await _say("Berhasil lolos!")
-		_show_menu("Lolos", [{"text": "Lanjut", "hint": "Kembali ke peta.",
+		await _say(Loc.t("Berhasil lolos!"))
+		_show_menu(Loc.t("Lolos"), [{"text": Loc.t("Lanjut"), "hint": Loc.t("Kembali ke peta."),
 			"cb": func() -> void: Game.return_to_world()}])
 	else:
-		await _say("Gagal! Jalan keluar terhalang.")
+		await _say(Loc.t("Gagal! Jalan keluar terhalang."))
 		_commands.clear()
 		_resolve_round()
 
@@ -458,7 +458,7 @@ func _resolve_round() -> void:
 		# Mesin battle langsung mengubah HP; tampilan baru diperbarui tepat saat animasi "mengenai".
 		var targets := engine.resolve_targets(cmd)
 		var animate: bool = cmd.kind != "skill" or actor.mp >= int(Db.SKILLS[cmd.skill].mp)
-		_set_banner("Giliran %s:   %s" % [actor.display_name, _cmd_text(cmd)])
+		_set_banner(Loc.t("Giliran %s:   %s") % [actor.display_name, _cmd_text(cmd)])
 		var lines := engine.execute(cmd)
 		if lines.is_empty():
 			continue
@@ -500,7 +500,7 @@ func _resolve_round() -> void:
 func _victory() -> void:
 	var was_boss := not engine.can_flee()
 	Audio.play_jingle("victory", false)
-	await _say("Semua monster dikalahkan!")
+	await _say(Loc.t("Semua monster dikalahkan!"))
 	# Catat keadaan tiap anggota sebelum hadiah dibagikan, untuk layar hasil.
 	var before: Array = []
 	for m: Battler in engine.party:
@@ -544,16 +544,16 @@ func _show_results(reward: Dictionary, before: Array, was_boss: bool) -> void:
 	_results.add_child(column)
 
 	var title := Label.new()
-	title.text = "Menang!"
+	title.text = Loc.t("Menang!")
 	for e: Battler in engine.enemies:
 		if was_boss and e.is_boss:
-			title.text = "%s tumbang!" % e.display_name
+			title.text = Loc.t("%s tumbang!") % e.display_name
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 30)
 	title.add_theme_color_override("font_color", COLOR_ACTIVE)
 	column.add_child(title)
 	var summary := Label.new()
-	summary.text = "+%d XP untuk tiap anggota yang bertahan        +%d emas  (total %d)" % [reward.xp, reward.gold, Game.gold]
+	summary.text = Loc.t("+%d XP untuk tiap anggota yang bertahan        +%d emas  (total %d)") % [reward.xp, reward.gold, Game.gold]
 	summary.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	column.add_child(summary)
 	if not (reward.drops as Dictionary).is_empty():  # bahan yang dijatuhkan monster
@@ -561,7 +561,7 @@ func _show_results(reward: Dictionary, before: Array, was_boss: bool) -> void:
 		drop_row.alignment = BoxContainer.ALIGNMENT_CENTER
 		drop_row.add_theme_constant_override("separation", 14)
 		var drop_title := Label.new()
-		drop_title.text = "Bahan:"
+		drop_title.text = Loc.t("Bahan:")
 		drop_row.add_child(drop_title)
 		for mat_id: String in Db.MATERIALS:
 			if not reward.drops.has(mat_id):
@@ -569,7 +569,7 @@ func _show_results(reward: Dictionary, before: Array, was_boss: bool) -> void:
 			var mat: Dictionary = Db.MATERIALS[mat_id]
 			drop_row.add_child(GearIcon.material(mat_id, int(reward.drops[mat_id]), 32.0))
 			var mat_name := Label.new()
-			mat_name.text = mat.name
+			mat_name.text = Loc.t(mat.name)
 			mat_name.add_theme_font_size_override("font_size", 14)
 			mat_name.add_theme_color_override("font_color", Color(String(Db.RARITIES[mat.rarity].color)))
 			drop_row.add_child(mat_name)
@@ -614,7 +614,7 @@ func _show_results(reward: Dictionary, before: Array, was_boss: bool) -> void:
 	_results_running = true
 	_results_skip = false
 	var button := Button.new()
-	button.text = "Lewati"
+	button.text = Loc.t("Lewati")
 	button.focus_entered.connect(func() -> void: Audio.sfx("ui_move"))
 	button.pressed.connect(func() -> void:
 		Audio.sfx("ui_ok")
@@ -629,14 +629,14 @@ func _show_results(reward: Dictionary, before: Array, was_boss: bool) -> void:
 	for i in engine.party.size():
 		await _animate_xp(engine.party[i], before[i], rows[i])
 	_results_running = false
-	button.text = "Lanjut"
+	button.text = Loc.t("Lanjut")
 	await results_closed
 
 
 ## Isi batang XP satu anggota dari keadaan sebelum ke sesudah, berhenti sejenak di tiap kenaikan level.
 func _animate_xp(m: Battler, was: Dictionary, row: Dictionary) -> void:
 	if not was.alive:
-		(row.note as Label).text = "Tumbang saat pertarungan berakhir: tidak mendapat XP."
+		(row.note as Label).text = Loc.t("Tumbang saat pertarungan berakhir: tidak mendapat XP.")
 		(row.note as Label).add_theme_color_override("font_color", COLOR_DOWN)
 		return
 	var level: int = was.level
@@ -660,13 +660,13 @@ func _animate_xp(m: Battler, was: Dictionary, row: Dictionary) -> void:
 			var gain := int(now[stat_name]) - int(was.stats[stat_name])
 			if gain > 0:
 				gains.append("%s +%d" % [stat_name, gain])
-		var text := "Naik level!   " + "   ".join(gains)
+		var text := Loc.t("Naik level!   ") + "   ".join(gains)
 		var learned: Array = []
 		for skill_id: String in m.skills:
 			if not (was.skills as Array).has(skill_id):
-				learned.append(Db.SKILLS[skill_id].name)
+				learned.append(Loc.t(Db.SKILLS[skill_id].name))
 		if not learned.is_empty():
-			text += "\nJurus baru: " + ", ".join(learned)
+			text += Loc.t("\nJurus baru: ") + ", ".join(learned)
 		(row.note as Label).text = text
 
 
@@ -683,8 +683,8 @@ func _fill_xp(row: Dictionary, from: int, to: int, need: int) -> void:
 
 func _defeat() -> void:
 	Audio.play_jingle("game_over", false)
-	await _say("Seluruh party tumbang...")
-	_show_menu("Kalah", [{"text": "Kembali ke desa", "hint": "Party dipulihkan, tetapi separuh emas hilang.",
+	await _say(Loc.t("Seluruh party tumbang..."))
+	_show_menu(Loc.t("Kalah"), [{"text": Loc.t("Kembali ke desa"), "hint": Loc.t("Party dipulihkan, tetapi separuh emas hilang."),
 		"cb": Game.defeat_to_respawn}])
 
 
@@ -1112,7 +1112,7 @@ func _learns(char_id: String, skill_id: String) -> bool:
 # ---------------------------------------------------------------- tampilan
 
 func _refresh() -> void:
-	_info.text = "Emas: %d     Menang: %d" % [Game.gold, Game.wins]
+	_info.text = Loc.t("Emas: %d     Menang: %d") % [Game.gold, Game.wins]
 
 	var current: Battler = null
 	if _cmd_index >= 0 and _cmd_index < _actors.size():
@@ -1184,7 +1184,7 @@ func _refresh() -> void:
 func _status_tags(b: Battler) -> String:
 	var tags: Array = []
 	for status_id: String in b.statuses:
-		tags.append("%s %d" % [Db.STATUSES[status_id].name, b.statuses[status_id]])
+		tags.append("%s %d" % [Loc.t(Db.STATUSES[status_id].name), b.statuses[status_id]])
 	return ", ".join(tags)
 
 
@@ -1250,7 +1250,7 @@ func _show_menu(title: String, items: Array, back: Callable = Callable()) -> voi
 
 	var all_items := items.duplicate()
 	if back.is_valid():
-		all_items.append({"text": "< Kembali", "hint": "Kembali ke pilihan sebelumnya (Esc).", "cb": back})
+		all_items.append({"text": Loc.t("< Kembali"), "hint": Loc.t("Kembali ke pilihan sebelumnya (Esc)."), "cb": back})
 
 	var first: Button = null
 	for item: Dictionary in all_items:

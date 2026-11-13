@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Aveloria"
-config/version="1.2.1"
+config/version="1.3"
 run/main_scene="res://scenes/title.tscn"
 config/icon="res://icon.png"
 boot_splash/bg_color=Color(0.078, 0.102, 0.149, 1)
