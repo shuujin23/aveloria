@@ -92,6 +92,12 @@ var _forge_open := false
 var _gear_view: PanelContainer  # layar Perlengkapan (scripts/ui/gear_view.gd)
 var _gear_open := false
 var _gear_from_menu := false
+var _stats_view: PanelContainer  # layar Status (scripts/ui/stats_view.gd)
+var _stats_open := false
+var _stats_from_menu := false
+var _quest_view: PanelContainer  # daftar quest (scripts/ui/quest_view.gd)
+var _quests_open := false
+var _quests_from_menu := false
 var _fade: ColorRect
 
 
@@ -201,12 +207,20 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		_toggle_gear()
 		return
+	if key != null and key.pressed and not key.echo and key.keycode == KEY_Q:  # Q: buka/tutup daftar quest
+		get_viewport().set_input_as_handled()
+		_toggle_quests()
+		return
+	if key != null and key.pressed and not key.echo and key.keycode == KEY_C:  # C: buka/tutup layar Status
+		get_viewport().set_input_as_handled()
+		_toggle_stats()
+		return
 	if event.is_action_pressed("ui_cancel"):  # Esc: buka/tutup menu
 		get_viewport().set_input_as_handled()
 		if _shop_open:
 			Audio.sfx("ui_cancel")
 			shop_closed.emit()
-		elif _bag_open or _gear_open or _forge_open:
+		elif _bag_open or _gear_open or _forge_open or _stats_open or _quests_open:
 			pass  # tampilan itu menangani Esc sendiri
 		elif _menu_open:
 			Audio.sfx("ui_cancel")
@@ -354,6 +368,8 @@ func _on_step() -> void:
 		_travel(WorldMap.portal_target(tile))
 	elif tile.has("chest"):
 		_open_chest(_tile)
+	elif tile.has("quest"):
+		_quest_spot(tile.quest)
 	elif tile.has("boss"):
 		var rule: Dictionary = Db.BOSS_RULES[tile.boss]
 		if Game.flags.has(tile.boss):
@@ -514,24 +530,7 @@ func _run_steps(steps: Array) -> bool:
 			await advance
 		elif step.has("choice"):
 			var options: Array = step.choice
-			_dialog_hint.visible = false
-			_dialog_choices.visible = true
-			_dialog_open = false  # pilihan dijawab lewat tombol, bukan tombol lanjut
-			for child in _dialog_choices.get_children():
-				child.queue_free()
-			for i in options.size():
-				var button := Button.new()
-				button.text = Loc.t(options[i].text)
-				button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-				button.focus_entered.connect(func() -> void: Audio.sfx("ui_move"))
-				button.pressed.connect(func() -> void: Audio.sfx("ui_ok"))
-				button.pressed.connect(func() -> void: chosen.emit(i))
-				_dialog_choices.add_child(button)
-				if i == 0:
-					button.grab_focus()
-			var index: int = await chosen
-			for child in _dialog_choices.get_children():
-				child.queue_free()
+			var index: int = await _ask_choice(options.map(func(option: Dictionary) -> String: return Loc.t(option.text)))
 			var completed: bool = await _run_steps(options[index].steps)
 			if not completed:
 				return false
@@ -552,6 +551,18 @@ func _run_steps(steps: Array) -> bool:
 					await _shop(step.stock)
 				"forge":  # pandai besi: beli perlengkapan, tempa, jual bahan
 					await _forge(int(step.tier), Loc.t(step.get("name", Loc.t("Pandai Besi"))))
+				"gold":  # hadiah emas
+					Game.gold += int(step.amount)
+					Audio.sfx("coin")
+					_update_hud()
+				"quest_note":  # pemberitahuan quest baru / selesai
+					Audio.sfx("save")
+					var note: String = Loc.t(step.title) % Loc.t(Quests.LIST[step.quest].name)
+					if step.hint != "":
+						note += "\n" + Loc.t(step.hint)
+					await _run_steps([{"text": note}])
+				"reward_gear":  # hadiah perlengkapan untuk satu anggota party pilihan pemain
+					await _reward_gear(step)
 				"rest":  # menginap: pulih, jadi titik kembali, dan menyimpan permainan
 					Game.rest_at_inn()
 					Game.save_game()
@@ -568,6 +579,82 @@ func _run_steps(steps: Array) -> bool:
 					_start_battle(step.ids, step.get("backdrop", "lembah"), step.get("after", ""))
 					return false
 	return true
+
+
+## Tampilkan tombol-tombol pilihan di kotak dialog dan tunggu pemain memilih; mengembalikan indeksnya.
+func _ask_choice(labels: Array) -> int:
+	_dialog_hint.visible = false
+	_dialog_choices.visible = true
+	_dialog_panel.visible = true
+	_dialog_open = false  # pilihan dijawab lewat tombol, bukan tombol lanjut
+	for child in _dialog_choices.get_children():
+		child.queue_free()
+	for i in labels.size():
+		var button := Button.new()
+		button.text = labels[i]
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.focus_entered.connect(func() -> void: Audio.sfx("ui_move"))
+		button.pressed.connect(func() -> void: Audio.sfx("ui_ok"))
+		button.pressed.connect(func() -> void: chosen.emit(i))
+		_dialog_choices.add_child(button)
+		if i == 0:
+			button.grab_focus()
+	var index: int = await chosen
+	for child in _dialog_choices.get_children():
+		child.queue_free()
+	return index
+
+
+## Hadiah perlengkapan: pemain memilih anggota party penerimanya, lalu barang itu langsung dipakai.
+func _reward_gear(step: Dictionary) -> void:
+	var labels: Array = []
+	for m: Battler in Game.party:
+		var preview := {"id": Db.gear_id(m.id, step.slot, int(step.tier)), "plus": 0, "trait": "", "rarity": step.rarity}
+		labels.append("%s:  %s   (%s)" % [m.display_name, Db.gear_label(preview), Db.entry_stat_text(preview)])
+	var who: Battler = Game.party[await _ask_choice(labels)]
+	var entry := Game.grant_gear(who, step.slot, int(step.tier), step.rarity)
+	Audio.play_jingle("fanfare")
+	_update_hud()
+	await _run_steps([{"text": Loc.t("%s menerima %s!  %s.\nSifat: %s.") % [who.display_name, Db.gear_label(entry), Db.entry_stat_text(entry), Db.trait_text(entry)]}])
+
+
+## Menginjak tempat side quest: bertarung melawan penjaganya kalau quest-nya sedang berjalan.
+func _quest_spot(id: String) -> void:
+	var q: Dictionary = Quests.LIST[id]
+	match Quests.state(id, Game.flags):
+		"active":
+			_start_battle(Db.BOSSES[q.boss], q.backdrop, "q_%s_won" % id)
+		"won", "done":
+			_show_message(Loc.t("Tidak ada apa-apa lagi di sini."))
+		_:
+			_show_message(Loc.t("Tempat ini terasa berbahaya. Mungkin penduduk di permukiman terdekat tahu ceritanya."))
+
+
+## Pintasan daftar quest (tombol Q).
+func _toggle_quests() -> void:
+	if _quests_open:
+		_close_quests()
+	elif not _busy and not _moving:
+		_busy = true
+		_cancel_path()
+		_quests_from_menu = false
+		_open_quests()
+
+
+func _open_quests() -> void:
+	_menu_panel.visible = false
+	_quests_open = true
+	_quest_view.open()
+
+
+func _close_quests() -> void:
+	_quest_view.visible = false
+	_quests_open = false
+	if _quests_from_menu:
+		_open_menu()
+	else:
+		_dir_held = -0.25
+		_busy = false
 
 
 # ---------------------------------------------------------------- menu (Esc), tas, dan toko
@@ -610,6 +697,12 @@ func _open_menu() -> void:
 		{"text": Loc.t("Perlengkapan"), "cb": func() -> void:
 			_gear_from_menu = true
 			_open_gear()},
+		{"text": Loc.t("Status"), "cb": func() -> void:
+			_stats_from_menu = true
+			_open_stats()},
+		{"text": Loc.t("Quest"), "cb": func() -> void:
+			_quests_from_menu = true
+			_open_quests()},
 		{"text": Loc.t("Simpan permainan"), "cb": _menu_save},
 		{"text": Loc.t("Muat simpanan terakhir"), "cb": _menu_load, "disabled": not Game.has_save()},
 		{"text": Loc.label(), "cb": func() -> void:  # ganti bahasa lalu muat ulang peta supaya semua tulisan ikut
@@ -727,6 +820,33 @@ func _close_gear() -> void:
 		_busy = false
 
 
+## Pintasan layar Status (tombol C): stat tiap tokoh dan pembagian poin stat.
+func _toggle_stats() -> void:
+	if _stats_open:
+		_close_stats()
+	elif not _busy and not _moving:
+		_busy = true
+		_cancel_path()
+		_stats_from_menu = false
+		_open_stats()
+
+
+func _open_stats() -> void:
+	_menu_panel.visible = false
+	_stats_open = true
+	_stats_view.open()
+
+
+func _close_stats() -> void:
+	_stats_view.visible = false
+	_stats_open = false
+	if _stats_from_menu:
+		_open_menu()
+	else:
+		_dir_held = -0.25
+		_busy = false
+
+
 ## Buka pandai besi dan tunggu sampai pemain selesai.
 func _forge(tier: int, shop_name: String) -> void:
 	_dialog_panel.visible = false
@@ -777,10 +897,13 @@ func _update_hud() -> void:
 	var zone: String = WorldMap.tile_at(_tile).zone
 	if zone == "":
 		zone = WorldMap.map_name() if (WorldMap.is_settlement(Game.map_id) or WorldMap.is_dungeon(Game.map_id)) else Loc.t("Jalan")
-	_zone_label.text = Loc.t("%s\nEmas: %d\nEsc: menu   I: tas   E: perlengkapan") % [Loc.t(zone), Game.gold]
+	_zone_label.text = Loc.t("%s\nEmas: %d\nEsc: menu   I: tas   E: perlengkapan\nC: status   Q: quest") % [Loc.t(zone), Game.gold]
 	var lines: Array = []
 	for m: Battler in Game.party:
-		lines.append("%-7s Lv %d   HP %d/%d   MP %d/%d" % [m.display_name, m.level, m.hp, m.max_hp, m.mp, m.max_mp])
+		var line := "%-7s Lv %d   HP %d/%d   MP %d/%d" % [m.display_name, m.level, m.hp, m.max_hp, m.mp, m.max_mp]
+		if m.points_left() > 0:  # masih ada poin stat yang belum dibagi
+			line += Loc.t("   +%d poin") % m.points_left()
+		lines.append(line)
 	_party_label.text = "\n".join(lines)
 
 
@@ -883,7 +1006,7 @@ func _material(t: Vector2i) -> String:
 			return "mist_floor"
 		"k", "J":
 			return "cinder"
-		"x", "e":  # peti dan jalan keluar: bahan peta itu, atau ikut petak tetangga yang bisa diinjak
+		"x", "e", "1", "2", "3":  # peti, jalan keluar, dan tempat quest: bahan peta itu, atau ikut petak tetangga yang bisa diinjak
 			if WorldMap.floor_material() != "":
 				return WorldMap.floor_material()
 			for side: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
@@ -925,6 +1048,13 @@ func _build_objects() -> void:
 			match WorldMap.char_at(t):
 				"^":  # di dalam dungeon dindingnya bukit batu, bukan gunung bersalju
 					sprite = _sprite("hill_%d" % _variant(t, 2) if WorldMap.is_dungeon(Game.map_id) else _mountain_name(t, 6, 10), MOUNTAIN_ANCHOR)
+				"1", "3":  # sarang perampok dan mulut tambang: gua kecil yang kosong setelah penjaganya kalah
+					var den: Dictionary = Quests.LIST[WorldMap.tile_at(t).quest]
+					sprite = _sprite("lair_empty" if Game.flags.has(den.boss) else "lair_occupied", Vector2(18, 30))
+					sprite.modulate = Color(0.75, 1.0, 0.72) if WorldMap.char_at(t) == "1" else Color(1.0, 0.82, 0.55)
+				"2":  # altar tua
+					sprite = _sprite("altar", Vector2(16, 30))
+					sprite.modulate = Color(0.82, 0.72, 1.0)
 				"x":
 					sprite = _sprite("chest_open" if Game.flags.has(WorldMap.chest_flag(t)) else "chest_closed", CHEST_ANCHOR)
 					_chest_sprites[t] = sprite
@@ -1180,6 +1310,15 @@ func _build_hud() -> void:
 	_forge_view.changed.connect(_update_hud)
 	_forge_view.closed.connect(func() -> void: forge_closed.emit())
 	root.add_child(_forge_view)
+
+	_quest_view = (load("res://scripts/ui/quest_view.gd") as GDScript).new()
+	_quest_view.closed.connect(_close_quests)
+	root.add_child(_quest_view)
+
+	_stats_view = (load("res://scripts/ui/stats_view.gd") as GDScript).new()
+	_stats_view.changed.connect(_update_hud)
+	_stats_view.closed.connect(_close_stats)
+	root.add_child(_stats_view)
 
 	_gear_view = (load("res://scripts/ui/gear_view.gd") as GDScript).new()
 	_gear_view.closed.connect(_close_gear)

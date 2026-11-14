@@ -6,7 +6,7 @@ extends SceneTree
 const SAME := ["", "Arlen", "Mira", "Selene", "Kael", "Marla", "Finn", "Doran", "Garrick", "Osric", "Nessa",
 	"Halvard", "Brenna", "Tobin", "Varek", "Aveloria", "Gargoyle", "Common", "Rare", "Super Rare", "Ultra Rare"]
 const SOURCES := ["battle/battle_engine.gd", "battle/battler.gd", "battle/battle_scene.gd", "world/world.gd", "game.gd",
-	"title.gd", "ending.gd", "db.gd", "ui/bag_view.gd", "ui/forge_view.gd", "ui/gear_view.gd", "ui/shop_view.gd"]
+	"title.gd", "ending.gd", "db.gd", "ui/bag_view.gd", "ui/stats_view.gd", "ui/quest_view.gd", "ui/forge_view.gd", "ui/gear_view.gd", "ui/shop_view.gd"]
 
 var _failed := false
 var _missing := {}
@@ -72,10 +72,23 @@ func _initialize() -> void:
 				for gold: int in [0, 999]:
 					_need_steps(Story.talk(npc.id, flags, gold), "dialog " + npc.id)
 
+	# --- side quest ---
+	for id: String in Quests.LIST:
+		var q: Dictionary = Quests.LIST[id]
+		for text: String in [q.name, q.place, q.goal, q.back, q.remind] + (q.offer as Array) + (q.thanks as Array):
+			_need(text, "quest " + id)
+		_need_steps(Story.scene("q_%s_won" % id), "quest " + id)
+		_expect(not Story.scene("q_%s_won" % id).is_empty() and Db.BOSSES.has(q.boss) and Story.npc(q.giver).has("name"),
+			"quest %s punya adegan menang, penjaga, dan pemberi" % id)
+	for text: String in Quests.STATE_LABELS.values() + ["Quest baru: %s", "Quest selesai: %s"]:
+		_need(text, "quest")
+
 	# --- konstanta teks di layar ---
 	var forge: Dictionary = (load("res://scripts/ui/forge_view.gd") as GDScript).get_script_constant_map()
 	for text: String in (forge.TABS as Array) + (forge.TAB_HINTS as Array):
 		_need(text, "pandai besi")
+	for text: String in ((load("res://scripts/ui/stats_view.gd") as GDScript).get_script_constant_map().HINTS as Dictionary).values():
+		_need(text, "status")
 	for text: String in (load("res://scripts/ending.gd") as GDScript).get_script_constant_map().CREDITS:
 		_need(text, "penutup")
 

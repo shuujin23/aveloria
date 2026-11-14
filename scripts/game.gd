@@ -187,29 +187,46 @@ func _pay(cost: Dictionary) -> void:
 			mats.erase(mat_id)
 
 
-## Alasan sebuah perlengkapan tidak bisa dibeli; kosong kalau bisa.
-func gear_block(gear_id: String) -> String:
+## Alasan sebuah perlengkapan tidak bisa dibeli pada rarity itu; kosong kalau bisa.
+func gear_block(gear_id: String, rarity: String = "common") -> String:
 	var g := Db.gear(gear_id)
 	var m := member(g.owner)
 	if m == null:
 		return Loc.t("%s belum bergabung.") % Loc.t(Db.CHARACTERS[g.owner].name)
-	if m.equip.has(g.slot) and int(Db.gear(m.equip[g.slot].id).tier) >= int(g.tier):
-		return Loc.t("Sudah memakai yang setara atau lebih baik.")
-	if gold < int(g.price):
+	if m.equip.has(g.slot):
+		var worn: Dictionary = m.equip[g.slot]
+		var worn_tier := int(Db.gear(worn.id).tier)
+		var worn_rank := int(Db.GEAR_RARITIES[Db.gear_rarity(worn)].rank)
+		if worn_tier > int(g.tier) or (worn_tier == int(g.tier) and worn_rank >= int(Db.GEAR_RARITIES[rarity].rank)):
+			return Loc.t("Sudah memakai yang setara atau lebih baik.")
+	if gold < Db.gear_price(gear_id, rarity):
 		return Loc.t("Emas belum cukup.")
 	return ""
 
 
 ## Beli perlengkapan dan langsung pakai; barang lama di slot itu tergantikan.
-func buy_gear(gear_id: String) -> bool:
-	if gear_block(gear_id) != "":
+func buy_gear(gear_id: String, rarity: String = "common") -> bool:
+	if gear_block(gear_id, rarity) != "":
 		return false
 	var g := Db.gear(gear_id)
 	var m := member(g.owner)
-	gold -= int(g.price)
-	m.equip[g.slot] = {"id": gear_id, "plus": 0, "trait": ""}
+	gold -= Db.gear_price(gear_id, rarity)
+	m.equip[g.slot] = {"id": gear_id, "plus": 0, "trait": "", "rarity": rarity}
 	m.recalc()
 	return true
+
+
+## Hadiah perlengkapan (mis. dari side quest): langsung dipakai, tingkat tempa barang lama di slot itu
+## ikut pindah, dan barang ultra rare langsung membawa satu sifat. Mengembalikan barang barunya.
+func grant_gear(m: Battler, slot: String, tier: int, rarity: String) -> Dictionary:
+	var gear_id := Db.gear_id(m.id, slot, tier)
+	var plus := int((m.equip.get(slot, {}) as Dictionary).get("plus", 0))
+	var pool := Db.trait_pool(gear_id)
+	var entry := {"id": gear_id, "plus": plus, "rarity": rarity,
+		"trait": pool[randi() % pool.size()] if int(Db.GEAR_RARITIES[rarity].rank) >= 2 else ""}
+	m.equip[slot] = entry
+	m.recalc()
+	return entry
 
 
 ## Tempa satu tingkat. Mengembalikan {"ok", "trait"}: trait = sifat yang baru didapat ("" kalau tidak dapat).
@@ -223,7 +240,7 @@ func enhance(m: Battler, slot: String) -> Dictionary:
 	_pay(cost)
 	entry.plus = int(entry.plus) + 1
 	var gained := ""
-	if entry["trait"] == "" and randf() < float(Db.TRAIT_GAIN_CHANCE[int(entry.plus) - 1]):
+	if entry["trait"] == "" and randf() < Db.trait_gain_chance(int(entry.plus), Db.gear_rarity(entry)):
 		var pool := Db.trait_pool(entry.id)
 		gained = pool[randi() % pool.size()]
 		entry["trait"] = gained
@@ -268,6 +285,46 @@ func sell_mat(mat_id: String) -> bool:
 	return true
 
 
+# ---------------------------------------------------------------- poin stat
+
+## Pakai satu poin stat seorang tokoh untuk menaikkan `stat_name`.
+func spend_point(m: Battler, stat_name: String) -> bool:
+	if m.points_left() <= 0 or not Db.STAT_POINT_VALUE.has(stat_name):
+		return false
+	m.alloc[stat_name] = int(m.alloc.get(stat_name, 0)) + 1
+	m.recalc()
+	if stat_name == "max_hp" and m.is_alive():  # HP/MP saat ini ikut naik, supaya poinnya langsung terasa
+		m.hp = min(m.max_hp, m.hp + int(Db.STAT_POINT_VALUE[stat_name]))
+	elif stat_name == "max_mp":
+		m.mp = min(m.max_mp, m.mp + int(Db.STAT_POINT_VALUE[stat_name]))
+	return true
+
+
+func respec_price(m: Battler) -> int:
+	return Db.RESPEC_GOLD * m.level
+
+
+## Alasan poin seorang tokoh tidak bisa diatur ulang; kosong kalau bisa.
+func respec_block(m: Battler) -> String:
+	if m.points_spent() == 0:
+		return Loc.t("Belum ada poin yang dibagi.")
+	if not WorldMap.is_settlement(map_id):
+		return Loc.t("Poin hanya bisa diatur ulang di desa, dusun, atau pos.")
+	if gold < respec_price(m):
+		return Loc.t("Emas belum cukup.")
+	return ""
+
+
+## Kembalikan semua poin stat seorang tokoh supaya bisa dibagi ulang.
+func respec(m: Battler) -> bool:
+	if respec_block(m) != "":
+		return false
+	gold -= respec_price(m)
+	m.alloc = {}
+	m.recalc()
+	return true
+
+
 # ---------------------------------------------------------------- simpan dan muat
 
 func has_save() -> bool:
@@ -278,7 +335,7 @@ func has_save() -> bool:
 func save_game() -> bool:
 	var members: Array = []
 	for m: Battler in party:
-		members.append({"id": m.id, "level": m.level, "xp": m.xp, "hp": m.hp, "mp": m.mp, "equip": m.equip})
+		members.append({"id": m.id, "level": m.level, "xp": m.xp, "hp": m.hp, "mp": m.mp, "equip": m.equip, "alloc": m.alloc})
 	var data := {
 		"version": SAVE_VERSION,
 		"party": members,
@@ -336,8 +393,15 @@ func load_game() -> bool:
 					continue
 				var status_id := str(piece.get("trait", ""))
 				m.equip[slot] = {"id": String(piece.id), "plus": clampi(int(piece.get("plus", 0)), 0, Db.ENHANCE_MAX),
-					"trait": status_id if Db.trait_pool(piece.id).has(status_id) else ""}
-			m.recalc()
+					"trait": status_id if Db.trait_pool(piece.id).has(status_id) else "", "rarity": Db.gear_rarity(piece)}
+		var saved_alloc: Variant = entry.get("alloc", {})
+		if saved_alloc is Dictionary:
+			for stat_name: Variant in saved_alloc:
+				if Db.STAT_POINT_VALUE.has(stat_name) and int(saved_alloc[stat_name]) > 0:
+					m.alloc[String(stat_name)] = int(saved_alloc[stat_name])
+			if m.points_spent() > m.points_total():  # simpanan yang tidak masuk akal: poin dikembalikan
+				m.alloc = {}
+		m.recalc()
 		m.xp = max(0, int(entry.get("xp", 0)))
 		m.hp = clampi(int(entry.get("hp", m.max_hp)), 1, m.max_hp)
 		m.mp = clampi(int(entry.get("mp", m.max_mp)), 0, m.max_mp)

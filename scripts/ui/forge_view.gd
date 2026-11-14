@@ -9,7 +9,7 @@ signal closed
 const GearIcon := preload("res://scripts/ui/gear_icon.gd")
 const TABS := ["Beli", "Tempa", "Tempa Ulang", "Jual Bahan"]
 const TAB_HINTS := [
-	"Perlengkapan langsung dipakai tokoh pemiliknya. Barang lama di slot itu tergantikan.",
+	"Perlengkapan langsung dipakai tokoh pemiliknya. Barang lama di slot itu tergantikan. Kiri: Common, kanan: Rare.",
 	"Tiap tingkat tempa menambah stat dan berpeluang memberi sifat (efek status) kalau belum punya.",
 	"Mengacak sifat senjata menjadi sifat lain. Tingkat tempa tidak berubah.",
 	"Jual bahan yang tidak terpakai. Tekan kartu untuk menjual satu.",
@@ -26,6 +26,7 @@ var _tab_box: HBoxContainer
 var _member_box: HBoxContainer
 var _grid: GridContainer
 var _detail: Label
+var _title_color := Color.WHITE  # warna judul kartu berikutnya (lihat _tint_title)
 
 
 func _init() -> void:
@@ -129,8 +130,9 @@ func _rebuild(focus_card: int = 0, message: String = "") -> void:
 	var who: Battler = Game.party[_member]
 	match _tab:
 		0:
-			for slot: String in Db.GEAR_SLOTS:
-				cards.append(_buy_card(who, slot))
+			for slot: String in Db.GEAR_SLOTS:  # tiap baris: Common di kiri, Rare di kanan
+				for rarity: String in Db.SHOP_RARITIES:
+					cards.append(_buy_card(who, slot, rarity))
 		1:
 			for slot: String in Db.GEAR_SLOTS:
 				cards.append(_enhance_card(who, slot))
@@ -167,27 +169,36 @@ func _toggle(text: String, active: bool, on_press: Callable) -> Button:
 
 # ---------------------------------------------------------------- kartu tiap tab
 
-func _buy_card(m: Battler, slot: String) -> Button:
+func _buy_card(m: Battler, slot: String, rarity: String) -> Button:
 	var gear_id := Db.gear_id(m.id, slot, _tier)
 	var g := Db.gear(gear_id)
-	var entry := {"id": gear_id, "plus": 0, "trait": ""}
-	var reason := Game.gear_block(gear_id)
-	var desc := Loc.t("%s untuk %s: %s.") % [g.name, m.display_name, Db.gear_stat_text(gear_id, 0)]
+	var entry := {"id": gear_id, "plus": 0, "trait": "", "rarity": rarity}
+	var reason := Game.gear_block(gear_id, rarity)
+	var stat_text := Db.gear_stat_text(gear_id, 0, rarity)
+	var desc := Loc.t("%s untuk %s: %s.") % [Db.gear_label(entry), m.display_name, stat_text]
+	if rarity != "common":
+		desc += Loc.t(" Peluang mendapat sifat saat ditempa lebih besar.")
 	if m.equip.has(slot):
 		var old: Dictionary = m.equip[slot]
-		desc += Loc.t("\nSekarang memakai %s (%s).") % [Db.gear_title(old), Db.gear_stat_text(old.id, int(old.plus))]
+		desc += Loc.t("\nSekarang memakai %s (%s).") % [Db.gear_label(old), Db.entry_stat_text(old)]
 		if reason == "" and (int(old.plus) > 0 or old["trait"] != ""):
 			desc += Loc.t(" Tingkat tempa dan sifat barang lama tidak ikut pindah.")
 	else:
 		desc += Loc.t("\nSlot %s masih kosong.") % Loc.t(Db.GEAR_SLOT_NAMES[slot])
-	var index := Db.GEAR_SLOTS.find(slot)
-	return _card(GearIcon.gear(entry), g.name, Loc.t("%d emas") % g.price, Db.gear_stat_text(gear_id, 0), desc, reason,
+	var index := Db.GEAR_SLOTS.find(slot) * Db.SHOP_RARITIES.size() + Db.SHOP_RARITIES.find(rarity)
+	_tint_title(entry)
+	return _card(GearIcon.gear(entry), Db.gear_label(entry), Loc.t("%d emas") % Db.gear_price(gear_id, rarity), stat_text, desc, reason,
 		func() -> void:
-			if Game.buy_gear(gear_id):
+			if Game.buy_gear(gear_id, rarity):
 				Audio.sfx("coin")
 				changed.emit()
-				_rebuild(index, Loc.t("%s membeli dan memakai %s.") % [m.display_name, g.name]))
+				_rebuild(index, Loc.t("%s membeli dan memakai %s.") % [m.display_name, Db.gear_label(entry)]))
 
+
+## Judul kartu berikutnya memakai warna rarity barang itu.
+func _tint_title(entry: Dictionary) -> void:
+	var rarity := Db.gear_rarity(entry)
+	_title_color = Color.WHITE if rarity == "common" else Color(String(Db.GEAR_RARITIES[rarity].color))
 
 func _enhance_card(m: Battler, slot: String) -> Button:
 	if not m.equip.has(slot):
@@ -197,17 +208,18 @@ func _enhance_card(m: Battler, slot: String) -> Button:
 	var cost := Db.enhance_cost(entry.id, plus)
 	var index := Db.GEAR_SLOTS.find(slot)
 	var trait_text := Db.trait_text(entry)
+	_tint_title(entry)
 	if cost.is_empty():
-		return _card(GearIcon.gear(entry), Db.gear_title(entry), Loc.t("Tempa maksimal"), Db.gear_stat_text(entry.id, plus),
+		return _card(GearIcon.gear(entry), Db.gear_label(entry), Loc.t("Tempa maksimal"), Db.entry_stat_text(entry),
 			Loc.t("%s sudah +%d.%s") % [Db.gear(entry.id).name, plus, "" if trait_text == "" else Loc.t("\nSifat: ") + trait_text],
 			Loc.t("Sudah mencapai tingkat tempa maksimal."), func() -> void: pass)
 	var reason := "" if Game.can_pay(cost) else Loc.t("Emas atau bahan belum cukup.")
-	var desc := "%s  ->  +%d: %s." % [Db.gear_stat_text(entry.id, plus), plus + 1, Db.gear_stat_text(entry.id, plus + 1)]
+	var desc := "%s  ->  +%d: %s." % [Db.entry_stat_text(entry), plus + 1, Db.entry_stat_text(entry, 1)]
 	if trait_text == "":
-		desc += Loc.t("\nPeluang mendapat sifat: %d%%.") % roundi(float(Db.TRAIT_GAIN_CHANCE[plus]) * 100.0)
+		desc += Loc.t("\nPeluang mendapat sifat: %d%%.") % roundi(Db.trait_gain_chance(plus + 1, Db.gear_rarity(entry)) * 100.0)
 	else:
 		desc += Loc.t("\nSifat: %s; peluangnya naik menjadi %d%%.") % [trait_text, roundi(Db.trait_chance(plus + 1) * 100.0)]
-	return _card(GearIcon.gear(entry), Db.gear_title(entry), Loc.t("ke +%d:  %d emas") % [plus + 1, cost.gold],
+	return _card(GearIcon.gear(entry), Db.gear_label(entry), Loc.t("ke +%d:  %d emas") % [plus + 1, cost.gold],
 		Db.mats_text(cost.mats, Game.mats), desc, reason,
 		func() -> void:
 			var result := Game.enhance(m, slot)
@@ -233,7 +245,8 @@ func _reforge_card(m: Battler, slot: String) -> Button:
 	var options: Array = []
 	for status_id: String in Db.trait_pool(entry.id):
 		options.append(Loc.t(Db.STATUSES[status_id].name))
-	return _card(GearIcon.gear(entry), Db.gear_title(entry), Loc.t("%d emas") % cost.gold, Db.mats_text(cost.mats, Game.mats),
+	_tint_title(entry)
+	return _card(GearIcon.gear(entry), Db.gear_label(entry), Loc.t("%d emas") % cost.gold, Db.mats_text(cost.mats, Game.mats),
 		Loc.t("Sifat sekarang: %s.\nSifat yang mungkin: %s.") % [Loc.t("belum ada") if trait_text == "" else trait_text, ", ".join(options)],
 		Game.reforge_block(m, slot),
 		func() -> void:
@@ -293,7 +306,8 @@ func _card(icon: Control, title: String, price: String, note: String, desc: Stri
 	if icon != null:
 		icon.position = Vector2(14, (CARD_SIZE.y - icon.size.y) * 0.5)
 		body.add_child(icon)
-	_text(body, title, Vector2(76, 8), 17, Color.WHITE)
+	_text(body, title, Vector2(76, 8), 17, _title_color)
+	_title_color = Color.WHITE
 	_text(body, price, Vector2(76, 33), 15, Color("ffd866"))
 	_text(body, note, Vector2(76, 57), 13, Color(1, 1, 1, 0.7))
 

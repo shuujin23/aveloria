@@ -209,6 +209,7 @@ const ENEMY_CLASS := {
 	"kura_magma": [3, "super"], "lahar": [3, "ultra"],
 	"ksatria_kelam": [4, "common"], "gargoyle": [4, "common"], "bayangan": [4, "rare"],
 	"peti_terkutuk": [4, "super"], "raja": [4, "ultra"],
+	"goblin_kepala": [1, "super"], "roh_tua": [2, "super"], "golem_purba": [3, "super"],
 }
 ## Monster super rare tiap wilayah (awalan nama tabel pertemuan) dan peluangnya ikut muncul.
 const SUPER_BY_TABLE := {"lembah": "lendir_emas", "kabut": "mata_kabut", "abu": "kura_magma", "kastil": "peti_terkutuk"}
@@ -239,7 +240,21 @@ const GEAR_STATS := {
 	"feet": [{"agi": 2, "defense": 1}, {"agi": 3, "defense": 1}, {"agi": 5, "defense": 2}],
 }
 const GEAR_PRICES := {"weapon": [40, 120, 300], "head": [25, 80, 200], "body": [45, 140, 340], "feet": [25, 80, 200]}
-const STAT_LABELS := {"max_hp": "HP", "atk": "ATK", "defense": "DEF", "mag": "MAG", "agi": "SPD"}
+const STAT_LABELS := {"max_hp": "HP", "max_mp": "MP", "atk": "ATK", "defense": "DEF", "mag": "MAG", "agi": "SPD"}
+
+## Rarity perlengkapan (terpisah dari tingkat besi/baja/mitril dan dari tempa):
+##   common  seperti biasa; dijual pandai besi
+##   rare    stat sedikit lebih tinggi dan peluang mendapat sifat saat ditempa lebih besar; dijual mahal
+##   ultra   stat lebih tinggi lagi dan sudah membawa satu sifat sejak didapat; hadiah side quest
+## rank = urutan; bonus = tambahan stat (bagian dari stat dasar, minimal sebesar rank);
+## price = pengali harga; trait_gain = tambahan peluang mendapat sifat saat ditempa.
+const GEAR_RARITIES := {
+	"common": {"name": "Common", "color": "d8dce4", "rank": 0, "bonus": 0.0, "price": 1.0, "trait_gain": 0.0},
+	"rare": {"name": "Rare", "color": "6ab0ff", "rank": 1, "bonus": 0.2, "price": 2.5, "trait_gain": 0.15},
+	"ultra": {"name": "Ultra Rare", "color": "ffb347", "rank": 2, "bonus": 0.4, "price": 2.5, "trait_gain": 0.15},
+}
+## Rarity yang dijual pandai besi.
+const SHOP_RARITIES := ["common", "rare"]
 
 ## Stat andalan tiap slot: naik minimal 1 di tiap tingkat tempa; stat lainnya naik sebanding (bisa tertahan pembulatan).
 const GEAR_PRIMARY := {"weapon": "main", "head": "max_hp", "body": "defense", "feet": "agi"}
@@ -306,10 +321,19 @@ const CHARACTERS := {
 		"learn": {1: ["bidik_jitu"], 2: ["panah_racun"], 3: ["hujan_panah"], 4: ["langkah_angin"], 5: ["tipu_daya"]}},
 }
 
+## Poin stat: tiap naik level, tiap tokoh mendapat STAT_POINTS_PER_LEVEL poin yang bebas dibagi pemain
+## (layar Status). Stat dasar tetap naik sendiri lewat `growth`; poin ini tambahan di atasnya.
+## STAT_POINT_VALUE = kenaikan stat per poin. Mengatur ulang poin seorang tokoh: RESPEC_GOLD x levelnya,
+## hanya di permukiman.
+const STAT_POINTS_PER_LEVEL := 1
+const STAT_POINT_VALUE := {"max_hp": 3, "max_mp": 2, "atk": 1, "defense": 1, "mag": 1, "agi": 1}
+const RESPEC_GOLD := 10
+
 ## Arlen memulai sendirian; rekan lain bergabung lewat cerita (lihat Story).
 const START_PARTY := ["arlen"]
 
-# Angka semi-bos dan bos disetel dengan anggapan party memakai perlengkapan wilayahnya (lihat sim.gd).
+# Angka semi-bos dan bos disetel dengan anggapan party memakai perlengkapan wilayahnya dan membagi
+# poin statnya (bergantian stat utama dan HP); lihat sim.gd.
 # Tiap jenis monster hanya memakai sebagian efek status (lewat `skills`),
 # dan bisa kebal terhadap efek tertentu (`immune`).
 # voice = "soft": suara terluka/kalah yang ringan (monster kecil); tanpa itu memakai geraman.
@@ -322,7 +346,7 @@ const ENEMIES := {
 		"xp": 9, "gold": 6, "skills": ["serangan_buas", "raungan"], "immune": []},
 	"goblin": {"name": "Goblin Perampok", "hp": 42, "mp": 6, "atk": 16, "defense": 7, "mag": 0, "agi": 7,
 		"xp": 12, "gold": 12, "skills": ["serangan_buas", "tipu_muslihat"], "immune": []},
-	"ogre": {"name": "Ogre Penjaga", "hp": 266, "mp": 30, "atk": 28, "defense": 9, "mag": 0, "agi": 5,
+	"ogre": {"name": "Ogre Penjaga", "hp": 276, "mp": 30, "atk": 28, "defense": 9, "mag": 0, "agi": 5,
 		"xp": 80, "gold": 100, "skills": ["hantaman_bumi", "raungan", "serangan_buas"], "immune": ["slow"],
 		"boss": true},
 	"lendir_emas": {"name": "Lendir Emas", "hp": 70, "mp": 10, "atk": 15, "defense": 9, "mag": 0, "agi": 8,
@@ -333,12 +357,23 @@ const ENEMIES := {
 		"xp": 110, "gold": 130, "skills": ["gigitan_bara", "kulit_batu"], "immune": ["burn"]},
 	"peti_terkutuk": {"name": "Peti Terkutuk", "hp": 360, "mp": 30, "atk": 46, "defense": 28, "mag": 20, "agi": 14,
 		"xp": 170, "gold": 200, "skills": ["serangan_buas", "kutukan", "api_hitam"], "immune": ["poison"]},
+	# --- Monster elite penjaga tempat side quest (lihat Quests). sprite = memakai gambar monster lain,
+	# tint = warna pembedanya. Tidak bisa ditinggal kabur, dan menjatuhkan bahan super rare. ---
+	"goblin_kepala": {"name": "Goblin Kepala", "hp": 225, "mp": 20, "atk": 28, "defense": 9, "mag": 0, "agi": 9,
+		"xp": 45, "gold": 50, "skills": ["serangan_buas", "raungan", "tipu_muslihat"], "immune": [], "boss": true,
+		"sprite": "goblin", "tint": "ffb0a0"},
+	"roh_tua": {"name": "Roh Tua", "hp": 754, "mp": 80, "atk": 43, "defense": 16, "mag": 43, "agi": 11,
+		"xp": 110, "gold": 120, "skills": ["lidah_api", "api_hitam", "kutukan"], "immune": ["burn", "slow"], "boss": true,
+		"voice": "soft", "sprite": "roh_kabut", "tint": "d0a8ff"},
+	"golem_purba": {"name": "Golem Purba", "hp": 1044, "mp": 40, "atk": 62, "defense": 26, "mag": 0, "agi": 5,
+		"xp": 220, "gold": 250, "skills": ["hantaman_batu", "kulit_batu", "hantaman_bumi"], "immune": ["poison", "slow"], "boss": true,
+		"sprite": "golem_batu", "tint": "ffd08a"},
 	# --- Hutan Kabut ---
 	"laba_laba": {"name": "Laba-laba Kabut", "hp": 52, "mp": 8, "atk": 22, "defense": 8, "mag": 0, "agi": 12,
 		"xp": 16, "gold": 10, "skills": ["gigitan_racun", "jaring"], "immune": ["poison"]},
 	"roh_kabut": {"name": "Roh Kabut", "hp": 38, "mp": 20, "atk": 9, "defense": 14, "mag": 18, "agi": 9,
 		"xp": 15, "gold": 12, "skills": ["lidah_api"], "immune": ["burn"], "voice": "soft"},
-	"ratu": {"name": "Ratu Laba-laba", "hp": 668, "mp": 60, "atk": 40, "defense": 11, "mag": 18, "agi": 9,
+	"ratu": {"name": "Ratu Laba-laba", "hp": 734, "mp": 60, "atk": 43, "defense": 11, "mag": 19, "agi": 9,
 		"xp": 180, "gold": 220, "skills": ["gigitan_racun", "jaring_raksasa", "semburan_racun"], "immune": ["poison", "slow"],
 		"boss": true},
 	# --- Pegunungan Abu ---
@@ -348,7 +383,7 @@ const ENEMIES := {
 		"xp": 24, "gold": 14, "skills": ["cakar_tajam"], "immune": []},
 	"golem_batu": {"name": "Golem Batu", "hp": 120, "mp": 12, "atk": 33, "defense": 22, "mag": 0, "agi": 4,
 		"xp": 34, "gold": 24, "skills": ["hantaman_batu", "kulit_batu"], "immune": ["poison"]},
-	"lahar": {"name": "Raksasa Lahar", "hp": 992, "mp": 80, "atk": 51, "defense": 17, "mag": 24, "agi": 7,
+	"lahar": {"name": "Raksasa Lahar", "hp": 1111, "mp": 80, "atk": 56, "defense": 17, "mag": 26, "agi": 7,
 		"xp": 340, "gold": 420, "skills": ["semburan_lahar", "hantaman_bumi", "kulit_batu"], "immune": ["burn", "slow"],
 		"boss": true},
 	# --- Kastil Kelam ---
@@ -358,7 +393,7 @@ const ENEMIES := {
 		"xp": 44, "gold": 28, "skills": ["api_hitam", "kutukan"], "immune": ["poison"], "voice": "soft"},
 	"gargoyle": {"name": "Gargoyle", "hp": 112, "mp": 10, "atk": 37, "defense": 26, "mag": 0, "agi": 15,
 		"xp": 46, "gold": 30, "skills": ["cakar_batu", "kulit_batu"], "immune": ["poison"]},
-	"raja": {"name": "Raja Monster", "hp": 1960, "mp": 200, "atk": 62, "defense": 21, "mag": 35, "agi": 12,
+	"raja": {"name": "Raja Monster", "hp": 2270, "mp": 200, "atk": 69, "defense": 21, "mag": 39, "agi": 12,
 		"xp": 600, "gold": 0, "skills": ["tebasan_kegelapan", "badai_kegelapan", "auman_raja", "rantai_bayangan"], "immune": ["slow"],
 		"boss": true},
 }
@@ -398,6 +433,10 @@ const BOSSES := {
 	"ratu": ["laba_laba", "ratu", "laba_laba"],
 	"lahar": ["kadal_bara", "lahar", "kadal_bara"],
 	"raja": ["raja"],  # bos utama, sendirian
+	# Penjaga tempat side quest (lihat Quests).
+	"goblin_kepala": ["goblin", "goblin_kepala"],
+	"roh_tua": ["roh_kabut", "roh_tua", "roh_kabut"],
+	"golem_purba": ["kadal_bara", "golem_purba", "kadal_bara"],
 }
 
 ## Aturan tiap sarang semi-bos di peta:
@@ -500,16 +539,51 @@ static func gear(id: String) -> Dictionary:
 		"name": Loc.t(GEAR_NAMES[parts[0]][parts[1]][tier - 1]), "price": GEAR_PRICES[parts[1]][tier - 1]}
 
 
-## Bonus stat sebuah perlengkapan pada tingkat tempa `plus`: nama stat -> nilai.
-static func gear_stats(id: String, plus: int) -> Dictionary:
+## Rarity sebuah perlengkapan yang dipakai ({"id", "plus", "trait", "rarity"}); barang lama tanpa rarity = common.
+static func gear_rarity(entry: Dictionary) -> String:
+	var rarity: String = entry.get("rarity", "common")
+	return rarity if GEAR_RARITIES.has(rarity) else "common"
+
+
+## Harga beli sebuah perlengkapan pada rarity tertentu.
+static func gear_price(id: String, rarity: String) -> int:
+	return roundi(float(gear(id).price) * float(GEAR_RARITIES[rarity].price))
+
+
+## Peluang mendapat sifat saat menempa ke tingkat `plus_after` (1..ENHANCE_MAX).
+static func trait_gain_chance(plus_after: int, rarity: String) -> float:
+	return min(1.0, float(TRAIT_GAIN_CHANCE[plus_after - 1]) + float(GEAR_RARITIES[rarity].trait_gain))
+
+
+## Bonus stat barang yang sedang dipakai, dan teksnya.
+static func entry_stats(entry: Dictionary) -> Dictionary:
+	return gear_stats(entry.id, int(entry.get("plus", 0)), gear_rarity(entry))
+
+
+static func entry_stat_text(entry: Dictionary, extra_plus: int = 0) -> String:
+	return gear_stat_text(entry.id, int(entry.get("plus", 0)) + extra_plus, gear_rarity(entry))
+
+
+## Nama barang beserta rarity-nya untuk tampilan, mis. "Pedang Besi +2  [Rare]".
+static func gear_label(entry: Dictionary) -> String:
+	var rarity := gear_rarity(entry)
+	return gear_title(entry) if rarity == "common" else "%s  [%s]" % [gear_title(entry), GEAR_RARITIES[rarity].name]
+
+
+## Bonus stat sebuah perlengkapan pada tingkat tempa `plus` dan rarity tertentu: nama stat -> nilai.
+static func gear_stats(id: String, plus: int, rarity: String = "common") -> Dictionary:
 	var g := gear(id)
 	var out := {}
 	var base: Dictionary = GEAR_STATS[g.slot][int(g.tier) - 1]
 	for key: String in base:
 		var stat_name: String = GEAR_MAIN_STAT[g.owner] if key == "main" else key
 		var value := float(base[key])
+		var step: int = max(1, roundi(value * ENHANCE_STEP))  # kenaikan tempa dihitung dari stat dasar, bukan dari bonus rarity
+		var rank := int(GEAR_RARITIES[rarity].rank)
+		if rank > 0:
+			value += max(rank, roundi(value * float(GEAR_RARITIES[rarity].bonus)))
 		if key == GEAR_PRIMARY[g.slot]:
-			value += max(1, roundi(value * ENHANCE_STEP)) * plus
+			value += step * plus
 		else:
 			value *= 1.0 + ENHANCE_STEP * plus
 		out[stat_name] = roundi(value)
@@ -517,9 +591,9 @@ static func gear_stats(id: String, plus: int) -> Dictionary:
 
 
 ## Teks bonus stat, mis. "DEF +3  HP +8".
-static func gear_stat_text(id: String, plus: int) -> String:
+static func gear_stat_text(id: String, plus: int, rarity: String = "common") -> String:
 	var parts: Array = []
-	var stats := gear_stats(id, plus)
+	var stats := gear_stats(id, plus, rarity)
 	for stat_name: String in stats:
 		parts.append("%s +%d" % [STAT_LABELS[stat_name], stats[stat_name]])
 	return "  ".join(parts)

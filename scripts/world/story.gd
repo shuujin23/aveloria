@@ -13,6 +13,9 @@ extends RefCounted
 ##   {"do": "forge", "tier": 1, "name": "Nama bengkel"}   buka pandai besi yang menjual perlengkapan tingkat itu
 ##   {"do": "battle", "ids": [...], "backdrop": "hutan", "after": "kunci_adegan"}
 ##   {"do": "credits"}                       simpan permainan lalu buka layar penutup
+##   {"do": "gold", "amount": 60}            party menerima emas
+##   {"do": "reward_gear", "slot", "tier", "rarity"}   pemain memilih anggota party yang menerima perlengkapan itu
+##   {"do": "quest_note", "title", "quest", "hint"}    pemberitahuan quest baru / quest selesai
 
 const INN_PRICE := 10
 const DUSUN_INN_PRICE := 20
@@ -132,6 +135,19 @@ const SCENES := {
 			{"text": "Lewat saja", "steps": []},
 		]},
 	],
+	# Adegan setelah penjaga tempat side quest kalah (lihat Quests).
+	"q_perampok_won": [
+		{"text": "Goblin Kepala tumbang. Di antara barang rampasannya ada sebuah palu tempa tua."},
+		{"who": "Mira", "text": "Itu pasti palu Garrick. Ayo kembalikan ke desa."},
+	],
+	"q_roh_tua_won": [
+		{"text": "Roh Tua lenyap bersama kabut di sekitarnya. Sebuah lentera tua masih tergantung di altar."},
+		{"who": "Selene", "text": "Lentera penuntun dusun. Osric pasti senang melihatnya lagi."},
+	],
+	"q_golem_purba_won": [
+		{"text": "Golem Purba runtuh menjadi tumpukan batu. Jalan masuk tambang terbuka lagi."},
+		{"who": "Kael", "text": "Tobin berutang satu pada kita. Ayo tagih di pos."},
+	],
 	"ending": [
 		{"text": "Raja Monster roboh. Kegelapan yang menyelimuti Kastil Kelam luruh seperti kabut pagi."},
 		{"who": "Arlen", "text": "Sudah selesai."},
@@ -164,6 +180,11 @@ static func npc(npc_id: String) -> Dictionary:
 ## Dialog seorang NPC, tergantung sejauh mana cerita sudah berjalan (flags) dan emas party.
 ## Keadaan permainan dikirim lewat parameter karena skrip ini tidak boleh bergantung pada autoload Game.
 static func talk(npc_id: String, flags: Dictionary, gold: int) -> Array:
+	# Dialog side quest (kalau NPC ini pemberi quest) diselipkan sebelum dialog biasanya.
+	return Quests.steps_for(npc_id, npc(npc_id).get("name", ""), flags) + _talk_base(npc_id, flags, gold)
+
+
+static func _talk_base(npc_id: String, flags: Dictionary, gold: int) -> Array:
 	match npc_id:
 		"tetua":
 			if flags.has("ogre"):

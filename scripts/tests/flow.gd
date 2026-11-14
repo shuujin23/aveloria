@@ -135,6 +135,25 @@ func _initialize() -> void:
 	await _shot("perlengkapan.png")
 	current_scene.call("_toggle_gear")
 	_expect(not current_scene.get("_gear_open") and not current_scene.get("_busy"), "pintasan sekali lagi menutup layar Perlengkapan")
+	# --- Layar Status: membagi poin stat ---
+	arlen.level = 3
+	arlen.recalc()
+	arlen.full_restore()
+	current_scene.call("_update_hud")
+	_expect((current_scene.get("_party_label") as Label).text.contains(Loc.t("   +%d poin") % arlen.points_left()), "HUD menandai tokoh yang masih punya poin stat")
+	var hp_before_point := arlen.max_hp
+	var points_before := arlen.points_left()
+	current_scene.call("_toggle_stats")
+	_expect(current_scene.get("_stats_open") and current_scene.get("_busy"), "pintasan membuka layar Status")
+	await create_timer(0.1).timeout
+	await _shot("status.png")
+	(root.gui_get_focus_owner() as Button).pressed.emit()  # tombol pertama: +HP
+	await create_timer(0.1).timeout
+	_expect(arlen.points_left() == points_before - 1 and arlen.max_hp == hp_before_point + int(Db.STAT_POINT_VALUE["max_hp"]), "menekan tombol + memakai satu poin dan menaikkan stat")
+	current_scene.call("_toggle_stats")
+	_expect(not current_scene.get("_stats_open") and not current_scene.get("_busy"), "pintasan sekali lagi menutup layar Status")
+	arlen.alloc = {}
+	arlen.level = 1
 	arlen.equip.clear()  # sisa uji memakai stat dasar
 	arlen.recalc()
 	arlen.hp = arlen.max_hp
@@ -230,6 +249,48 @@ func _initialize() -> void:
 	_expect(_game.party.size() == 2 and (_game.party[1] as Battler).id == "mira", "Mira masuk party")
 	_expect((_game.party[1] as Battler).level == 3 or (_game.party[1] as Battler).level == 4, "Mira bergabung setingkat Arlen (Lv %d)" % (_game.party[1] as Battler).level)
 	_expect(not (current_scene.get("_npc_at") as Dictionary).has(Vector2i(18, 3)), "Mira hilang dari peta setelah bergabung")
+
+	# --- Side quest: Palu Warisan (Garrick) ---
+	_set_levels(14)
+	_game.gold = 0
+	await _open_world("desa", Vector2i(12, 8))
+	current_scene.call("_talk", "gatot")
+	await _skip_dialog()
+	_expect(_game.flags.has("q_perampok") and current_scene.get("_forge_open"), "bicara dengan Garrick: quest diterima, lalu bengkelnya terbuka seperti biasa")
+	current_scene.emit_signal("forge_closed")
+	await _skip_dialog()
+	current_scene.call("_toggle_quests")
+	_expect(current_scene.get("_quests_open") and current_scene.get("_busy"), "pintasan membuka daftar quest")
+	await create_timer(0.1).timeout
+	await _shot("quest_daftar.png")
+	current_scene.call("_toggle_quests")
+	_expect(not current_scene.get("_quests_open") and not current_scene.get("_busy"), "pintasan sekali lagi menutup daftar quest")
+	var den := WorldMap.find_in("dunia", "1")
+	await _open_world("dunia", den + Vector2i(1, 0))
+	await _shot("quest_tempat.png")
+	current_scene.call("_walk_to", den)
+	await _wait_until(func() -> bool: return current_scene != null and current_scene.name == "Battle", 100)
+	_expect(current_scene.name == "Battle", "menginjak sarang perampok saat quest berjalan memulai pertarungan")
+	await create_timer(1.0).timeout
+	await _shot("battle_quest.png")
+	await _play_battle()
+	_expect(_game.flags.has("goblin_kepala") and current_scene.get("_dialog_open"), "Goblin Kepala kalah: penandanya tercatat dan adegannya tampil")
+	await _skip_dialog()
+	var quest_gold: int = _game.gold
+	await _open_world("desa", Vector2i(12, 8))
+	current_scene.call("_talk", "gatot")
+	await _skip_dialog()  # pilihan pertama: Arlen yang menerima senjata
+	var prize: Dictionary = (_game.party[0] as Battler).equip.get("weapon", {})
+	_expect(_game.flags.has("q_perampok_done") and Db.gear_rarity(prize) == "ultra" and prize.get("trait", "") != "" and _game.gold == quest_gold + 60,
+		"kembali ke Garrick: Arlen menerima senjata Ultra Rare bersifat, plus 60 emas")
+	current_scene.emit_signal("forge_closed")
+	await _skip_dialog()
+	await _open_world("dunia", den + Vector2i(1, 0))
+	current_scene.call("_walk_to", den)
+	await create_timer(0.8).timeout
+	_expect(current_scene.name == "World", "setelah quest selesai, sarang perampok kosong")
+	(_game.party[0] as Battler).equip.clear()  # sisa uji memakai stat dasar
+	(_game.party[0] as Battler).recalc()
 
 	# --- Ogre Penjaga dan gerbang ---
 	_set_levels(16)  # sejak Ogre diperkuat (v1.2), level 8 tanpa perlengkapan kadang kalah
@@ -589,6 +650,18 @@ func _initialize() -> void:
 		await create_timer(0.2).timeout
 		await _shot("battle_status.png")
 
+		# Serangan biasa: pemanah menembak dari tempatnya, ksatria maju mendekati musuh.
+		var fx_units: Dictionary = current_scene.get("_units")
+		var archer: Battler = eng.party[3]
+		await current_scene.call("_play_fx", {"actor": archer, "kind": "attack", "target": eng.enemies[0]}, [eng.enemies[0]])
+		await _shot("battle_panah_kael.png")
+		_expect((fx_units[archer].sprite as Sprite2D).position.distance_to(fx_units[archer].home) < 1.0, "Kael menyerang dari tempatnya: anak panahnya yang terbang")
+		await current_scene.call("_end_fx", archer)
+		var knight: Battler = eng.party[0]
+		await current_scene.call("_play_fx", {"actor": knight, "kind": "attack", "target": eng.enemies[0]}, [eng.enemies[0]])
+		_expect((fx_units[knight].sprite as Sprite2D).position.distance_to(fx_units[knight].home) > 20.0, "Arlen tetap maju mendekati musuh saat menyerang")
+		await current_scene.call("_end_fx", knight)
+
 		# Uji tampilan menu battle: perintah hanya dicatat (_hold), dan Arlen dibuat selalu mendapat giliran pertama.
 		current_scene.set("_hold", true)
 		(eng.party[0] as Battler).agi = 999
@@ -796,6 +869,7 @@ func _check_maps() -> void:
 
 	WorldMap.current = "abu"
 	var ash := _reachable(WorldMap.find("W"), {})
+	_expect(ash.has(WorldMap.find("3")), "tempat quest Pegunungan Abu terjangkau")
 	_expect(ash.has(Vector2i(4, 1)) and ash.has(Vector2i(51, 3)) and WorldMap.char_at(Vector2i(4, 1)) == "x" and WorldMap.char_at(Vector2i(51, 3)) == "x", "dua peti Pegunungan Abu terjangkau")
 	_expect(WorldMap.width() == 54 and WorldMap.height() == 20, "peta Pegunungan Abu berukuran 54 x 20 petak")
 	_expect(ash.has(WorldMap.find("K")) and ash.has(Vector2i(26, 6)) and ash.has(WorldMap.find("N")), "pos, tempat Kael, dan kawah terjangkau dari jalan masuk Pegunungan Abu")
@@ -818,6 +892,7 @@ func _check_maps() -> void:
 	var opened := _reachable(start, {"ogre": true})
 	_expect(closed.has(WorldMap.find("B")), "sarang semi-bos terjangkau dari desa")
 	_expect(closed.has(Vector2i(19, 3)), "tempat Mira terjangkau dari desa")
+	_expect(closed.has(WorldMap.find("1")) and opened.has(WorldMap.find("2")) and not closed.has(WorldMap.find("2")), "tempat quest Lembah Hijau dan Hutan Kabut terjangkau")
 	_expect(closed.has(Vector2i(6, 1)) and closed.has(Vector2i(6, 27)) and WorldMap.char_at(Vector2i(6, 1)) == "x" and WorldMap.char_at(Vector2i(6, 27)) == "x", "dua peti Lembah Hijau terjangkau dari desa")
 	_expect(not closed.has(Vector2i(61, 3)) and opened.has(Vector2i(61, 3)) and opened.has(Vector2i(50, 27)) and WorldMap.char_at(Vector2i(61, 3)) == "x" and WorldMap.char_at(Vector2i(50, 27)) == "x", "dua peti Hutan Kabut terjangkau setelah gerbang terbuka")
 	_expect(WorldMap.width() == 66 and WorldMap.height() == 29, "peta dunia berukuran 66 x 29 petak")

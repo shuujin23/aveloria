@@ -16,7 +16,7 @@ func _initialize() -> void:
 	_expect(not UpdateCheck.is_newer("v1.1", "1.2"), "versi lama bukan versi baru")
 	_expect(UpdateCheck.latest_tag('{"tag_name": "v1.3", "name": "Aveloria v1.3"}') == "v1.3", "tag dibaca dari jawaban GitHub")
 	_expect(UpdateCheck.latest_tag("<html>rusak</html>") == "" and UpdateCheck.latest_tag("[]") == "", "jawaban yang tidak terbaca diabaikan")
-	_expect(UpdateCheck.current_version() == "1.6.1", "versi game ini tercatat di project.godot (%s)" % UpdateCheck.current_version())
+	_expect(UpdateCheck.current_version() == "1.7", "versi game ini tercatat di project.godot (%s)" % UpdateCheck.current_version())
 
 	AudioServer.set_bus_mute(0, true)
 	change_scene_to_file("res://scenes/title.tscn")

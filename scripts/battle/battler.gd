@@ -28,6 +28,9 @@ var immune: Array = []  # id efek status yang tidak mempan pada petarung ini
 ## plus = tingkat tempa; trait = id efek status sifatnya ("" kalau belum punya).
 var equip := {}
 
+## Poin stat yang sudah dibagi pemain (khusus anggota party): nama stat -> jumlah poin.
+var alloc := {}
+
 var xp_reward := 0
 var gold_reward := 0
 
@@ -79,11 +82,14 @@ func recalc() -> void:
 	defense = int(base.defense + growth.defense * n)
 	mag = int(base.mag + growth.mag * n)
 	agi = int(base.agi + growth.agi * n)
+	for stat_name: String in alloc:  # poin stat yang dibagi pemain
+		set(stat_name, int(get(stat_name)) + int(alloc[stat_name]) * int(Db.STAT_POINT_VALUE[stat_name]))
 	for slot: String in equip:
-		var bonus := Db.gear_stats(equip[slot].id, int(equip[slot].plus))
+		var bonus := Db.entry_stats(equip[slot])
 		for stat_name: String in bonus:
 			set(stat_name, int(get(stat_name)) + int(bonus[stat_name]))
 	hp = min(hp, max_hp)
+	mp = min(mp, max_mp)
 	skills.clear()
 	var learn: Dictionary = c.learn
 	var levels: Array = learn.keys()
@@ -91,6 +97,22 @@ func recalc() -> void:
 	for lv: int in levels:
 		if lv <= level:
 			skills.append_array(learn[lv])
+
+
+## Poin stat yang sudah didapat sampai level ini, yang sudah dibagi, dan yang masih tersisa.
+func points_total() -> int:
+	return (level - 1) * Db.STAT_POINTS_PER_LEVEL
+
+
+func points_spent() -> int:
+	var spent := 0
+	for stat_name: String in alloc:
+		spent += int(alloc[stat_name])
+	return spent
+
+
+func points_left() -> int:
+	return points_total() - points_spent()
 
 
 ## Sifat perlengkapan di sebuah slot: {"status", "chance"}; kosong kalau tidak ada.

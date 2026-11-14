@@ -30,7 +30,7 @@ const MAPS := {
 			Vector2i(61, 3): {"mats": {"benang_kabut": 3}}, Vector2i(50, 27): {"item": "ramuan_besar", "count": 1}},
 		"rows": [
 			"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-			"^^^^^^x...ffffff.......^^^^^^^^^^~~~~~~^^^^,,,,,,,FFFFFF,,,,,^^^^^",
+			"^^^^^^x...ffffff.......^^^^^^^^^^~~~~~~^^^^,2,,,,,FFFFFF,,,,,^^^^^",
 			"^^^^^^....ffffff.......^^^^^^^^^^~~~~~~^^^^,,,,,,,FFFFFF,,,,,^^^^^",
 			"^^^^....ffffffffff........^^^^^~~~~~~~~^^,,,,,FFFFFFFFFF,,,,,x^^^^",
 			"^^^^....ffffffffff........^^^^^~~~~~~~~^^,,,,,FFFFFFFFFF,,,,,,^^^^",
@@ -47,7 +47,7 @@ const MAPS := {
 			"^.......ffff...=....ffffff...~~~~~~~~,,,,,,,,,,,,,,,,,,,,,,,FF,,,^",
 			"^.......ffff...=....ffffff...~~~~~~~~,,,,,,,,,,,,,,,,,,,,,,,FF,,,^",
 			"^.....fffffff..=......fff....~~~~~~~~,,,,,,FFF,,,,,,,,,,,,,,,,,,,^",
-			"^.....fffffff..=......fff....~~~~~~~~,,,,,,FFF,,,,,,,,,,,,,,,,,,,^",
+			"^.....fff1fff..=......fff....~~~~~~~~,,,,,,FFF,,,,,,,,,,,,,,,,,,,^",
 			"^.....fffffff..==============G==========DFFFFFFF,,,,,,,,,,,,,,,,^^",
 			"^.......ffff...=.............~~~~~~~~,,,,FFFFFFF,,,,,,,,,,,,,,^^^^",
 			"^.......ffff...=.............~~~~~~~~,,,,FFFFFFF,,,,,,,,,,,,,,^^^^",
@@ -82,7 +82,7 @@ const MAPS := {
 			"^^^^accccaaaaaaaaaaaaaaaaaccccccccccccaaaaaaaaaaa^^^^^",
 			"^^^^accccaaaaaaaaaaaaaaaaaccccccccccccaaaaaaaaaaa^^^^^",
 			"^^^^^^aaaaaaaaaaaa^^^^^aaaaaccccccccaaaaaaa^^^^^^^^^^^",
-			"^^^^^^aaaaaaaaaaaa^^^^^aaaaaccccccccaaaaaaa^^^^^^^^^^^",
+			"^^^^^^aa3aaaaaaaaa^^^^^aaaaaccccccccaaaaaaa^^^^^^^^^^^",
 			"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
 		],
 	},
@@ -221,6 +221,7 @@ const MAPS := {
 # boss   = semi-bos yang bersarang di sini (lihat Db.BOSS_RULES)
 # dungeon = pintu masuk dungeon semi-bos itu: hanya bisa dimasuki kalau syarat Db.BOSS_RULES terpenuhi
 # chest  = peti harta; isinya ada di "chests" peta itu
+# quest  = tempat side quest (angka 1-3 di peta wilayah); lihat Quests
 # gate   = hanya bisa dilewati setelah penanda itu tercatat; locked = pesan saat masih terkunci
 # scene  = adegan cerita yang dimainkan tiap kali petak ini diinjak
 const TILES := {
@@ -269,6 +270,10 @@ const TILES := {
 	"U": {"walk": true, "zone": "Sarang Ratu Laba-laba", "boss": "ratu"},
 	"J": {"walk": true, "zone": "Kawah Lahar", "boss": "lahar"},
 	"x": {"walk": true, "zone": "", "chest": true},
+	# Tempat side quest (lihat Quests): dijaga monster elite selama quest-nya berjalan.
+	"1": {"walk": true, "zone": "Sarang Perampok", "quest": "perampok"},
+	"2": {"walk": true, "zone": "Altar Tua", "quest": "roh_tua"},
+	"3": {"walk": true, "zone": "Mulut Tambang", "quest": "golem_purba"},
 	"e": {"walk": true, "zone": "", "portal": "@exit"},
 }
 

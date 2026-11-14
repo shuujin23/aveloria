@@ -128,7 +128,7 @@ func _initialize() -> void:
 	_golem("monster_ksatria_kelam", 1.0, ["8a8aa8", "5e5e7c", "42425c", "2a2a40"], "c8503f", "ff4a3a", 0, false, true)
 	_wisp("monster_bayangan", ["b08ae0", "7a4ab8", "56308a", "341c5c"], ["e8d8ff", "c8a8f0", "a880e0", "8a5ac8"], "ffe14a", "1c1030")
 	_bird("monster_gargoyle", ["9a94a8", "726c84", "524c62", "363246"], ["363246", "8a84a0", "625c78"], "ff4a3a")
-	_golem("monster_raja", 1.6, ["7a5a9a", "523a72", "3a2854", "241a38"], "ff4a5a", "ffe14a", 9, true, true)
+	_monster_raja()
 
 	_backdrop("bg_lembah", ["6fb4e8", "a8d8f0"], "7fb08a", "5a9e58", ["5a9e4f", "6db35c", "4a8a44"], "")
 	_backdrop("bg_hutan", ["4f8fb8", "86bcc8"], "3f7a50", "2f6a40", ["4a8546", "5a9a52", "3c7340"], "trees")
@@ -1284,6 +1284,93 @@ func _monster_ogre() -> void:
 	_flat(img, [Vector2(27, 24), Vector2(28, 19), Vector2(30, 24)], ivory)
 	_flat(img, [Vector2(34, 24), Vector2(36, 19), Vector2(37, 24)], ivory)
 	_finish(img, "monster_ogre", "3a1c10", [32, 64, 25, 3.5])
+
+
+## Raja Monster: penguasa kegelapan bersayap kelelawar, bertanduk dan bermahkota, berjubah merah tua,
+## pedang hitam bercahaya di satu tangan dan bola api gelap di tangan lain (84x88, jangkar 44,84).
+func _monster_raja() -> void:
+	var img := _new(84, 88)
+	var armor := _pal(["8a7ab0", "5e4e88", "3e3260", "261d40"])
+	var helm := _pal(["6e6294", "4a3e70", "30264e", "1c1630"])
+	var gold := Color("f0c040")
+	var gold_dark := Color("a8782c")
+	var ivory := Color("e8dcc0")
+	var ivory_dark := Color("b0a080")
+	# Sayap kelelawar di belakang badan.
+	var wing := [Vector2(31, 32), Vector2(19, 13), Vector2(4, 6), Vector2(2, 23), Vector2(8, 20), Vector2(7, 35),
+		Vector2(14, 31), Vector2(15, 46), Vector2(22, 40), Vector2(29, 48)]
+	var membrane := [Vector2(29, 33), Vector2(19, 18), Vector2(7, 11), Vector2(6, 18), Vector2(11, 18), Vector2(11, 29),
+		Vector2(17, 27), Vector2(18, 39), Vector2(24, 35), Vector2(28, 41)]
+	for pts: Array in [wing, _mirror(wing, 84)]:
+		_flat(img, pts, Color("2c1640"))
+	for pts: Array in [membrane, _mirror(membrane, 84)]:
+		_flat(img, pts, Color("5a3478"))
+	for tip: Vector2 in [Vector2(4, 6), Vector2(7, 35), Vector2(15, 46)]:  # ruas sayap
+		_line(img, Vector2(30, 32), tip, Color("2c1640"), 1)
+		_line(img, Vector2(53, 32), Vector2(83 - tip.x, tip.y), Color("2c1640"), 1)
+	# Jubah compang-camping sampai ke tanah.
+	_flat(img, [Vector2(27, 31), Vector2(57, 31), Vector2(70, 80), Vector2(64, 76), Vector2(60, 83), Vector2(54, 77), Vector2(48, 83),
+		Vector2(42, 77), Vector2(36, 83), Vector2(30, 77), Vector2(24, 83), Vector2(20, 76), Vector2(14, 80)], Color("6e1424"))
+	_flat(img, [Vector2(54, 33), Vector2(57, 31), Vector2(70, 80), Vector2(64, 76), Vector2(61, 80)], Color("4a0c18"))
+	_flat(img, [Vector2(30, 33), Vector2(27, 31), Vector2(14, 80), Vector2(20, 76), Vector2(23, 80)], Color("8a2030"))
+	# Badan berzirah dan rok zirah.
+	_flat(img, [Vector2(31, 54), Vector2(53, 54), Vector2(57, 80), Vector2(27, 80)], Color("2c2244"))
+	_flat(img, [Vector2(46, 54), Vector2(53, 54), Vector2(57, 80), Vector2(49, 80)], Color("1e1632"))
+	_rect(img, 40, 55, 43, 79, Color("8a2a34"))
+	_rect(img, 27, 79, 57, 80, gold_dark)
+	_rect(img, 31, 54, 53, 55, gold)
+	_rect(img, 30, 80, 38, 83, Color("1c1630"))
+	_rect(img, 46, 80, 54, 83, Color("1c1630"))
+	_blob(img, 42, 44, 13, 13, armor)
+	_flat(img, [Vector2(32, 34), Vector2(52, 34), Vector2(48, 40), Vector2(42, 43), Vector2(36, 40)], gold)
+	_flat(img, [Vector2(45, 34), Vector2(52, 34), Vector2(48, 40), Vector2(44, 42)], gold_dark)
+	_blob(img, 42, 47, 3.5, 3.5, _pal(["ffc0b0", "ff4a3a", "c0202a", "7a0f1c"]))
+	# Pelindung bahu berduri.
+	for side: int in [0, 1]:
+		var spikes := [[Vector2(21, 31), Vector2(18, 20), Vector2(26, 28)], [Vector2(27, 28), Vector2(28, 19), Vector2(32, 28)]]
+		for spike: Array in spikes:
+			_flat(img, spike if side == 0 else _mirror(spike, 84), ivory if side == 0 else ivory_dark)
+		_blob(img, 26.0 if side == 0 else 58.0, 33, 8, 6, armor)
+	# Tangan kiri layar: pedang hitam tegak dengan alur merah menyala.
+	_rect(img, 14, 10, 18, 50, Color("3a3650"))
+	_rect(img, 14, 10, 14, 50, Color("7a7698"))
+	_rect(img, 16, 13, 16, 47, Color("ff4a5a"))
+	_flat(img, [Vector2(14, 11), Vector2(19, 11), Vector2(16.5, 3)], Color("3a3650"))
+	_rect(img, 9, 51, 23, 53, gold)
+	_rect(img, 20, 51, 23, 53, gold_dark)
+	_rect(img, 15, 54, 17, 61, Color("1c1630"))
+	_blob(img, 16.5, 63, 2.5, 2.5, _pal(["fff0a0", "f0c040", "a8782c", "705018"]))
+	_blob(img, 22, 44, 4.5, 10, armor)
+	_blob(img, 17, 56, 4.5, 4, _pal(["a898c8", "7a6aa8", "54447c", "342a54"]))
+	# Tangan kanan layar terangkat: bola api kegelapan.
+	_blob(img, 62, 42, 4.5, 9, armor)
+	_blob(img, 67, 32, 4, 7.5, armor)
+	_blob(img, 69, 24, 3.5, 3.5, _pal(["d8d0e8", "a898c8", "7a6aa8", "54447c"]))
+	_blob(img, 70, 13, 8, 8, _pal(["f0c8ff", "c060f0", "7a2ab8", "3c1466"]))
+	_blob(img, 69, 12, 3.5, 3.5, _pal(["ffffff", "ffe0ff", "f0a0ff", "c060f0"]))
+	for spark: Vector2i in [Vector2i(60, 8), Vector2i(79, 6), Vector2i(80, 18), Vector2i(62, 20), Vector2i(72, 2)]:
+		_px(img, spark.x, spark.y, Color("f0a0ff"))
+	# Tanduk besar melengkung, helm, mahkota, dan mata menyala.
+	var horn := [Vector2(36, 19), Vector2(30, 17), Vector2(24, 9), Vector2(23, 0), Vector2(27, 6), Vector2(32, 11), Vector2(38, 14)]
+	var horn_shade := [Vector2(36, 19), Vector2(30, 17), Vector2(24, 9), Vector2(23, 0), Vector2(25, 9), Vector2(30, 14)]
+	_flat(img, horn, ivory)
+	_flat(img, horn_shade, ivory_dark)
+	_flat(img, _mirror(horn, 84), ivory_dark)
+	_blob(img, 42, 24, 8, 9, helm)
+	_flat(img, [Vector2(35, 16), Vector2(36, 9), Vector2(39, 13), Vector2(42, 5), Vector2(45, 13), Vector2(48, 9), Vector2(49, 16)], gold)
+	_flat(img, [Vector2(45, 13), Vector2(48, 9), Vector2(49, 16), Vector2(44, 16)], gold_dark)
+	_px(img, 41, 11, Color("ff4a3a"))
+	_px(img, 42, 11, Color("ff4a3a"))
+	_px(img, 41, 12, Color("c0202a"))
+	_px(img, 42, 12, Color("c0202a"))
+	_rect(img, 36, 22, 47, 27, Color("120c1c"))
+	_rect(img, 37, 23, 40, 24, Color("ff3a3a"))
+	_rect(img, 43, 23, 46, 24, Color("ff3a3a"))
+	_px(img, 38, 23, Color("ffd0a0"))
+	_px(img, 44, 23, Color("ffd0a0"))
+	_rect(img, 41, 26, 42, 30, helm[1])
+	_rect(img, 38, 29, 45, 30, helm[2])
+	_finish(img, "monster_raja", "140a1e", [42, 82, 28, 4.5])
 
 
 ## Garis lurus setebal `thick` piksel (untuk kaki laba-laba).

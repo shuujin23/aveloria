@@ -8,6 +8,14 @@ const SPRITES := "res://assets/sprites/"
 ## "+N" di pojok kanan bawah, dan ikon sifat di pojok kiri atas.
 static func gear(entry: Dictionary, px: float = 48.0) -> Control:
 	var root := _picture("gear_%s" % entry.id, px)
+	var rarity := Db.gear_rarity(entry)
+	if rarity != "common":  # garis bawah berwarna rarity, seperti pada ikon bahan
+		var bar := ColorRect.new()
+		bar.color = Color(String(Db.GEAR_RARITIES[rarity].color))
+		bar.size = Vector2(px, 3)
+		bar.position = Vector2(0, px - 1)
+		bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		root.add_child(bar)
 	var plus := int(entry.get("plus", 0))
 	if plus > 0:
 		root.add_child(_corner_text("+%d" % plus, px, Color("ffd866")))

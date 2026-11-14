@@ -131,8 +131,8 @@ func _slot(m: Battler, slot: String) -> Button:
 		empty.add_child(label)
 		return empty
 	var entry: Dictionary = m.equip[slot]
-	var text := "%s   (%s %s)   %s" % [Db.gear_title(entry), Loc.t(Db.GEAR_SLOT_NAMES[slot]), m.display_name,
-		Db.gear_stat_text(entry.id, int(entry.plus))]
+	var text := "%s   (%s %s)   %s" % [Db.gear_label(entry), Loc.t(Db.GEAR_SLOT_NAMES[slot]), m.display_name,
+		Db.entry_stat_text(entry)]
 	var trait_text := Db.trait_text(entry)
 	text += Loc.t("\nSifat: %s") % trait_text if trait_text != "" else Loc.t("\nBelum punya sifat. Menempa berpeluang memberinya sifat.")
 	return _cell(GearIcon.gear(entry), text)

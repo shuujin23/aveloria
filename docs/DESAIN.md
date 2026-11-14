@@ -138,3 +138,29 @@ wilayah sebelumnya kalah.
 - Mira mempelajari **Salur Jiwa** di level 7: biaya 6 MP, memulihkan MP satu rekan lain sebesar 12 + seperempat MAG Mira (17 di level 7).
 - Jenis jurus baru `mp` di `Db.SKILLS`. Tidak bisa diarahkan ke pemakainya sendiri: daftar sasaran tidak memuat Mira, dan mesin battle mengalihkannya ke rekan lain (atau tidak berpengaruh kalau tidak ada rekan lain).
 - AI simulasi tidak memakai jurus ini, jadi angka simulasi bos tidak berubah.
+
+## Poin stat
+
+- Stat dasar tiap tokoh tetap naik sendiri sesuai perannya (`growth` di `Db.CHARACTERS`). Di atas itu, tiap naik level tiap tokoh mendapat `Db.STAT_POINTS_PER_LEVEL` (1) poin yang bebas dibagi pemain. Nilai tiap poin ada di `Db.STAT_POINT_VALUE`: +3 HP, +2 MP, atau +1 ATK/DEF/MAG/SPD.
+- Poin tidak dibagi saat naik level, tetapi kapan saja lewat **layar Status** (tombol `C` di peta atau menu Esc). HUD peta menandai tokoh yang masih punya poin, dan layar hasil pertarungan mengingatkannya.
+- `Battler.alloc` menyimpan pembagiannya (stat -> jumlah poin) dan ikut tersimpan. Simpanan lama dimuat dengan semua poin sejak level 1 belum dibagi; pembagian yang melebihi jatah dikembalikan.
+- **Atur ulang** poin seorang tokoh: `Db.RESPEC_GOLD` (10) x levelnya, hanya di permukiman (desa, dusun, pos).
+- Awalnya direncanakan 2 poin per level, tetapi simulasi menunjukkan itu membuat bos akhir dimenangkan 95-99%. Dengan 1 poin dan bos diperkuat (Ogre HP 276; Ratu HP 734/ATK 43/MAG 19; Lahar HP 1111/ATK 56/MAG 26; Raja HP 2270/ATK 69/MAG 39), simulasi perlengkapan wajar: Ogre 86%, Ratu 78%, Lahar 82%, Raja 76%. Pemain yang tidak membagi poin sama sekali: 76%, 63%, 55%, 55%.
+- AI simulasi membagi poin bergantian antara stat utama dan HP (`sim.gd -- alloc=none|main|mix`, `points=N`).
+
+## Rarity perlengkapan dan side quest (tahap 1)
+
+- **Rarity** adalah properti barang yang dipakai (`"rarity"` di `Battler.equip`), terpisah dari tingkat (besi/baja/mitril) dan tempa. Datanya di `Db.GEAR_RARITIES`:
+  - Common: seperti biasa; dijual pandai besi.
+  - Rare: stat lebih tinggi (+20% stat dasar, minimal +1) dan peluang mendapat sifat saat ditempa +15 poin; dijual 2,5x harga Common.
+  - Ultra Rare: stat lebih tinggi lagi (+40%, minimal +2) dan sudah membawa satu sifat sejak didapat; hanya dari side quest.
+  - Legend belum ada (tahap 2).
+- Tab Beli di pandai besi menampilkan Common di kiri dan Rare di kanan. Boleh naik dari Common ke Rare di tingkat yang sama; tingkat tempa dan sifat barang lama tetap tidak ikut pindah saat membeli. Barang lama di simpanan dimuat sebagai Common.
+- **Side quest** (`scripts/world/quests.gd`): satu per wilayah, masing-masing dari seorang penduduk, dengan satu tempat di peta wilayah (petak `1`, `2`, `3`) yang dijaga monster elite.
+  - Palu Warisan (Garrick, Desa Rindu): Goblin Kepala di hutan barat daya Lembah Hijau.
+  - Lentera Dusun (Osric, Dusun Embun): Roh Tua di altar tua, sudut barat laut Hutan Kabut.
+  - Tambang yang Terkubur (Tobin, Pos Pemburu): Golem Purba di sudut barat daya Pegunungan Abu.
+- Jalannya: bicara dengan pemberi (quest diterima otomatis, lalu dialog biasanya berlanjut) -> kalahkan penjaga -> kembali ke pemberi. Penanda: `q_<id>`, `<boss>`, `q_<id>_done`. Hadiah: senjata Ultra Rare tingkat wilayah itu untuk satu anggota party pilihan pemain (tingkat tempa senjata lamanya ikut pindah) plus emas.
+- Monster elite memakai gambar monster lain dengan warna pembeda (`"sprite"` dan `"tint"` di `Db.ENEMIES`), tidak bisa ditinggal kabur, dan menjatuhkan bahan super rare.
+- Daftar quest: tombol `Q` di peta atau menu Esc.
+- Kesulitan (simulasi `sim.gd -- quests`, perlengkapan wajar, dilawan dalam keadaan segar): Goblin Kepala 75%, Roh Tua sekitar 78%, Golem Purba 79%. XP dari quest membuat semi-bos sesudahnya sekitar 8 poin lebih mudah; itu bagian dari hadiahnya.

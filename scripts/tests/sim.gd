@@ -41,11 +41,27 @@ const EVENTS := {
 
 ## Untuk mencoba angka bos tanpa mengubah Db: "-- ogre:1.3:1.2;ratu:1.2:1.1" = pengali HP dan ATK/MAG.
 var _scale := {}
+## Cara AI membagi poin stat: "-- alloc=none" tidak membagi, "alloc=main" semua ke stat utama,
+## bawaan "mix" = bergantian stat utama dan HP. "points=1" mencoba jumlah poin per level yang lain.
+## "-- quests" menyisipkan pertarungan side quest tepat sebelum tiap dungeon (tanpa hadiahnya), untuk mengukur kesulitannya.
+var _route: Array = ROUTE.duplicate()
+var _alloc_mode := "mix"
+var _points := Db.STAT_POINTS_PER_LEVEL
 var _regen := Db.MP_REGEN  # "-- regen=0.05" untuk mencoba angka pemulihan MP lain
 
 
 func _init() -> void:
 	for arg: String in OS.get_cmdline_user_args():
+		if arg == "quests":
+			for pair: Array in [["lembah_gua", "quest:goblin_kepala"], ["kabut_sarang", "quest:roh_tua"], ["abu_kawah", "quest:golem_purba"]]:
+				_route.insert(_route.find(pair[0]), pair[1])
+			continue
+		if arg.begins_with("alloc="):
+			_alloc_mode = arg.trim_prefix("alloc=")
+			continue
+		if arg.begins_with("points="):
+			_points = int(arg.trim_prefix("points="))
+			continue
 		if arg.begins_with("regen="):
 			_regen = float(arg.trim_prefix("regen="))
 			continue
@@ -72,26 +88,27 @@ func _run(rest_every: int, geared: int) -> void:
 		var party := Db.new_party()
 		var step := 0
 		var retries := 0  # kalah = siuman di penginapan lalu mencoba tahap yang sama lagi
-		while step < ROUTE.size():
-			var stage: String = ROUTE[step]
+		while step < _route.size():
+			var stage: String = _route[step]
 			var ids: Array
 			if EVENTS.has(stage):
 				if retries == 0:
 					party.append(Battler.from_character(EVENTS[stage].join, (party[0] as Battler).level))
 				ids = EVENTS[stage].ids
-			elif stage.begins_with("boss:"):
-				ids = Db.BOSSES[stage.trim_prefix("boss:")]
+			elif stage.begins_with("boss:") or stage.begins_with("quest:"):
+				ids = Db.BOSSES[stage.get_slice(":", 1)]
 			else:
 				ids = Db.random_group(stage).slice(0, party.size() + 1)
-			var from_dungeon := step > 0 and DUNGEONS.has(ROUTE[step - 1])  # tahap sebelumnya masih di dalam dungeon
+			var from_dungeon := step > 0 and DUNGEONS.has(_route[step - 1])  # tahap sebelumnya masih di dalam dungeon
 			var enters := DUNGEONS.has(stage) and not from_dungeon  # baru masuk dungeon: persiapan semi-bos dilakukan di sini
 			if geared > 0 and retries == 0 and ((stage.contains(":") and not from_dungeon) or enters):
 				var tier := 1
 				for i2 in step:
-					if (ROUTE[i2] as String).begins_with("boss:"):
+					if (_route[i2] as String).begins_with("boss:"):
 						tier += 1
 				var boss_plus := 1 if geared == 1 else 3
 				_equip(party, min(tier, Db.GEAR_TIERS), boss_plus if (stage.begins_with("boss:") or enters) else geared - 1)
+			_allocate(party)
 			var eng := BattleEngine.new(party, BattleEngine.make_encounter(ids))
 			eng.mp_regen = _regen
 			for e: Battler in eng.enemies:
@@ -112,7 +129,7 @@ func _run(rest_every: int, geared: int) -> void:
 					break
 				for m: Battler in party:
 					m.full_restore()
-				while step > 0 and DUNGEONS.has(ROUTE[step - 1]):  # siuman di penginapan: dungeon diulang dari awal
+				while step > 0 and DUNGEONS.has(_route[step - 1]):  # siuman di penginapan: dungeon diulang dari awal
 					step -= 1
 				continue
 			retries = 0
@@ -121,10 +138,10 @@ func _run(rest_every: int, geared: int) -> void:
 			step += 1
 			if DUNGEONS.has(stage):
 				continue  # di dalam dungeon tidak ada penginapan
-			if step % rest_every == 0 or (step < ROUTE.size() and (ROUTE[step] as String).contains(":")):
+			if step % rest_every == 0 or (step < _route.size() and (_route[step] as String).contains(":")):
 				for m: Battler in party:
 					m.full_restore()
-		if step == ROUTE.size():
+		if step == _route.size():
 			cleared += 1
 
 	print("=== %s ===" % ["Tanpa perlengkapan", "Perlengkapan wajar (+1 di semi-bos)", "Perlengkapan rajin (+3 dan sifat di semi-bos)"][geared])
@@ -134,6 +151,26 @@ func _run(rest_every: int, geared: int) -> void:
 	for stage: String in tries:
 		print("  %-14s menang %4d/%4d (%3.0f%%)   level Arlen rata-rata %.1f" % [stage, won.get(stage, 0), tries[stage],
 			100.0 * won.get(stage, 0) / tries[stage], level_at[stage] / tries[stage]])
+
+
+## Bagi poin stat yang belum terpakai sesuai _alloc_mode.
+func _allocate(party: Array) -> void:
+	if _alloc_mode == "none":
+		return
+	for m: Battler in party:
+		var main: String = Db.GEAR_MAIN_STAT[m.id]
+		var budget := (m.level - 1) * _points
+		var grew := false
+		while m.points_spent() < budget:
+			var pick := main
+			if _alloc_mode == "mix" and m.points_spent() % 2 == 1:
+				pick = "max_hp"
+			m.alloc[pick] = int(m.alloc.get(pick, 0)) + 1
+			grew = true
+		if grew:
+			var hp_gap := m.max_hp - m.hp
+			m.recalc()
+			m.hp = max(1, m.max_hp - hp_gap)
 
 
 func _equip(party: Array, tier: int, plus: int) -> void:

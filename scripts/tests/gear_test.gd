@@ -32,11 +32,13 @@ func _initialize() -> void:
 		if not ResourceLoader.exists("res://assets/sprites/mat_%s.png" % mat_id):
 			_expect(false, "ikon bahan %s ada" % mat_id)
 	for enemy_id: String in Db.ENEMIES:
-		var known := Db.ENEMY_CLASS.has(enemy_id) and ResourceLoader.exists("res://assets/sprites/monster_%s.png" % enemy_id)
+		var known := Db.ENEMY_CLASS.has(enemy_id) and ResourceLoader.exists("res://assets/sprites/monster_%s.png" % Db.ENEMIES[enemy_id].get("sprite", enemy_id))
 		if not known:
 			_expect(false, "monster %s punya kategori dan sprite" % enemy_id)
-		elif Db.ENEMIES[enemy_id].get("boss", false) != (Db.rarity_of(enemy_id) == "ultra"):
+		elif Db.rarity_of(enemy_id) == "ultra" and not Db.ENEMIES[enemy_id].get("boss", false):
 			_expect(false, "%s: hanya bos yang ultra rare" % enemy_id)
+		elif Db.ENEMIES[enemy_id].get("boss", false) and not Db.rarity_of(enemy_id) in ["ultra", "super"]:
+			_expect(false, "%s: bos dan penjaga quest berkategori ultra atau super rare" % enemy_id)
 	for region in range(1, 5):
 		for rarity: String in Db.RARITIES:
 			if Db.material_id(region, rarity) == "":

@@ -33,6 +33,8 @@ const COLOR_BORDER := Color("c9a85c")
 const COLOR_ACTIVE := Color("ffd866")
 const COLOR_DOWN := Color("d0655a")
 const GearIcon := preload("res://scripts/ui/gear_icon.gd")
+# Tokoh bersenjata jarak jauh: serangan biasanya menembakkan proyektil, tidak maju mendekati musuh.
+const RANGED_HEROES := ["kael"]
 
 # Posisi berdiri dalam koordinat petak arena (0,0 = tengah). Urutan = urutan anggota party.
 const PARTY_SLOTS := [Vector2(0, 1), Vector2(0, 4), Vector2(-3, 4), Vector2(-3, 1)]
@@ -49,7 +51,7 @@ const MONSTER_ANCHOR := {
 	"goblin": Vector2(18, 40), "ogre": Vector2(34, 66),
 	"laba_laba": Vector2(24, 29), "roh_kabut": Vector2(16, 36), "ratu": Vector2(40, 55),
 	"kadal_bara": Vector2(26, 26), "elang_abu": Vector2(26, 34), "golem_batu": Vector2(22, 44), "lahar": Vector2(36, 73),
-	"ksatria_kelam": Vector2(22, 44), "bayangan": Vector2(16, 36), "gargoyle": Vector2(26, 34), "raja": Vector2(34, 78),
+	"ksatria_kelam": Vector2(22, 44), "bayangan": Vector2(16, 36), "gargoyle": Vector2(26, 34), "raja": Vector2(44, 84),
 	"lendir_emas": Vector2(18, 29), "mata_kabut": Vector2(18, 39), "kura_magma": Vector2(26, 31), "peti_terkutuk": Vector2(19, 33),
 }
 # Per latar: bahan tanah, jumlah variannya, hiasan di belakang arena, dan kerapatannya.
@@ -655,6 +657,7 @@ func _animate_xp(m: Battler, was: Dictionary, row: Dictionary) -> void:
 				learned.append(Loc.t(Db.SKILLS[skill_id].name))
 		if not learned.is_empty():
 			text += Loc.t("\nJurus baru: ") + ", ".join(learned)
+		text += "\n" + Loc.t("+%d poin stat. Bagikan di layar Status (tombol C di peta).") % ((m.level - int(was.level)) * Db.STAT_POINTS_PER_LEVEL)
 		(row.note as Label).text = text
 
 
@@ -701,6 +704,8 @@ func _play_fx(cmd: Dictionary, targets: Array) -> void:
 		fx = "heal"
 	elif cmd.kind == "skill":
 		fx = Db.SKILL_FX.get(cmd.skill, "heavy_slash")
+	elif RANGED_HEROES.has(actor.id):  # pemanah: anak panahnya yang terbang, bukan orangnya
+		fx = "arrow"
 	var area := Vector2.ZERO  # titik tengah semua sasaran
 	for t: Battler in targets:
 		area += _center(t) / targets.size()
@@ -1206,11 +1211,14 @@ func _fill_statuses(box: HBoxContainer, b: Battler) -> void:
 
 ## Sprite ikut berubah warna saat terbakar atau keracunan.
 func _status_tint(b: Battler) -> Color:
+	var base := Color.WHITE
+	if b.is_enemy and Db.ENEMIES[b.id].has("tint"):  # warna pembeda monster elite
+		base = Color(String(Db.ENEMIES[b.id].tint))
 	if b.has_status("burn"):
-		return Color(1.0, 0.72, 0.55)
+		return base * Color(1.0, 0.72, 0.55)
 	if b.has_status("poison"):
-		return Color(0.72, 1.0, 0.68)
-	return Color.WHITE
+		return base * Color(0.72, 1.0, 0.68)
+	return base
 
 
 ## Terdorong sedikit lalu kembali, relatif terhadap posisi saat ini.
@@ -1288,7 +1296,9 @@ func _build_units() -> void:
 	var slots: Array = ENEMY_SLOTS[clampi(engine.enemies.size(), 1, 4)]
 	for i in engine.enemies.size():
 		var e: Battler = engine.enemies[i]
-		var unit := _add_unit(e, "monster_%s" % e.id, MONSTER_ANCHOR[e.id], _field_pos(slots[i % slots.size()]))
+		var look: String = Db.ENEMIES[e.id].get("sprite", e.id)  # monster elite memakai gambar monster lain
+		var unit := _add_unit(e, "monster_%s" % look, MONSTER_ANCHOR[look], _field_pos(slots[i % slots.size()]))
+		(unit.sprite as Sprite2D).modulate = _status_tint(e)
 		# Hanya batang HP di kaki monster; namanya muncul di menu sasaran dan lewat panah penunjuk.
 		var bar := _make_bar(Color("d0655a"))
 		bar.custom_minimum_size = Vector2(84, 7)
