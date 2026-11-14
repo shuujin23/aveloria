@@ -34,6 +34,12 @@ const MOUNTAIN_ANCHOR := Vector2(16, 31)
 const HOUSE_ANCHOR := Vector2(20, 38)
 const PERSON_ANCHOR := Vector2(12, 30)
 const CHEST_ANCHOR := Vector2(14, 24)
+# Tampilan tempat side quest per karakter peta: [bentuk, warna].
+const QUEST_SPOTS := {
+	"1": ["lair", Color(0.75, 1.0, 0.72)], "2": ["altar", Color(0.82, 0.72, 1.0)], "3": ["lair", Color(1.0, 0.82, 0.55)],
+	"4": ["altar", Color(1.0, 0.55, 0.55)], "5": ["altar", Color(1.0, 1.0, 0.85)], "6": ["altar", Color(0.6, 0.9, 1.0)],
+	"7": ["lair", Color(0.8, 0.9, 1.0)], "8": ["lair", Color(1.0, 0.5, 0.4)],
+}
 # Titik kaki sprite semi-bos yang berdiri di petaknya di dalam dungeon.
 const BOSS_ANCHOR := {"ogre": Vector2(34, 66), "ratu": Vector2(40, 55), "lahar": Vector2(36, 73)}
 const BACKDROPS := {"grass": "lembah", "forest_floor": "hutan", "mist_grass": "kabut", "mist_floor": "kabut",
@@ -607,16 +613,21 @@ func _ask_choice(labels: Array) -> int:
 
 ## Hadiah perlengkapan: pemain memilih anggota party penerimanya, lalu barang itu langsung dipakai.
 func _reward_gear(step: Dictionary) -> void:
-	var labels: Array = []
-	for m: Battler in Game.party:
-		var preview := {"id": Db.gear_id(m.id, step.slot, int(step.tier)), "plus": 0, "trait": "", "rarity": step.rarity}
-		labels.append("%s:  %s   (%s)" % [m.display_name, Db.gear_label(preview), Db.entry_stat_text(preview)])
-	var who: Battler = Game.party[await _ask_choice(labels)]
+	var who: Battler = Game.member(step.get("for", ""))
+	if who == null:  # hadiah bebas: pemain memilih penerimanya
+		var labels: Array = []
+		for m: Battler in Game.party:
+			var preview := {"id": Db.gear_id(m.id, step.slot, int(step.tier)), "plus": 0, "trait": "", "rarity": step.rarity}
+			labels.append("%s:  %s   (%s)" % [m.display_name, Db.gear_label(preview), Db.entry_stat_text(preview)])
+		who = Game.party[await _ask_choice(labels)]
 	var entry := Game.grant_gear(who, step.slot, int(step.tier), step.rarity)
 	Audio.play_jingle("fanfare")
 	_update_hud()
-	await _run_steps([{"text": Loc.t("%s menerima %s!  %s.\nSifat: %s.") % [who.display_name, Db.gear_label(entry), Db.entry_stat_text(entry), Db.trait_text(entry)]}])
-
+	var text: String = Loc.t("%s menerima %s!  %s.\nSifat: %s.") % [who.display_name, Db.gear_label(entry), Db.entry_stat_text(entry), Db.trait_text(entry)]
+	var legend := Db.legend_of(entry)
+	if not legend.is_empty():
+		text += "\n" + Loc.t(legend.desc)
+	await _run_steps([{"text": text}])
 
 ## Menginjak tempat side quest: bertarung melawan penjaganya kalau quest-nya sedang berjalan.
 func _quest_spot(id: String) -> void:
@@ -1006,7 +1017,7 @@ func _material(t: Vector2i) -> String:
 			return "mist_floor"
 		"k", "J":
 			return "cinder"
-		"x", "e", "1", "2", "3":  # peti, jalan keluar, dan tempat quest: bahan peta itu, atau ikut petak tetangga yang bisa diinjak
+		"x", "e", "1", "2", "3", "4", "5", "6", "7", "8":  # peti, jalan keluar, dan tempat quest: bahan peta itu, atau ikut petak tetangga yang bisa diinjak
 			if WorldMap.floor_material() != "":
 				return WorldMap.floor_material()
 			for side: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
@@ -1048,13 +1059,14 @@ func _build_objects() -> void:
 			match WorldMap.char_at(t):
 				"^":  # di dalam dungeon dindingnya bukit batu, bukan gunung bersalju
 					sprite = _sprite("hill_%d" % _variant(t, 2) if WorldMap.is_dungeon(Game.map_id) else _mountain_name(t, 6, 10), MOUNTAIN_ANCHOR)
-				"1", "3":  # sarang perampok dan mulut tambang: gua kecil yang kosong setelah penjaganya kalah
-					var den: Dictionary = Quests.LIST[WorldMap.tile_at(t).quest]
-					sprite = _sprite("lair_empty" if Game.flags.has(den.boss) else "lair_occupied", Vector2(18, 30))
-					sprite.modulate = Color(0.75, 1.0, 0.72) if WorldMap.char_at(t) == "1" else Color(1.0, 0.82, 0.55)
-				"2":  # altar tua
-					sprite = _sprite("altar", Vector2(16, 30))
-					sprite.modulate = Color(0.82, 0.72, 1.0)
+				"1", "2", "3", "4", "5", "6", "7", "8":  # tempat side quest: gua atau altar berwarna, kosong setelah penjaganya kalah
+					var look: Array = QUEST_SPOTS[WorldMap.char_at(t)]
+					if look[0] == "altar":
+						sprite = _sprite("altar", Vector2(16, 30))
+					else:
+						var guard: String = Quests.LIST[WorldMap.tile_at(t).quest].boss
+						sprite = _sprite("lair_empty" if Game.flags.has(guard) else "lair_occupied", Vector2(18, 30))
+					sprite.modulate = look[1]
 				"x":
 					sprite = _sprite("chest_open" if Game.flags.has(WorldMap.chest_flag(t)) else "chest_closed", CHEST_ANCHOR)
 					_chest_sprites[t] = sprite

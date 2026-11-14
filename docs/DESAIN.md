@@ -164,3 +164,19 @@ wilayah sebelumnya kalah.
 - Monster elite memakai gambar monster lain dengan warna pembeda (`"sprite"` dan `"tint"` di `Db.ENEMIES`), tidak bisa ditinggal kabur, dan menjatuhkan bahan super rare.
 - Daftar quest: tombol `Q` di peta atau menu Esc.
 - Kesulitan (simulasi `sim.gd -- quests`, perlengkapan wajar, dilawan dalam keadaan segar): Goblin Kepala 75%, Roh Tua sekitar 78%, Golem Purba 79%. XP dari quest membuat semi-bos sesudahnya sekitar 8 poin lebih mudah; itu bagian dari hadiahnya.
+
+## Senjata Legend, quest sulit, dan bos super (tahap 2)
+
+- **Rarity Legend** (`Db.GEAR_RARITIES["legend"]`): stat +60% (minimal +3), membawa sifat, dan punya efek unik. Hanya ada sebagai senjata tingkat 3, satu per tokoh (`Db.LEGEND_WEAPONS`):
+  - Pedang Fajar (Arlen): serangan fisik 30% menebas sekali lagi dengan separuh kekuatan.
+  - Tongkat Cahaya Abadi (Mira): penyembuhan 35% lebih kuat.
+  - Tongkat Bintang Jatuh (Selene): semua jurus memakai MP 30% lebih sedikit (`Battler.skill_cost`).
+  - Busur Angin Timur (Kael): selalu paling dulu di urutan ronde, peluang kritikal +10%.
+- **Empat quest sulit**, satu per tokoh, terbuka setelah Raksasa Lahar kalah. Hadiahnya senjata Legend tokoh itu (tanpa pilihan penerima) plus 400 emas:
+  - Ujian Sang Ksatria (Tetua Bram): Panglima Kelam di ruang dalam timur Kastil Kelam (petak `4`).
+  - Doa yang Tertinggal (Marla): Induk Pucat di kapel runtuh, timur laut Lembah Hijau (`5`).
+  - Bintang yang Jatuh (Tetua Elowen): Penjaga Kristal di kawah bintang, selatan Hutan Kabut (`6`).
+  - Angin dari Timur (Tetua Aldric): Rajawali Badai di puncak utara Pegunungan Abu (`7`).
+- **Bos super**: Naga Purba (Varek, petak `8` di timur laut Pegunungan Abu), terbuka setelah Raja Monster kalah; hadiah 3000 emas. Disetel untuk party yang memegang keempat senjata Legend.
+- Sprite: Naga Purba digambar tersendiri; empat bos quest memakai pembuat bentuk yang sudah ada dengan ukuran dan warna baru (golem berpedang, laba-laba, golem, burung yang diperbesar).
+- Kesulitan (simulasi `sim.gd -- quests runs=60`, dikerjakan berurutan): quest sulit 60-68% dengan perlengkapan wajar dan 67-76% dengan perlengkapan rajin; Naga Purba 50% dan 64%. Setelah keempat quest sulit selesai, Raja Monster dimenangkan hampir selalu; itu imbalan untuk konten pilihan.

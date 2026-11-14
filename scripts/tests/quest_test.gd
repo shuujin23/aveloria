@@ -86,13 +86,82 @@ func _initialize() -> void:
 		var q: Dictionary = Quests.LIST[id]
 		var group: Array = Db.BOSSES[q.boss]
 		var elite: Dictionary = Db.ENEMIES[q.boss]
-		_expect(group.has(q.boss) and elite.get("boss", false) and Db.rarity_of(q.boss) == "super" and Db.region_of(q.boss) == int(q.reward.tier),
-			"%s: penjaga %s adalah elite wilayah %d yang tidak bisa ditinggal kabur" % [q.name, elite.name, int(q.reward.tier)])
+		var hard: bool = q.get("hard", false)
+		_expect(group.has(q.boss) and elite.get("boss", false) and Db.rarity_of(q.boss) == ("ultra" if hard else "super")
+			and (hard or Db.region_of(q.boss) == int(q.reward.tier)),
+			"%s: penjaga %s tidak bisa ditinggal kabur dan berkategori %s" % [q.name, elite.name, "ultra rare" if hard else "super rare"])
 	# Tempat quest ada di peta dan cocok dengan datanya.
-	for spot: Array in [["dunia", "1", "perampok"], ["dunia", "2", "roh_tua"], ["abu", "3", "golem_purba"]]:
+	for spot: Array in [["dunia", "1", "perampok"], ["dunia", "2", "roh_tua"], ["abu", "3", "golem_purba"], ["kastil", "4", "pedang_fajar"],
+			["dunia", "5", "tongkat_cahaya"], ["dunia", "6", "tongkat_bintang"], ["abu", "7", "busur_angin"], ["abu", "8", "naga_purba"]]:
 		_expect(WorldMap.find_in(spot[0], spot[1]).x >= 0 and WorldMap.TILES[spot[1]].quest == spot[2]
 			and WorldMap.TILES[spot[1]].zone == Quests.LIST[spot[2]].place, "tempat quest %s ada di peta %s" % [spot[2], spot[0]])
 
+	# --- quest sulit dan senjata Legend ---
+	flags = {"mira_joined": true, "selene_joined": true, "kael_joined": true}
+	_expect(Quests.state("pedang_fajar", flags) == "locked" and Quests.state("naga_purba", flags) == "locked", "quest sulit belum terbuka sebelum Raksasa Lahar kalah")
+	flags["lahar"] = true
+	_expect(Quests.state("pedang_fajar", flags) == "available" and Quests.state("busur_angin", flags) == "available"
+		and Quests.state("naga_purba", flags) == "locked", "setelah Raksasa Lahar kalah: empat quest sulit terbuka, bos super belum")
+	flags["raja"] = true
+	_expect(Quests.state("naga_purba", flags) == "available", "bos super terbuka setelah Raja Monster kalah")
+	flags["q_pedang_fajar"] = true
+	flags["panglima_kelam"] = true
+	var legend_steps := Quests.steps_for("tetua", "Tetua Bram", flags)
+	_expect(legend_steps.any(func(step: Dictionary) -> bool: return step.get("do", "") == "reward_gear" and step.rarity == "legend" and step["for"] == "arlen"),
+		"quest Arlen berhadiah senjata Legend untuk Arlen sendiri")
+	flags["q_naga_purba"] = true
+	flags["naga_purba"] = true
+	var dragon_steps := Quests.steps_for("rekso", "Varek", flags)
+	_expect(not dragon_steps.any(func(step: Dictionary) -> bool: return step.get("do", "") == "reward_gear")
+		and dragon_steps.any(func(step: Dictionary) -> bool: return step.get("do", "") == "gold" and int(step.amount) == 3000), "bos super berhadiah emas saja")
+	for owner: String in Db.LEGEND_WEAPONS:
+		_expect(Quests.LIST.values().any(func(entry: Dictionary) -> bool: return entry.reward.get("for", "") == owner and entry.reward.rarity == "legend"),
+			"ada quest berhadiah senjata Legend untuk %s" % owner)
+
+	game.new_game()
+	game.party = [Battler.from_character("arlen", 12), Battler.from_character("mira", 12), Battler.from_character("selene", 12), Battler.from_character("kael", 12)]
+	for m: Battler in game.party:
+		m.equip["weapon"] = {"id": Db.gear_id(m.id, "weapon", 3), "plus": 2, "trait": "", "rarity": "common"}
+		var given: Dictionary = game.grant_gear(m, "weapon", 3, "legend")
+		_expect(Db.gear_rarity(given) == "legend" and int(given.plus) == 2 and Db.gear_title(given).begins_with(Db.LEGEND_WEAPONS[m.id].name)
+			and m.legend_effect() == Db.LEGEND_WEAPONS[m.id].effect, "%s menerima %s dengan efek %s" % [m.display_name, Db.gear_title(given), m.legend_effect()])
+	_expect(int(Db.gear_stats("arlen_weapon_3", 0, "legend")["atk"]) > int(Db.gear_stats("arlen_weapon_3", 0, "ultra")["atk"]), "senjata Legend lebih kuat dari Ultra Rare")
+	var hero: Battler = game.party[0]
+	var healer: Battler = game.party[1]
+	var mage: Battler = game.party[2]
+	var hunter: Battler = game.party[3]
+	_expect(mage.skill_cost("badai_es") == roundi(8 * Db.LEGEND_MP_FACTOR) and hero.skill_cost("tebasan_kuat") == 3, "Tongkat Bintang Jatuh: jurus Selene lebih hemat MP, tokoh lain tidak")
+	var dummy := Battler.from_enemy("golem_batu")
+	var eng := BattleEngine.new(game.party, [dummy])
+	var first := 0
+	for i in 60:
+		if eng.round_order()[0] == hunter:
+			first += 1
+	_expect(first == 60, "Busur Angin Timur: Kael selalu paling dulu di urutan ronde")
+	mage.mp = mage.max_mp
+	eng.execute({"actor": mage, "kind": "skill", "skill": "bola_api", "target": dummy})
+	_expect(mage.mp == mage.max_mp - mage.skill_cost("bola_api"), "MP yang terpakai mengikuti biaya hemat")
+	var doubles := 0
+	for i in 400:
+		dummy.hp = dummy.max_hp
+		for line: String in eng.execute({"actor": hero, "kind": "attack", "target": dummy}):
+			if line == Loc.t("%s menebas sekali lagi!") % hero.display_name:
+				doubles += 1
+	_expect(doubles > 80 and doubles < 160, "Pedang Fajar: sekitar 30%% serangan menebas dua kali (%d dari 400)" % doubles)
+	var plain_healer := Battler.from_character("mira", 12)
+	var boosted := 0
+	var normal := 0
+	for i in 200:
+		hero.hp = 1
+		eng.execute({"actor": healer, "kind": "skill", "skill": "pulih", "target": hero})
+		boosted += hero.hp - 1
+		healer.mp = healer.max_mp
+		var other := BattleEngine.new([plain_healer, hero], [dummy])
+		hero.hp = 1
+		other.execute({"actor": plain_healer, "kind": "skill", "skill": "pulih", "target": hero})
+		normal += hero.hp - 1
+		plain_healer.mp = plain_healer.max_mp
+	_expect(float(boosted) / normal > 1.25, "Tongkat Cahaya Abadi: penyembuhan lebih kuat (%.2fx)" % (float(boosted) / normal))
 	print("HASIL: %s" % ("ADA YANG GAGAL" if _failed else "SEMUA LOLOS"))
 	quit(1 if _failed else 0)
 

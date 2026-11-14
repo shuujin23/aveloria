@@ -129,6 +129,12 @@ func _initialize() -> void:
 	_wisp("monster_bayangan", ["b08ae0", "7a4ab8", "56308a", "341c5c"], ["e8d8ff", "c8a8f0", "a880e0", "8a5ac8"], "ffe14a", "1c1030")
 	_bird("monster_gargoyle", ["9a94a8", "726c84", "524c62", "363246"], ["363246", "8a84a0", "625c78"], "ff4a3a")
 	_monster_raja()
+	# Bos quest sulit (satu per tokoh) dan bos super.
+	_monster_panglima_kelam()
+	_monster_induk_pucat()
+	_monster_penjaga_kristal()
+	_monster_rajawali_badai()
+	_monster_naga_purba()
 
 	_backdrop("bg_lembah", ["6fb4e8", "a8d8f0"], "7fb08a", "5a9e58", ["5a9e4f", "6db35c", "4a8a44"], "")
 	_backdrop("bg_hutan", ["4f8fb8", "86bcc8"], "3f7a50", "2f6a40", ["4a8546", "5a9a52", "3c7340"], "trees")
@@ -1284,6 +1290,231 @@ func _monster_ogre() -> void:
 	_flat(img, [Vector2(27, 24), Vector2(28, 19), Vector2(30, 24)], ivory)
 	_flat(img, [Vector2(34, 24), Vector2(36, 19), Vector2(37, 24)], ivory)
 	_finish(img, "monster_ogre", "3a1c10", [32, 64, 25, 3.5])
+
+
+## Panglima Kelam: ksatria berzirah hitam dengan helm bertanduk dan jambul merah, perisai layang-layang,
+## dan pedang besar terangkat (70x78 termasuk pinggiran, jangkar 35,73).
+func _monster_panglima_kelam() -> void:
+	var img := _new(66, 74)
+	var armor := _pal(["8e889c", "5c566e", "3a3448", "221c2c"])
+	var helm := _pal(["6c6680", "48425a", "2e283c", "1a1424"])
+	var gold := Color("e0b040")
+	var ivory := Color("e8dcc0")
+	_flat(img, [Vector2(20, 24), Vector2(46, 24), Vector2(56, 70), Vector2(50, 66), Vector2(46, 72), Vector2(40, 66), Vector2(33, 72),
+		Vector2(27, 66), Vector2(22, 72), Vector2(17, 66), Vector2(11, 70)], Color("4a0e18"))  # jubah
+	_flat(img, [Vector2(20, 24), Vector2(24, 24), Vector2(18, 66), Vector2(11, 70)], Color("6e1824"))
+	_rect(img, 25, 56, 31, 69, armor[2])  # kaki
+	_rect(img, 35, 56, 41, 69, armor[3])
+	_rect(img, 25, 60, 31, 61, gold)
+	_rect(img, 35, 60, 41, 61, gold)
+	_rect(img, 23, 68, 32, 71, Color("1a1420"))
+	_rect(img, 34, 68, 43, 71, Color("1a1420"))
+	_flat(img, [Vector2(23, 48), Vector2(43, 48), Vector2(46, 60), Vector2(20, 60)], Color("2c2236"))  # rok zirah
+	_rect(img, 23, 48, 43, 49, gold)
+	_rect(img, 32, 50, 34, 59, Color("8a1a26"))
+	_blob(img, 33, 38, 12, 12, armor)  # dada
+	_flat(img, [Vector2(33, 31), Vector2(38, 38), Vector2(33, 45), Vector2(28, 38)], Color("c0202a"))
+	_flat(img, [Vector2(33, 34), Vector2(35.5, 38), Vector2(33, 42), Vector2(30.5, 38)], Color("ff6a4a"))
+	for side: int in [0, 1]:  # pelindung bahu berduri
+		var spike := [Vector2(13, 25), Vector2(11, 15), Vector2(18, 23)]
+		_flat(img, spike if side == 0 else _mirror(spike, 66), ivory)
+		_blob(img, 19.0 if side == 0 else 47.0, 28, 8, 6, armor)
+		_rect(img, 13 if side == 0 else 41, 32, 25 if side == 0 else 53, 32, gold)
+	var horn := [Vector2(27, 14), Vector2(19, 12), Vector2(14, 3), Vector2(19, 8), Vector2(26, 10)]
+	_flat(img, horn, ivory)
+	_flat(img, _mirror(horn, 66), Color("b8ac8c"))
+	_flat(img, [Vector2(30, 10), Vector2(32, 0), Vector2(38, 3), Vector2(36, 10)], Color("d02030"))  # jambul
+	_flat(img, [Vector2(34, 1), Vector2(43, 4), Vector2(38, 8)], Color("9a1420"))
+	_blob(img, 33, 17, 8, 9, helm)
+	_rect(img, 27, 16, 39, 18, Color("120c1c"))
+	_rect(img, 28, 17, 30, 17, Color("ffd23a"))
+	_rect(img, 36, 17, 38, 17, Color("ffd23a"))
+	_rect(img, 32, 19, 33, 25, helm[0])
+	_rect(img, 26, 10, 40, 10, gold)
+	# Perisai di kiri layar.
+	_blob(img, 16, 37, 4, 7, armor)
+	_flat(img, [Vector2(3, 31), Vector2(18, 29), Vector2(19, 46), Vector2(11, 59), Vector2(3, 46)], Color("5a546c"))
+	_flat(img, [Vector2(5, 33), Vector2(16, 31.5), Vector2(17, 45), Vector2(11, 55), Vector2(5, 45)], Color("3a3448"))
+	_rect(img, 10, 35, 11, 50, Color("c0202a"))
+	_rect(img, 7, 40, 15, 41, Color("c0202a"))
+	# Pedang besar di kanan layar, terangkat miring.
+	_blob(img, 50, 38, 4.5, 8, armor)
+	_flat(img, [Vector2(51, 47), Vector2(56, 45), Vector2(64, 7), Vector2(62, 2), Vector2(57, 8)], Color("c0c4d0"))
+	_flat(img, [Vector2(56, 45), Vector2(64, 7), Vector2(62, 2), Vector2(59, 24)], Color("7c8094"))
+	_line(img, Vector2(47, 44), Vector2(60, 49), gold, 2)
+	_line(img, Vector2(52, 48), Vector2(50, 55), Color("3a2a20"), 2)
+	_blob(img, 53, 47, 3.5, 3.5, _pal(["a8a2b8", "7a7490", "524c66", "342e44"]))
+	_finish(img, "monster_panglima_kelam", "120a14", [33, 71, 22, 4])
+
+
+## Induk Pucat: laba-laba raksasa pucat menghadap kiri, perut menggembung bertanda jam pasir merah,
+## kantong telur di bawahnya, kaki panjang melengkung (92x66 termasuk pinggiran, jangkar 46,62).
+func _monster_induk_pucat() -> void:
+	var img := _new(88, 62)
+	var pale := _pal(["fbf6ea", "d8cfbc", "a49a88", "70665a"])
+	var far := Color("8c8272")
+	var near := Color("e6ddca")
+	var hip := Vector2(30, 33)
+	var far_knees := [Vector2(13, 13), Vector2(24, 7), Vector2(41, 7), Vector2(53, 12)]
+	var far_feet := [Vector2(2, 45), Vector2(13, 55), Vector2(61, 57), Vector2(77, 55)]
+	for i in 4:  # kaki sisi jauh
+		_line(img, hip, far_knees[i], far, 2)
+		_line(img, far_knees[i], far_feet[i], far, 2)
+	_blob(img, 58, 29, 22, 18, pale)  # perut
+	for speck: Vector2i in [Vector2i(46, 20), Vector2i(70, 22), Vector2i(72, 34), Vector2i(48, 38), Vector2i(66, 16)]:
+		_rect(img, speck.x, speck.y, speck.x + 1, speck.y + 1, pale[2])
+	_flat(img, [Vector2(53, 20), Vector2(63, 20), Vector2(58, 28)], Color("c8303a"))
+	_flat(img, [Vector2(53, 36), Vector2(63, 36), Vector2(58, 28)], Color("c8303a"))
+	var egg := _pal(["fffbe8", "eee2c0", "c8b890", "968662"])
+	_blob(img, 50, 47, 4, 4, egg)
+	_blob(img, 60, 49, 4.5, 4.5, egg)
+	_blob(img, 69, 46, 4, 4, egg)
+	_blob(img, 28, 36, 11, 9, pale)  # kepala-dada
+	var near_knees := [Vector2(9, 23), Vector2(19, 16), Vector2(44, 17), Vector2(59, 21)]
+	var near_feet := [Vector2(0, 55), Vector2(8, 60), Vector2(64, 60), Vector2(83, 58)]
+	for i in 4:  # kaki sisi dekat
+		_line(img, hip + Vector2(0, 4), near_knees[i], near, 2)
+		_line(img, near_knees[i], near_feet[i], near, 2)
+		_rect(img, int(near_knees[i].x), int(near_knees[i].y), int(near_knees[i].x) + 2, int(near_knees[i].y) + 2, pale[2])
+	for eye: Vector2i in [Vector2i(19, 34), Vector2i(21, 32), Vector2i(23, 33), Vector2i(20, 36), Vector2i(22, 36), Vector2i(25, 35)]:
+		_px(img, eye.x, eye.y, Color("ff3040"))
+	_flat(img, [Vector2(17, 40), Vector2(19, 47), Vector2(21, 41)], Color("f0e6d0"))
+	_flat(img, [Vector2(22, 42), Vector2(24, 48), Vector2(26, 42)], Color("f0e6d0"))
+	_px(img, 19, 49, Color("8fe060"))
+	_px(img, 24, 50, Color("8fe060"))
+	_px(img, 19, 51, Color("8fe060"))
+	_finish(img, "monster_induk_pucat", "3a342c", [44, 59, 36, 3.5])
+
+
+## Penjaga Kristal: kristal raksasa bermata satu yang melayang, dengan serpihan kristal mengitarinya
+## dan lingkaran rune di tanah (68x84 termasuk pinggiran, jangkar 34,78).
+func _monster_penjaga_kristal() -> void:
+	var img := _new(64, 80)
+	var light := Color("c4f2ff")
+	var mid := Color("62b4e6")
+	var dark := Color("2e6eac")
+	var bright := Color("eefdff")
+	for i in 40:  # lingkaran rune di tanah
+		var angle := TAU * i / 40.0
+		if i % 5 != 0:
+			_px(img, int(32 + cos(angle) * 19), int(74 + sin(angle) * 3.5), Color("7fe0ff"))
+	for side: int in [0, 1]:  # serpihan yang mengitari
+		var arm := [Vector2(7, 20), Vector2(15, 13), Vector2(17, 36), Vector2(11, 45), Vector2(5, 34)]
+		var arm_dark := [Vector2(15, 13), Vector2(17, 36), Vector2(11, 45), Vector2(12, 28)]
+		var low := [Vector2(13, 53), Vector2(18, 49), Vector2(20, 60), Vector2(16, 67)]
+		var crown := [Vector2(23, 9), Vector2(26, 1), Vector2(28, 11)]
+		_flat(img, arm if side == 0 else _mirror(arm, 64), light if side == 0 else mid)
+		_flat(img, arm_dark if side == 0 else _mirror(arm_dark, 64), mid if side == 0 else dark)
+		_flat(img, low if side == 0 else _mirror(low, 64), light if side == 0 else dark)
+		_flat(img, crown if side == 0 else _mirror(crown, 64), bright if side == 0 else mid)
+	# Kristal utama bersegi.
+	_flat(img, [Vector2(32, 4), Vector2(20, 22), Vector2(22, 50), Vector2(32, 63)], light)
+	_flat(img, [Vector2(32, 4), Vector2(44, 22), Vector2(42, 50), Vector2(32, 63)], mid)
+	_flat(img, [Vector2(44, 22), Vector2(42, 50), Vector2(32, 63), Vector2(38, 40)], dark)
+	_flat(img, [Vector2(32, 4), Vector2(27, 22), Vector2(28, 50), Vector2(32, 63)], bright)
+	_line(img, Vector2(20, 22), Vector2(44, 22), Color("9adcf8"), 1)
+	_line(img, Vector2(22, 50), Vector2(42, 50), Color("3c84c4"), 1)
+	_blob(img, 32, 33, 5, 5, _pal(["fffbe0", "ffe14a", "e0a020", "a06810"]))  # mata inti
+	_rect(img, 31, 31, 32, 35, Color("3a2408"))
+	for spark: Vector2i in [Vector2i(10, 8), Vector2i(54, 12), Vector2i(4, 48), Vector2i(58, 44), Vector2i(48, 4), Vector2i(26, 70), Vector2i(40, 68)]:
+		_px(img, spark.x, spark.y, Color.WHITE)
+	_finish(img, "monster_penjaga_kristal", "143050", [32, 75, 16, 3])
+
+
+## Rajawali Badai: burung raksasa putih-biru dengan sayap terbentang, jambul, paruh emas, dan kilat
+## di ujung sayapnya (100x70 termasuk pinggiran, jangkar 50,64).
+func _monster_rajawali_badai() -> void:
+	var img := _new(96, 66)
+	var plume := _pal(["f8faff", "c8d4f0", "8c9ccc", "586894"])
+	var outer := [Vector2(41, 27), Vector2(27, 10), Vector2(6, 3), Vector2(0, 13), Vector2(6, 15), Vector2(2, 25), Vector2(10, 25),
+		Vector2(8, 35), Vector2(18, 33), Vector2(20, 42), Vector2(35, 38)]
+	var middle := [Vector2(41, 27), Vector2(28, 14), Vector2(10, 8), Vector2(8, 15), Vector2(13, 17), Vector2(10, 25), Vector2(18, 25),
+		Vector2(18, 32), Vector2(34, 34)]
+	var inner := [Vector2(41, 27), Vector2(30, 18), Vector2(18, 14), Vector2(18, 21), Vector2(24, 23), Vector2(26, 30), Vector2(37, 31)]
+	for side: int in [0, 1]:
+		_flat(img, outer if side == 0 else _mirror(outer, 96), Color("46567e"))
+		_flat(img, middle if side == 0 else _mirror(middle, 96), Color("8498c8"))
+		_flat(img, inner if side == 0 else _mirror(inner, 96), Color("dce6ff"))
+		var bolt := [Vector2(5, 30), Vector2(10, 37), Vector2(6, 41), Vector2(12, 50)]  # kilat
+		for i in 3:
+			var from: Vector2 = bolt[i] if side == 0 else Vector2(95 - bolt[i].x, bolt[i].y)
+			var to: Vector2 = bolt[i + 1] if side == 0 else Vector2(95 - bolt[i + 1].x, bolt[i + 1].y)
+			_line(img, from, to, Color("ffe14a"), 1)
+	_flat(img, [Vector2(40, 44), Vector2(56, 44), Vector2(63, 60), Vector2(55, 56), Vector2(48, 63), Vector2(41, 56), Vector2(33, 60)], Color("8498c8"))  # ekor
+	_flat(img, [Vector2(44, 46), Vector2(52, 46), Vector2(54, 55), Vector2(48, 59), Vector2(42, 55)], Color("46567e"))
+	_blob(img, 48, 34, 10, 14, plume)  # badan
+	for feather: Vector2i in [Vector2i(44, 30), Vector2i(50, 33), Vector2i(46, 37), Vector2i(52, 39), Vector2i(48, 42)]:
+		_rect(img, feather.x, feather.y, feather.x + 1, feather.y, plume[2])
+	_flat(img, [Vector2(44, 11), Vector2(42, 1), Vector2(48, 8)], plume[1])  # jambul
+	_flat(img, [Vector2(48, 9), Vector2(50, 0), Vector2(53, 9)], plume[0])
+	_flat(img, [Vector2(52, 10), Vector2(57, 3), Vector2(56, 12)], plume[1])
+	_blob(img, 48, 17, 7.5, 7.5, plume)  # kepala
+	_flat(img, [Vector2(42, 17), Vector2(33, 22), Vector2(42, 23)], Color("f0b030"))  # paruh
+	_flat(img, [Vector2(37, 21), Vector2(33, 22), Vector2(36, 25)], Color("b07818"))
+	_rect(img, 44, 15, 46, 17, Color("7fe0ff"))
+	_px(img, 45, 16, Color("101830"))
+	_rect(img, 43, 13, 47, 13, plume[3])
+	_flat(img, [Vector2(42, 47), Vector2(40, 55), Vector2(46, 50)], Color("f0b030"))  # cakar
+	_flat(img, [Vector2(50, 50), Vector2(53, 56), Vector2(55, 48)], Color("f0b030"))
+	_finish(img, "monster_rajawali_badai", "1c2440", [48, 62, 22, 3.5])
+
+## Naga Purba, bos super: naga merah tua menghadap kiri, sayap terbentang, leher panjang, tanduk gading
+## (104x88 termasuk pinggiran, jangkar 58,82).
+func _monster_naga_purba() -> void:
+	var img := _new(100, 84)
+	var scale := _pal(["d8584c", "9a3034", "641e26", "3a1018"])
+	var belly := _pal(["f6dc9c", "d8b068", "ac8044", "7c582a"])
+	var ivory := Color("efe4c8")
+	var wing_dark := Color("4a1420")
+	var wing_light := Color("a8443c")
+	# Sayap di belakang badan.
+	_flat(img, [Vector2(52, 46), Vector2(40, 10), Vector2(58, 2), Vector2(74, 13), Vector2(70, 22), Vector2(85, 15), Vector2(94, 30),
+		Vector2(85, 33), Vector2(96, 45), Vector2(72, 50)], wing_dark)
+	_flat(img, [Vector2(54, 43), Vector2(44, 13), Vector2(58, 6), Vector2(69, 14), Vector2(66, 24), Vector2(84, 19), Vector2(89, 29),
+		Vector2(80, 32), Vector2(89, 43), Vector2(72, 46)], wing_light)
+	for tip: Vector2 in [Vector2(40, 10), Vector2(74, 13), Vector2(94, 30), Vector2(96, 45)]:
+		_line(img, Vector2(54, 44), tip, wing_dark, 1)
+	# Ekor melengkung ke kanan dengan ujung berduri.
+	_flat(img, [Vector2(74, 50), Vector2(88, 54), Vector2(98, 68), Vector2(96, 76), Vector2(88, 66), Vector2(76, 64)], scale[2])
+	_flat(img, [Vector2(74, 50), Vector2(88, 54), Vector2(96, 64), Vector2(86, 60), Vector2(76, 58)], scale[1])
+	_flat(img, [Vector2(95, 70), Vector2(100, 78), Vector2(93, 77)], ivory)
+	# Kaki belakang, badan, perut, kaki depan.
+	_blob(img, 73, 68, 9, 10, scale)
+	_rect(img, 66, 76, 80, 79, scale[3])
+	_blob(img, 58, 56, 22, 16, scale)
+	_blob(img, 54, 63, 14, 8, belly)
+	for rib in 4:  # ruas perut
+		_rect(img, 44 + rib * 6, 61 + (rib % 2), 45 + rib * 6, 68, belly[2])
+	_blob(img, 43, 70, 6.5, 8, scale)
+	_rect(img, 36, 77, 49, 79, scale[3])
+	for claw in 3:
+		_flat(img, [Vector2(35 + claw * 5, 78), Vector2(33 + claw * 5, 83), Vector2(38 + claw * 5, 79)], ivory)
+		_flat(img, [Vector2(66 + claw * 5, 78), Vector2(64 + claw * 5, 83), Vector2(69 + claw * 5, 79)], ivory)
+	# Leher panjang menjulur ke kiri atas.
+	_blob(img, 41, 45, 9.5, 9.5, scale)
+	_blob(img, 34, 37, 8.5, 8.5, scale)
+	_blob(img, 28, 29, 7.5, 7.5, scale)
+	_blob(img, 37, 48, 5, 6, belly)
+	_blob(img, 30, 39, 4, 5, belly)
+	for spike: Array in [[Vector2(46, 37), Vector2(50, 29), Vector2(51, 39)], [Vector2(39, 29), Vector2(42, 21), Vector2(44, 31)],
+			[Vector2(60, 41), Vector2(64, 33), Vector2(66, 42)], [Vector2(70, 43), Vector2(75, 37), Vector2(76, 46)]]:  # duri punggung
+		_flat(img, spike, ivory)
+	# Kepala: tanduk, moncong, rahang bergigi, mata menyala.
+	_flat(img, [Vector2(26, 19), Vector2(38, 7), Vector2(31, 21)], ivory)
+	_flat(img, [Vector2(22, 17), Vector2(30, 3), Vector2(27, 18)], Color("cfc2a0"))
+	_blob(img, 21, 23, 10, 7.5, scale)
+	_blob(img, 10, 26, 8, 5, scale)
+	_flat(img, [Vector2(4, 29), Vector2(22, 29), Vector2(20, 34), Vector2(8, 34)], scale[2])
+	_rect(img, 5, 29, 20, 29, Color("2a080c"))
+	for tooth in 5:
+		_flat(img, [Vector2(5 + tooth * 3, 29), Vector2(6 + tooth * 3, 32), Vector2(7.5 + tooth * 3, 29)], ivory)
+	_rect(img, 19, 20, 22, 21, Color("ffe14a"))
+	_px(img, 20, 20, Color("2a080c"))
+	_px(img, 20, 21, Color("2a080c"))
+	_rect(img, 4, 24, 5, 24, Color("2a080c"))
+	for ember: Vector2i in [Vector2i(1, 30), Vector2i(2, 33), Vector2i(0, 27)]:  # bara dari mulutnya
+		_px(img, ember.x, ember.y, Color("ffb040"))
+	_finish(img, "monster_naga_purba", "200a0e", [56, 80, 36, 4.5])
 
 
 ## Raja Monster: penguasa kegelapan bersayap kelelawar, bertanduk dan bermahkota, berjubah merah tua,

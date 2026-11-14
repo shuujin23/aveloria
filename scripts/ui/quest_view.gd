@@ -63,17 +63,16 @@ func open() -> void:
 		var q: Dictionary = Quests.LIST[entry.id]
 		var done: bool = entry.state == "done"
 		var head := Label.new()
-		head.text = "%s   -   %s" % [Loc.t(q.name), Loc.t(Quests.STATE_LABELS[entry.state])]
+		head.text = "%s%s   -   %s" % [Loc.t(q.name), Loc.t("  (sulit)") if q.get("hard", false) else "", Loc.t(Quests.STATE_LABELS[entry.state])]
 		head.add_theme_color_override("font_color", Color(1, 1, 1, 0.5) if done else Color("ffd866"))
 		_list.add_child(head)
-		var reward: Dictionary = q.reward
 		var body := Label.new()
 		body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		body.custom_minimum_size.x = 620
 		body.add_theme_font_size_override("font_size", 15)
 		body.add_theme_color_override("font_color", Color(1, 1, 1, 0.5 if done else 0.85))
 		var hint: String = Loc.t(q.goal) if entry.state == "active" else (Loc.t(q.back) if entry.state == "won" else "")
-		var prize := Loc.t("Hadiah: senjata %s untuk satu anggota party, %d emas.") % [Db.GEAR_RARITIES[reward.rarity].name, int(reward.gold)]
+		var prize := Quests.prize_text(entry.id)
 		body.text = prize if hint == "" else "%s\n%s" % [hint, prize]
 		_list.add_child(body)
 	if entries.is_empty():

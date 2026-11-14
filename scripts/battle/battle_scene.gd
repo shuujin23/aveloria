@@ -52,6 +52,8 @@ const MONSTER_ANCHOR := {
 	"laba_laba": Vector2(24, 29), "roh_kabut": Vector2(16, 36), "ratu": Vector2(40, 55),
 	"kadal_bara": Vector2(26, 26), "elang_abu": Vector2(26, 34), "golem_batu": Vector2(22, 44), "lahar": Vector2(36, 73),
 	"ksatria_kelam": Vector2(22, 44), "bayangan": Vector2(16, 36), "gargoyle": Vector2(26, 34), "raja": Vector2(44, 84),
+	"panglima_kelam": Vector2(35, 73), "induk_pucat": Vector2(46, 62), "penjaga_kristal": Vector2(34, 78),
+	"rajawali_badai": Vector2(50, 64), "naga_purba": Vector2(58, 82),
 	"lendir_emas": Vector2(18, 29), "mata_kabut": Vector2(18, 39), "kura_magma": Vector2(26, 31), "peti_terkutuk": Vector2(19, 33),
 }
 # Per latar: bahan tanah, jumlah variannya, hiasan di belakang arena, dan kerapatannya.
@@ -328,7 +330,8 @@ func _skill_menu(actor: Battler) -> void:
 	var items: Array = []
 	for skill_id: String in actor.skills:
 		var sk: Dictionary = Db.SKILLS[skill_id]
-		items.append({"text": "%s  (%d MP)" % [Loc.t(sk.name), sk.mp], "hint": Loc.t(sk.desc), "disabled": actor.mp < sk.mp, "unit": actor,
+		var cost := actor.skill_cost(skill_id)
+		items.append({"text": "%s  (%d MP)" % [Loc.t(sk.name), cost], "hint": Loc.t(sk.desc), "disabled": actor.mp < cost, "unit": actor,
 			"cb": func() -> void: _choose_skill(actor, skill_id)})
 	_show_menu(Loc.t("Jurus %s") % actor.display_name, items, _ask_command)
 
@@ -445,7 +448,7 @@ func _run_turn(cmd: Dictionary) -> void:
 	_mark_active(actor)
 	# Mesin battle langsung mengubah HP; tampilan baru diperbarui tepat saat animasi "mengenai".
 	var targets := engine.resolve_targets(cmd)
-	var animate: bool = cmd.kind != "skill" or actor.mp >= int(Db.SKILLS[cmd.skill].mp)
+	var animate: bool = cmd.kind != "skill" or actor.mp >= actor.skill_cost(cmd.skill)
 	_set_banner(Loc.t("Giliran %s:   %s") % [actor.display_name, _cmd_text(cmd)])
 	var lines := engine.execute(cmd)
 	if not lines.is_empty():

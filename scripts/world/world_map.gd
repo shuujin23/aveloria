@@ -32,7 +32,7 @@ const MAPS := {
 			"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
 			"^^^^^^x...ffffff.......^^^^^^^^^^~~~~~~^^^^,2,,,,,FFFFFF,,,,,^^^^^",
 			"^^^^^^....ffffff.......^^^^^^^^^^~~~~~~^^^^,,,,,,,FFFFFF,,,,,^^^^^",
-			"^^^^....ffffffffff........^^^^^~~~~~~~~^^,,,,,FFFFFFFFFF,,,,,x^^^^",
+			"^^^^....ffffffffff.......5^^^^^~~~~~~~~^^,,,,,FFFFFFFFFF,,,,,x^^^^",
 			"^^^^....ffffffffff........^^^^^~~~~~~~~^^,,,,,FFFFFFFFFF,,,,,,^^^^",
 			"^^......ffffffff............^^^~~~~~~^^^,,,,,,FFFFFFFFFFFF,,,,,,^^",
 			"^^......ffffffff............^^^~~~~~~^^^,,,,,,FFFFFFFFFFFF,,,,,,^^",
@@ -55,7 +55,7 @@ const MAPS := {
 			"^..............=.............~~~~~~~~,,,,,,FFF,,,,,,,,,,,,,,,^^^^^",
 			"^^.............=............~~~~~~~~~~~,,,,,,,,,,,,,,,,,,,^^^^^^^^",
 			"^^.............=............~~~~~~~~~~~,,,,,,,,,,,,,,,,,,,^^^^^^^^",
-			"^^^^.........fff..........~~~~~~~~~~~~~~,,,,,,,,,,,,,,,^^^^^^^^^^^",
+			"^^^^.........fff..........~~~~~~~~~~~~~~,6,,,,,,,,,,,,,^^^^^^^^^^^",
 			"^^^^^^x.....ffffff.....^^^^^~~~~~~~~~~~^^^^,,,,,,,x^^^^^^^^^^^^^^^",
 			"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
 		],
@@ -65,9 +65,9 @@ const MAPS := {
 		"chests": {Vector2i(4, 1): {"mats": {"sisik_bara": 3}}, Vector2i(51, 3): {"gold": 150}},
 		"rows": [
 			"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-			"^^^^xaaaaccccc^^^^^^^aaaaaaaaaaa^^^^^^^^LLLLLLL^^^^^^^",
+			"^^^^xaaaaccccc^^^^^^^aaaaaaaaaa7^^^^^^^^LLLLLLL^^^^^^^",
 			"^^^^aaaaaccccc^^^^^^^aaaaaaaaaaa^^^^^^^^LLLLLLL^^^^^^^",
-			"^^aaaaaaccccccccaaaaaaaaaaaaaaaaaaaa^^^^LLLLLLLLLaax^^",
+			"^^aaaaaaccccccccaaaaaaaaaaaaaaaaaaaa^^^^LLLLLLLLL8ax^^",
 			"^^aaaaaaccccccccaaaaaaaaaaaaaaaaaaaa^^^^LLLLLLLLLaaa^^",
 			"^aaaaaaaacccccaaaaaaaaacccccccaaaaaaaaaaLLLLLaaaaaaaa^",
 			"^aaaaaaaacccccaaaaaaaaacccccccaaaaaaaaaaLLLLLaaaaaaaa^",
@@ -95,7 +95,7 @@ const MAPS := {
 			"wwwwwwwwwdddCdddwwwwwwwwwwwwww",
 			"wwwwwwwwwdddCdddwwwwwwwwwwwwww",
 			"wwwwwwwwwwwwCwwwwwwwwwwwwwwwww",
-			"wwwwddddddddCddddddddwwwwwwwww",
+			"wwwwddddddddCddddddd4wwwwwwwww",
 			"wwwwxddwwdddCdddwwdddwwwwwwwww",
 			"wwwwdddwwdddCdddwwddxwwwwwwwww",
 			"wwwwddddddddCddddddddwwwwwwwww",
@@ -221,7 +221,7 @@ const MAPS := {
 # boss   = semi-bos yang bersarang di sini (lihat Db.BOSS_RULES)
 # dungeon = pintu masuk dungeon semi-bos itu: hanya bisa dimasuki kalau syarat Db.BOSS_RULES terpenuhi
 # chest  = peti harta; isinya ada di "chests" peta itu
-# quest  = tempat side quest (angka 1-3 di peta wilayah); lihat Quests
+# quest  = tempat side quest (angka 1-8); lihat Quests
 # gate   = hanya bisa dilewati setelah penanda itu tercatat; locked = pesan saat masih terkunci
 # scene  = adegan cerita yang dimainkan tiap kali petak ini diinjak
 const TILES := {
@@ -274,6 +274,11 @@ const TILES := {
 	"1": {"walk": true, "zone": "Sarang Perampok", "quest": "perampok"},
 	"2": {"walk": true, "zone": "Altar Tua", "quest": "roh_tua"},
 	"3": {"walk": true, "zone": "Mulut Tambang", "quest": "golem_purba"},
+	"4": {"walk": true, "zone": "Ruang Panglima", "quest": "pedang_fajar"},
+	"5": {"walk": true, "zone": "Kapel Runtuh", "quest": "tongkat_cahaya"},
+	"6": {"walk": true, "zone": "Kawah Bintang", "quest": "tongkat_bintang"},
+	"7": {"walk": true, "zone": "Puncak Angin", "quest": "busur_angin"},
+	"8": {"walk": true, "zone": "Sarang Naga", "quest": "naga_purba"},
 	"e": {"walk": true, "zone": "", "portal": "@exit"},
 }
 

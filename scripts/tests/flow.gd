@@ -601,6 +601,64 @@ func _initialize() -> void:
 		"Lanjutkan setelah tamat: kembali di kastil, Raja sudah kalah, tanpa adegan terulang")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(_game.save_path))
 
+	# --- Quest sulit: Ujian Sang Ksatria (senjata Legend), lalu bos super Naga Purba ---
+	_game.flags["lahar"] = true
+	_game.flags["raja"] = true
+	_set_levels(60)
+	await _open_world("desa", Vector2i(3, 3))
+	current_scene.call("_talk", "tetua")
+	await _skip_dialog()
+	_expect(_game.flags.has("q_pedang_fajar"), "Tetua Bram memberi quest sulit Arlen setelah Raksasa Lahar kalah")
+	var chamber := WorldMap.find_in("kastil", "4")
+	await _open_world("kastil", chamber + Vector2i(-1, 0))
+	current_scene.call("_walk_to", chamber)
+	await _wait_until(func() -> bool: return current_scene != null and current_scene.name == "Battle", 100)
+	await create_timer(1.0).timeout
+	await _shot("battle_panglima.png")
+	await _play_battle()
+	_expect(_game.flags.has("panglima_kelam") and current_scene.get("_dialog_open"), "Panglima Kelam kalah: penandanya tercatat dan adegannya tampil")
+	await _skip_dialog()
+	await _open_world("desa", Vector2i(3, 3))
+	current_scene.call("_talk", "tetua")
+	await _skip_dialog()
+	var dawnblade: Dictionary = (_game.party[0] as Battler).equip.get("weapon", {})
+	_expect(_game.flags.has("q_pedang_fajar_done") and Db.gear_rarity(dawnblade) == "legend" and Db.gear_title(dawnblade).begins_with(Loc.t("Pedang Fajar"))
+		and (_game.party[0] as Battler).legend_effect() == "double_strike", "kembali ke Tetua Bram: Arlen memegang Pedang Fajar (Legend)")
+	current_scene.call("_toggle_gear")
+	await create_timer(0.1).timeout
+	await _shot("perlengkapan_legend.png")
+	current_scene.call("_toggle_gear")
+	await _open_world("pos", Vector2i(4, 6))
+	current_scene.call("_talk", "rekso")
+	await _skip_dialog()
+	_expect(_game.flags.has("q_naga_purba"), "Varek memberi quest bos super setelah Raja Monster kalah")
+	current_scene.emit_signal("forge_closed")
+	await _skip_dialog()
+	var dragon_lair := WorldMap.find_in("abu", "8")
+	await _open_world("abu", dragon_lair + Vector2i(1, 0))
+	current_scene.call("_walk_to", dragon_lair)
+	await _wait_until(func() -> bool: return current_scene != null and current_scene.name == "Battle", 100)
+	await create_timer(1.0).timeout
+	await _shot("battle_naga.png")
+	await _play_battle()
+	_expect(_game.flags.has("naga_purba") and current_scene.get("_dialog_open"), "Naga Purba kalah: penandanya tercatat dan adegannya tampil")
+	await _skip_dialog()
+	var gold_before_dragon: int = _game.gold
+	await _open_world("pos", Vector2i(4, 6))
+	current_scene.call("_talk", "rekso")
+	await _skip_dialog()
+	_expect(_game.flags.has("q_naga_purba_done") and _game.gold == gold_before_dragon + 3000, "kembali ke Varek: hadiah 3000 emas")
+	current_scene.emit_signal("forge_closed")
+	await _skip_dialog()
+	# Tempat quest sulit lainnya bisa dijangkau.
+	WorldMap.current = "dunia"
+	var world_reach := _reachable(WorldMap.find_in("dunia", "T"), {"ogre": true, "ratu": true})
+	_expect(world_reach.has(WorldMap.find("5")) and world_reach.has(WorldMap.find("6")), "kapel runtuh dan kawah bintang terjangkau")
+	WorldMap.current = "abu"
+	var ash_reach := _reachable(WorldMap.find("W"), {})
+	_expect(ash_reach.has(WorldMap.find("7")) and ash_reach.has(WorldMap.find("8")), "puncak angin dan sarang naga terjangkau")
+	WorldMap.current = _game.map_id
+
 	# --- Kalah: kembali ke penginapan desa, emas tinggal setengah ---
 	_game.new_game()
 	_game.pending_scene = ""

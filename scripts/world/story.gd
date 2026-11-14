@@ -148,6 +148,26 @@ const SCENES := {
 		{"text": "Golem Purba runtuh menjadi tumpukan batu. Jalan masuk tambang terbuka lagi."},
 		{"who": "Kael", "text": "Tobin berutang satu pada kita. Ayo tagih di pos."},
 	],
+	"q_pedang_fajar_won": [
+		{"text": "Panglima Kelam roboh. Di balik jubahnya tergantung sebilah pedang yang berpendar seperti fajar."},
+		{"who": "Arlen", "text": "Pedang Fajar. Tetua Bram harus melihat ini."},
+	],
+	"q_tongkat_cahaya_won": [
+		{"text": "Induk Pucat tumbang. Di altar kapel yang retak tergeletak sebatang tongkat yang masih bercahaya."},
+		{"who": "Mira", "text": "Tongkat Guru... Marla benar. Ayo pulang ke desa."},
+	],
+	"q_tongkat_bintang_won": [
+		{"text": "Penjaga Kristal retak lalu hancur berkeping-keping. Di tengah kawah tertancap tongkat yang berkilau seperti langit malam."},
+		{"who": "Selene", "text": "Indah sekali... Tetua Elowen harus tahu."},
+	],
+	"q_busur_angin_won": [
+		{"text": "Rajawali Badai jatuh ke lereng. Di sarangnya, di antara tulang-belulang, terselip sebuah busur tua yang masih kokoh."},
+		{"who": "Kael", "text": "Busur Ayah. ...Ayo pulang ke pos."},
+	],
+	"q_naga_purba_won": [
+		{"text": "Naga Purba roboh, dan gunung itu akhirnya benar-benar diam."},
+		{"who": "Arlen", "text": "Sekarang Aveloria sungguh aman."},
+	],
 	"ending": [
 		{"text": "Raja Monster roboh. Kegelapan yang menyelimuti Kastil Kelam luruh seperti kabut pagi."},
 		{"who": "Arlen", "text": "Sudah selesai."},

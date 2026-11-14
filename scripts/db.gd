@@ -210,6 +210,8 @@ const ENEMY_CLASS := {
 	"ksatria_kelam": [4, "common"], "gargoyle": [4, "common"], "bayangan": [4, "rare"],
 	"peti_terkutuk": [4, "super"], "raja": [4, "ultra"],
 	"goblin_kepala": [1, "super"], "roh_tua": [2, "super"], "golem_purba": [3, "super"],
+	"panglima_kelam": [4, "ultra"], "induk_pucat": [1, "ultra"], "penjaga_kristal": [2, "ultra"], "rajawali_badai": [3, "ultra"],
+	"naga_purba": [4, "ultra"],
 }
 ## Monster super rare tiap wilayah (awalan nama tabel pertemuan) dan peluangnya ikut muncul.
 const SUPER_BY_TABLE := {"lembah": "lendir_emas", "kabut": "mata_kabut", "abu": "kura_magma", "kastil": "peti_terkutuk"}
@@ -246,13 +248,32 @@ const STAT_LABELS := {"max_hp": "HP", "max_mp": "MP", "atk": "ATK", "defense": "
 ##   common  seperti biasa; dijual pandai besi
 ##   rare    stat sedikit lebih tinggi dan peluang mendapat sifat saat ditempa lebih besar; dijual mahal
 ##   ultra   stat lebih tinggi lagi dan sudah membawa satu sifat sejak didapat; hadiah side quest
+##   legend  senjata pusaka bernama, satu per tokoh, dengan efek unik (lihat LEGEND_WEAPONS); hadiah quest sulit
 ## rank = urutan; bonus = tambahan stat (bagian dari stat dasar, minimal sebesar rank);
 ## price = pengali harga; trait_gain = tambahan peluang mendapat sifat saat ditempa.
 const GEAR_RARITIES := {
 	"common": {"name": "Common", "color": "d8dce4", "rank": 0, "bonus": 0.0, "price": 1.0, "trait_gain": 0.0},
 	"rare": {"name": "Rare", "color": "6ab0ff", "rank": 1, "bonus": 0.2, "price": 2.5, "trait_gain": 0.15},
 	"ultra": {"name": "Ultra Rare", "color": "ffb347", "rank": 2, "bonus": 0.4, "price": 2.5, "trait_gain": 0.15},
+	"legend": {"name": "Legend", "color": "ff6a8a", "rank": 3, "bonus": 0.6, "price": 2.5, "trait_gain": 0.15},
 }
+## Senjata Legend: satu per tokoh (senjata tingkat 3 ber-rarity legend), dengan nama sendiri dan efek unik.
+##   double_strike  serangan fisik berpeluang menebas sekali lagi dengan separuh kekuatan
+##   heal_boost     penyembuhan lebih kuat
+##   mp_saver       semua jurus memakai MP lebih sedikit
+##   first_strike   selalu bergerak paling dulu tiap ronde, dan peluang kritikal naik
+const LEGEND_WEAPONS := {
+	"arlen": {"name": "Pedang Fajar", "effect": "double_strike",
+		"desc": "Serangan fisik berpeluang 30% menebas sekali lagi dengan separuh kekuatan."},
+	"mira": {"name": "Tongkat Cahaya Abadi", "effect": "heal_boost", "desc": "Penyembuhan 35% lebih kuat."},
+	"selene": {"name": "Tongkat Bintang Jatuh", "effect": "mp_saver", "desc": "Semua jurus memakai MP 30% lebih sedikit."},
+	"kael": {"name": "Busur Angin Timur", "effect": "first_strike",
+		"desc": "Selalu bergerak paling dulu di tiap ronde, dan peluang kritikal +10%."},
+}
+const LEGEND_DOUBLE_CHANCE := 0.3
+const LEGEND_HEAL_BOOST := 1.35
+const LEGEND_MP_FACTOR := 0.7
+const LEGEND_CRIT_BONUS := 0.1
 ## Rarity yang dijual pandai besi.
 const SHOP_RARITIES := ["common", "rare"]
 
@@ -368,6 +389,18 @@ const ENEMIES := {
 	"golem_purba": {"name": "Golem Purba", "hp": 1044, "mp": 40, "atk": 62, "defense": 26, "mag": 0, "agi": 5,
 		"xp": 220, "gold": 250, "skills": ["hantaman_batu", "kulit_batu", "hantaman_bumi"], "immune": ["poison", "slow"], "boss": true,
 		"sprite": "golem_batu", "tint": "ffd08a"},
+	# --- Bos quest sulit (satu per tokoh) dan bos super setelah tamat (lihat Quests). Punya gambar sendiri. ---
+	"panglima_kelam": {"name": "Panglima Kelam", "hp": 1564, "mp": 60, "atk": 66, "defense": 24, "mag": 0, "agi": 14,
+		"xp": 500, "gold": 400, "skills": ["tebasan_gelap", "sumpah_perang", "tebasan_kegelapan"], "immune": ["slow"], "boss": true},
+	"induk_pucat": {"name": "Induk Pucat", "hp": 2025, "mp": 80, "atk": 75, "defense": 16, "mag": 32, "agi": 12,
+		"xp": 500, "gold": 400, "skills": ["gigitan_racun", "jaring_raksasa", "semburan_racun"], "immune": ["poison", "slow"], "boss": true},
+	"penjaga_kristal": {"name": "Penjaga Kristal", "hp": 2320, "mp": 120, "atk": 67, "defense": 30, "mag": 54, "agi": 8,
+		"xp": 500, "gold": 400, "skills": ["api_hitam", "badai_kegelapan", "kulit_batu"], "immune": ["burn", "poison"], "boss": true},
+	"rajawali_badai": {"name": "Rajawali Badai", "hp": 2080, "mp": 60, "atk": 89, "defense": 16, "mag": 0, "agi": 26,
+		"xp": 500, "gold": 400, "skills": ["cakar_tajam", "jeritan", "serangan_buas"], "immune": ["slow"], "boss": true},
+	"naga_purba": {"name": "Naga Purba", "hp": 3276, "mp": 300, "atk": 70, "defense": 28, "mag": 38, "agi": 14,
+		"xp": 2000, "gold": 0, "skills": ["semburan_lahar", "badai_kegelapan", "auman_raja", "hantaman_bumi"], "immune": ["burn", "slow"],
+		"boss": true},
 	# --- Hutan Kabut ---
 	"laba_laba": {"name": "Laba-laba Kabut", "hp": 52, "mp": 8, "atk": 22, "defense": 8, "mag": 0, "agi": 12,
 		"xp": 16, "gold": 10, "skills": ["gigitan_racun", "jaring"], "immune": ["poison"]},
@@ -437,6 +470,11 @@ const BOSSES := {
 	"goblin_kepala": ["goblin", "goblin_kepala"],
 	"roh_tua": ["roh_kabut", "roh_tua", "roh_kabut"],
 	"golem_purba": ["kadal_bara", "golem_purba", "kadal_bara"],
+	"panglima_kelam": ["panglima_kelam", "ksatria_kelam"],
+	"induk_pucat": ["laba_laba", "induk_pucat", "laba_laba"],
+	"penjaga_kristal": ["penjaga_kristal"],
+	"rajawali_badai": ["elang_abu", "rajawali_badai", "elang_abu"],
+	"naga_purba": ["naga_purba"],
 }
 
 ## Aturan tiap sarang semi-bos di peta:
@@ -545,6 +583,14 @@ static func gear_rarity(entry: Dictionary) -> String:
 	return rarity if GEAR_RARITIES.has(rarity) else "common"
 
 
+## Data senjata Legend kalau barang ini memang senjata Legend; kosong kalau bukan.
+static func legend_of(entry: Dictionary) -> Dictionary:
+	if entry.is_empty() or gear_rarity(entry) != "legend":
+		return {}
+	var g := gear(entry.id)
+	return LEGEND_WEAPONS[g.owner] if g.slot == "weapon" else {}
+
+
 ## Harga beli sebuah perlengkapan pada rarity tertentu.
 static func gear_price(id: String, rarity: String) -> int:
 	return roundi(float(gear(id).price) * float(GEAR_RARITIES[rarity].price))
@@ -602,7 +648,9 @@ static func gear_stat_text(id: String, plus: int, rarity: String = "common") -> 
 ## Nama lengkap barang yang dipakai, mis. "Pedang Besi +2".
 static func gear_title(entry: Dictionary) -> String:
 	var plus := int(entry.get("plus", 0))
-	return gear(entry.id).name + ("" if plus == 0 else " +%d" % plus)
+	var legend := legend_of(entry)  # senjata Legend memakai namanya sendiri
+	var title: String = gear(entry.id).name if legend.is_empty() else Loc.t(legend.name)
+	return title + ("" if plus == 0 else " +%d" % plus)
 
 
 ## Biaya menempa dari `plus` ke `plus + 1`: {"gold", "mats": {id bahan: jumlah}}; kosong kalau sudah maksimal.

@@ -45,6 +45,7 @@ var _scale := {}
 ## bawaan "mix" = bergantian stat utama dan HP. "points=1" mencoba jumlah poin per level yang lain.
 ## "-- quests" menyisipkan pertarungan side quest tepat sebelum tiap dungeon (tanpa hadiahnya), untuk mengukur kesulitannya.
 var _route: Array = ROUTE.duplicate()
+var _runs := RUNS  # "-- runs=100" untuk simulasi yang lebih cepat
 var _alloc_mode := "mix"
 var _points := Db.STAT_POINTS_PER_LEVEL
 var _regen := Db.MP_REGEN  # "-- regen=0.05" untuk mencoba angka pemulihan MP lain
@@ -55,6 +56,15 @@ func _init() -> void:
 		if arg == "quests":
 			for pair: Array in [["lembah_gua", "quest:goblin_kepala"], ["kabut_sarang", "quest:roh_tua"], ["abu_kawah", "quest:golem_purba"]]:
 				_route.insert(_route.find(pair[0]), pair[1])
+			# Quest sulit setelah Raksasa Lahar (hadiahnya senjata Legend dipakai), dan bos super setelah Raja Monster.
+			var at := _route.find("boss:lahar") + 1
+			for hard: String in ["quest:panglima_kelam", "quest:induk_pucat", "quest:penjaga_kristal", "quest:rajawali_badai"]:
+				_route.insert(at, hard)
+				at += 1
+			_route.append("quest:naga_purba")
+			continue
+		if arg.begins_with("runs="):
+			_runs = int(arg.trim_prefix("runs="))
 			continue
 		if arg.begins_with("alloc="):
 			_alloc_mode = arg.trim_prefix("alloc=")
@@ -84,7 +94,7 @@ func _run(rest_every: int, geared: int) -> void:
 	var tries := {}
 	var won := {}
 	var level_at := {}
-	for i in RUNS:
+	for i in _runs:
 		var party := Db.new_party()
 		var step := 0
 		var retries := 0  # kalah = siuman di penginapan lalu mencoba tahap yang sama lagi
@@ -134,6 +144,14 @@ func _run(rest_every: int, geared: int) -> void:
 				continue
 			retries = 0
 			won[stage] = won.get(stage, 0) + 1
+			if stage.begins_with("quest:"):  # hadiah senjata Legend langsung dipakai tokohnya
+				for quest: Dictionary in Quests.LIST.values():
+					if quest.boss == stage.get_slice(":", 1) and quest.reward.has("for"):
+						for m: Battler in party:
+							if m.id == quest.reward["for"]:
+								var old: Dictionary = m.equip.get("weapon", {})
+								m.equip["weapon"] = {"id": Db.gear_id(m.id, "weapon", 3), "plus": int(old.get("plus", 0)), "trait": old.get("trait", ""), "rarity": "legend"}
+								m.recalc()
 			eng.grant_rewards()
 			step += 1
 			if DUNGEONS.has(stage):
@@ -145,9 +163,9 @@ func _run(rest_every: int, geared: int) -> void:
 			cleared += 1
 
 	print("=== %s ===" % ["Tanpa perlengkapan", "Perlengkapan wajar (+1 di semi-bos)", "Perlengkapan rajin (+3 dan sifat di semi-bos)"][geared])
-	print("  tamat sampai Raja Monster : %.0f%%" % (100.0 * cleared / RUNS))
+	print("  tamat sampai Raja Monster : %.0f%%" % (100.0 * cleared / _runs))
 	print("  rata-rata ronde per battle: %.1f" % (float(rounds_sum) / battles))
-	print("  rata-rata kalah per permainan: %.1f" % (float(defeats) / RUNS))
+	print("  rata-rata kalah per permainan: %.1f" % (float(defeats) / _runs))
 	for stage: String in tries:
 		print("  %-14s menang %4d/%4d (%3.0f%%)   level Arlen rata-rata %.1f" % [stage, won.get(stage, 0), tries[stage],
 			100.0 * won.get(stage, 0) / tries[stage], level_at[stage] / tries[stage]])
@@ -177,7 +195,8 @@ func _equip(party: Array, tier: int, plus: int) -> void:
 	for m: Battler in party:
 		for slot: String in Db.GEAR_SLOTS:
 			var id := Db.gear_id(m.id, slot, tier)
-			m.equip[slot] = {"id": id, "plus": plus, "trait": Db.trait_pool(id)[0] if plus >= 3 else ""}
+			m.equip[slot] = {"id": id, "plus": plus, "trait": Db.trait_pool(id)[0] if plus >= 3 else "",
+				"rarity": Db.gear_rarity(m.equip.get(slot, {}))}
 		m.recalc()
 		m.full_restore()
 
@@ -216,7 +235,7 @@ func _policy(eng: BattleEngine, a: Battler) -> Dictionary:
 	var offensive: Array = []
 	for s: String in a.skills:
 		var sk: Dictionary = Db.SKILLS[s]
-		if a.mp < sk.mp:
+		if a.mp < a.skill_cost(s):
 			continue
 		if sk.kind == "heal" and float(hurt.hp) / hurt.max_hp < 0.5:
 			return {"actor": a, "kind": "skill", "skill": s, "target": hurt}

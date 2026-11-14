@@ -135,6 +135,9 @@ func _slot(m: Battler, slot: String) -> Button:
 		Db.entry_stat_text(entry)]
 	var trait_text := Db.trait_text(entry)
 	text += Loc.t("\nSifat: %s") % trait_text if trait_text != "" else Loc.t("\nBelum punya sifat. Menempa berpeluang memberinya sifat.")
+	var legend := Db.legend_of(entry)
+	if not legend.is_empty():
+		text += "\n" + Loc.t(legend.desc)
 	return _cell(GearIcon.gear(entry), text)
 
 

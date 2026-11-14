@@ -115,6 +115,20 @@ func points_left() -> int:
 	return points_total() - points_spent()
 
 
+## Efek unik senjata Legend yang sedang dipakai (lihat Db.LEGEND_WEAPONS); kosong kalau tidak ada.
+func legend_effect() -> String:
+	var legend := Db.legend_of(equip.get("weapon", {}))
+	return "" if legend.is_empty() else String(legend.effect)
+
+
+## MP yang dipakai sebuah jurus oleh petarung ini.
+func skill_cost(skill_id: String) -> int:
+	var cost := int(Db.SKILLS[skill_id].mp)
+	if legend_effect() == "mp_saver":
+		cost = max(1, roundi(cost * Db.LEGEND_MP_FACTOR))
+	return cost
+
+
 ## Sifat perlengkapan di sebuah slot: {"status", "chance"}; kosong kalau tidak ada.
 func gear_trait(slot: String) -> Dictionary:
 	var entry: Dictionary = equip.get(slot, {})

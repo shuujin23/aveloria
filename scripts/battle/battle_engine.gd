@@ -114,7 +114,10 @@ func enemy_command(e: Battler) -> Dictionary:
 func round_order() -> Array:
 	var keyed: Array = []
 	for b: Battler in living(party + enemies):
-		keyed.append({"who": b, "key": b.stat("agi") * rng.randf_range(0.75, 1.25)})
+		var key := b.stat("agi") * rng.randf_range(0.75, 1.25)
+		if b.legend_effect() == "first_strike":  # Busur Angin Timur: selalu paling dulu
+			key += 100000.0
+		keyed.append({"who": b, "key": key})
 	keyed.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.key > b.key)
 	var out: Array = []
 	for k: Dictionary in keyed:
@@ -163,6 +166,7 @@ func execute(cmd: Dictionary) -> Array:
 			if target != null:
 				lines.append(Loc.t("%s menyerang %s!") % [actor.display_name, target.display_name])
 				_phys_hit(actor, target, 1.0, 0.0, lines)
+				_second_strike(actor, target, 1.0, lines)
 				_weapon_nerf(actor, target, lines)
 				_gear_buff(actor, "weapon", lines)
 		"skill":
@@ -321,10 +325,11 @@ func _retarget(target: Variant, pool: Array) -> Battler:
 func _use_skill(actor: Battler, skill_id: String, wanted: Variant, lines: Array) -> void:
 	var sk: Dictionary = Db.SKILLS[skill_id]
 	lines.append(Loc.t("%s menggunakan %s!") % [actor.display_name, Loc.t(sk.name)])
-	if actor.mp < sk.mp:
+	var cost := actor.skill_cost(skill_id)
+	if actor.mp < cost:
 		lines.append(Loc.t("Tetapi MP tidak cukup!"))
 		return
-	actor.mp -= sk.mp
+	actor.mp -= cost
 
 	var targets: Array = []
 	match sk.target:
@@ -345,6 +350,7 @@ func _use_skill(actor: Battler, skill_id: String, wanted: Variant, lines: Array)
 		match sk.kind:
 			"phys":
 				_phys_hit(actor, t, sk.power, sk.get("crit", 0.0), lines)
+				_second_strike(actor, t, sk.power, lines)
 				_inflict(sk, t, lines)
 				_weapon_nerf(actor, t, lines)
 			"magic":
@@ -354,6 +360,8 @@ func _use_skill(actor: Battler, skill_id: String, wanted: Variant, lines: Array)
 				_weapon_nerf(actor, t, lines)
 			"heal":
 				var amount := int((float(sk.power) + actor.stat("mag") * 0.5) * rng.randf_range(0.9, 1.1))
+				if actor.legend_effect() == "heal_boost":  # Tongkat Cahaya Abadi
+					amount = int(amount * Db.LEGEND_HEAL_BOOST)
 				amount = min(amount, t.max_hp - t.hp)
 				t.hp += amount
 				lines.append(Loc.t("HP %s pulih %d.") % [t.display_name, amount])
@@ -389,12 +397,22 @@ func _inflict(sk: Dictionary, target: Battler, lines: Array) -> void:
 func _phys_hit(actor: Battler, target: Battler, power: float, crit_bonus: float, lines: Array) -> void:
 	var raw := actor.stat("atk") * power
 	var dmg: float
+	if actor.legend_effect() == "first_strike":
+		crit_bonus += Db.LEGEND_CRIT_BONUS
 	if rng.randf() < CRIT_CHANCE + crit_bonus:
 		lines.append(Loc.t("Serangan kritikal!"))
 		dmg = raw * 1.5
 	else:
 		dmg = raw - target.stat("defense") * 0.5
 	_apply_damage(target, dmg * rng.randf_range(0.85, 1.15), lines)
+
+
+## Pedang Fajar: serangan fisik berpeluang menebas sekali lagi dengan separuh kekuatan.
+func _second_strike(actor: Battler, target: Battler, power: float, lines: Array) -> void:
+	if actor.legend_effect() != "double_strike" or not target.is_alive() or rng.randf() >= Db.LEGEND_DOUBLE_CHANCE:
+		return
+	lines.append(Loc.t("%s menebas sekali lagi!") % actor.display_name)
+	_phys_hit(actor, target, power * 0.5, 0.0, lines)
 
 
 func _apply_damage(target: Battler, amount: float, lines: Array) -> void:
