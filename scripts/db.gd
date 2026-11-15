@@ -403,7 +403,7 @@ const SKILL_FX := {
 	"hantaman_bumi": "quake",
 	"hantaman_penghancur": "heavy_slash", "tebasan_pelumpuh": "heavy_slash", "tekad_baja": "buff_self", "pekik_gentar": "debuff",
 	"badai_api": "lava", "meteor": "fire", "tombak_es": "light", "racun_jiwa": "spore", "kabut_pelemah": "debuff",
-	"tantang": "buff_self", "penjara_es": "ice_storm", "kebangkitan": "heal", "panah_beruntun": "arrow",
+	"tantang": "buff_self", "penjara_es": "ice_prison", "kebangkitan": "heal", "panah_beruntun": "arrow",
 	"penyucian": "heal", "sinar_penghakiman": "heal_all", "panah_tembus": "arrow", "panah_api": "arrow", "panah_angin": "arrow",
 	"gigitan_racun": "bite", "jaring": "debuff", "lidah_api": "fire", "jaring_raksasa": "debuff", "semburan_racun": "spore",
 	"gigitan_bara": "bite", "cakar_tajam": "bite", "hantaman_batu": "heavy_slash", "kulit_batu": "buff_self", "semburan_lahar": "lava",

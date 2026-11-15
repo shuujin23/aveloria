@@ -23,7 +23,7 @@ const TILE_HALF := Vector2(48, 24)  # setengah ukuran petak di layar
 
 # Jenis animasi -> efek suara saat aksi dimulai (kunci di Audio.SFX).
 const FX_SOUND := {"attack": "swing", "heavy_slash": "swing", "spin": "swing", "bite": "bite", "fire": "fire",
-	"ice_storm": "ice", "light": "magic", "arrow": "arrow", "arrow_rain": "arrow", "heal": "heal", "heal_all": "heal",
+	"ice_storm": "ice", "ice_prison": "magic", "light": "magic", "arrow": "arrow", "arrow_rain": "arrow", "heal": "heal", "heal_all": "heal",
 	"bless": "buff", "rally": "buff", "debuff": "debuff", "spore": "slime", "quake": "quake", "guard": "guard",
 	"lava": "fire", "dark": "magic"}
 
@@ -836,6 +836,16 @@ func _play_fx(cmd: Dictionary, targets: Array) -> void:
 				_ring(_home(t), Color("e8f6ff"), 50.0)
 			_shake(5.0, 0.3)
 			await _wait(0.3)
+		"ice_prison":  # satu sasaran: kristal es tumbuh dari tanah mengurungnya, lalu membeku
+			_tint_to(Color(0.4, 0.68, 1.0, 0.16))
+			await _hop(actor)
+			_ring(_home(first), Color("bfe6ff"), 60.0)
+			_ice_cage(_home(first), float(_units[first].height))
+			await _wait(0.34)
+			Audio.sfx("ice")
+			_burst(_center(first), Color("e8f6ff"), 12, 120.0, 4.0, Vector2(0, -60))
+			_shake(4.0, 0.2)
+			await _wait(0.3)
 		"arrow_rain":  # langit menggelap, hujan panah
 			_tint_to(Color(0.08, 0.08, 0.2, 0.4))
 			await _hop(actor)
@@ -980,6 +990,35 @@ func _ring(pos: Vector2, color: Color, radius: float) -> void:
 	var tween := create_tween().set_parallel()
 	tween.tween_property(ring, "scale", Vector2.ONE, 0.35).set_ease(Tween.EASE_OUT)
 	tween.tween_property(ring, "modulate:a", 0.0, 0.35)
+
+
+## Kurungan es: kristal runcing tumbuh dari tanah di sekeliling kaki sasaran, bertahan sebentar, lalu memudar.
+func _ice_cage(foot: Vector2, height: float) -> void:
+	var tall: float = clampf(height * 1.05, 60.0, 150.0)
+	# [geser x, geser y, lebar, tinggi relatif]: tiga di belakang (lebih tinggi), empat di depan.
+	var spikes: Array = [[-30, -8, 11, 0.9], [0, -12, 13, 1.0], [30, -8, 11, 0.9],
+		[-42, 4, 10, 0.62], [-15, 10, 12, 0.74], [15, 10, 12, 0.74], [42, 4, 10, 0.62]]
+	for i in spikes.size():
+		var s: Array = spikes[i]
+		var w := float(s[2])
+		var h := tall * float(s[3])
+		var crystal := Node2D.new()
+		crystal.position = foot + Vector2(float(s[0]), float(s[1]))
+		var lit := Polygon2D.new()  # sisi terang
+		lit.polygon = PackedVector2Array([Vector2(-w, 0), Vector2(0, 0), Vector2(0, -h), Vector2(-w * 0.55, -h * 0.72)])
+		lit.color = Color(0.86, 0.96, 1.0, 0.85)
+		var shade := Polygon2D.new()  # sisi gelap
+		shade.polygon = PackedVector2Array([Vector2(0, 0), Vector2(w, 0), Vector2(w * 0.55, -h * 0.72), Vector2(0, -h)])
+		shade.color = Color(0.42, 0.72, 0.95, 0.85)
+		crystal.add_child(lit)
+		crystal.add_child(shade)
+		crystal.scale = Vector2(1.0, 0.0)
+		_add_fx(crystal, 1.1)
+		var tween := create_tween()
+		tween.tween_interval(i * 0.03)
+		tween.tween_property(crystal, "scale:y", 1.0, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tween.tween_interval(0.45)
+		tween.tween_property(crystal, "modulate:a", 0.0, 0.25)
 
 
 func _beam(foot: Vector2, color: Color) -> void:
