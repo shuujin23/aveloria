@@ -732,8 +732,8 @@ func _open_menu() -> void:
 		{"text": Loc.t("Jurnal"), "cb": func() -> void:
 			_quests_from_menu = true
 			_open_quests()},
-		{"text": Loc.t("Simpan permainan"), "cb": _menu_save},
-		{"text": Loc.t("Muat simpanan terakhir"), "cb": _menu_load, "disabled": not Game.has_save()},
+		{"text": Loc.t("Simpan permainan"), "cb": func() -> void: _pick_slot(true)},
+		{"text": Loc.t("Muat simpanan"), "cb": func() -> void: _pick_slot(false), "disabled": Game.used_slots().is_empty()},
 		{"text": Loc.label(), "cb": func() -> void:  # ganti bahasa lalu muat ulang peta supaya semua tulisan ikut
 			Loc.toggle()
 			get_tree().change_scene_to_file(Game.WORLD_SCENE)},
@@ -748,16 +748,44 @@ func _close_menu() -> void:
 	_busy = false
 
 
-func _menu_save() -> void:
+## Daftar slot simpanan di menu: saving = pilih slot tujuan menyimpan; kalau tidak, pilih simpanan yang dimuat.
+func _pick_slot(saving: bool) -> void:
+	var items: Array = []
+	for i in Game.SAVE_SLOTS:
+		var entry := {"text": Game.slot_label(i)}
+		if saving:
+			entry["cb"] = func() -> void: _menu_save(i)
+		else:
+			entry["cb"] = func() -> void: _menu_load(i)
+			entry["disabled"] = not Game.has_save(i)
+		if i == Game.slot:
+			entry["hint"] = Loc.t("Slot yang sedang dipakai. Menginap di penginapan juga menyimpan ke slot ini.")
+		elif saving and Game.has_save(i):
+			entry["hint"] = Loc.t("Simpanan di slot ini akan tertimpa.")
+		else:
+			entry["hint"] = ""
+		items.append(entry)
+	items.append({"text": Loc.t("Kembali"), "cb": _open_menu, "hint": ""})
+	_fill_menu(Loc.t("Simpan ke slot mana?") if saving else Loc.t("Muat simpanan yang mana?"), items,
+		Loc.t("Slot yang sedang dipakai: Slot %d") % (Game.slot + 1), Game.slot)
+
+
+## Simpan ke sebuah slot (index -1 = slot yang sedang dipakai); slot itu lalu menjadi slot yang dipakai.
+func _menu_save(index: int = -1) -> void:
+	var before: int = Game.slot
+	if index >= 0:
+		Game.slot = index
 	var saved := Game.save_game()
 	if saved:
 		Audio.sfx("save")
+	else:
+		Game.slot = before
 	_close_menu()
-	_show_message(Loc.t("Permainan disimpan.") if saved else Loc.t("Gagal menyimpan permainan."))
+	_show_message(Loc.t("Permainan disimpan di Slot %d.") % (Game.slot + 1) if saved else Loc.t("Gagal menyimpan permainan."))
 
 
-func _menu_load() -> void:
-	if Game.load_game():
+func _menu_load(index: int = -1) -> void:
+	if Game.load_game(index):
 		get_tree().change_scene_to_file(Game.WORLD_SCENE)
 	else:
 		_close_menu()

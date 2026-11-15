@@ -291,3 +291,10 @@ Belum dimainkan dengan tangan; diverifikasi lewat tes otomatis (dua bahasa) dan 
 - Selama quest berjalan muncul Gerobak Rampasan (timur sarang, tepi jalan) dan Gong Penjaga (barat sarang). Bawa tong madu (`q_perampok_bait`), taruh dan pukul gong (`q_perampok_sneak`), lalu injak sarang: pilih menyelinap, bertarung, atau mundur.
 - Menyelinap mencatat `q_perampok_got` dan memberi 45 XP (sama dengan XP Goblin Kepala) lewat langkah `{"do": "xp"}` / `Game.grant_xp()`; tanpa emas dan bahan dari monster. Penanda `goblin_kepala` tidak dipalsukan: gambar sarang tetap "berpenghuni".
 - `Quests.state()` menganggap tujuan tercapai kalau penjaga kalah **atau** `q_<id>_got` ada. Hadiah Garrick tetap satu kali (`q_perampok_done`), dan simpanan lama yang bosnya sudah kalah tetap bisa menagih.
+
+## Slot simpanan
+
+- Tiga slot (`Game.SAVE_SLOTS`). Slot 1 memakai file lama `save.json`, jadi simpanan dari versi satu-slot otomatis menjadi Slot 1; Slot 2 dan 3 memakai `save_2.json` dan `save_3.json` (`Game.slot_path()`).
+- `Game.slot` = slot yang sedang dipakai. `save_game()` (termasuk simpan otomatis di penginapan, altar, dan saat tamat) selalu menulis ke slot itu; `load_game(i)` memuat slot `i` dan menjadikannya slot yang dipakai.
+- Layar judul: Lanjutkan langsung memuat kalau hanya ada satu simpanan, dan menampilkan daftar slot kalau lebih. Permainan Baru langsung mulai di Slot 1 kalau belum ada simpanan; kalau sudah ada, pemain memilih slot (slot berisi butuh tekan kedua, dan baru tertimpa saat menyimpan).
+- Menu Esc: "Simpan permainan" dan "Muat simpanan" membuka daftar slot; slot yang dipilih untuk menyimpan menjadi slot yang dipakai.

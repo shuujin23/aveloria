@@ -8,7 +8,8 @@ const BATTLE_SCENE := "res://scenes/battle.tscn"
 const ENDING_SCENE := "res://scenes/ending.tscn"
 const START_MAP := "desa"
 const START_TILE := Vector2i(7, 10)  # di depan penginapan; juga titik kembali setelah kalah
-const SAVE_VERSION := 4  # versi 1 (sebelum perlengkapan), 2 (sebelum peta wilayah diperbesar), dan 3 (sebelum pembuka dengan kurir) tetap bisa dimuat
+const SAVE_SLOTS := 3  # jumlah slot simpanan
+const SAVE_VERSION := 4 # versi 1 (sebelum perlengkapan), 2 (sebelum peta wilayah diperbesar), dan 3 (sebelum pembuka dengan kurir) tetap bisa dimuat
 ## Peta yang bentuknya berubah di versi simpanan 3: posisi lama di peta ini tidak berlaku lagi.
 const RESIZED_MAPS := ["dunia", "abu"]
 
@@ -33,9 +34,12 @@ var world_message := ""  # pesan singkat yang ditampilkan saat kembali ke peta
 ## isi tas. Dipakai "Coba lagi" setelah kalah dari bos; lihat retry_battle().
 var _battle_snapshot := {}
 
-## Lokasi file simpanan (satu slot). Di Windows: %APPDATA%\Godot\app_userdata\Aveloria\save.json.
-## Uji otomatis menggantinya supaya tidak menimpa simpanan pemain.
+## Lokasi file simpanan slot pertama. Di Windows: %APPDATA%\Godot\app_userdata\Aveloria\save.json.
+## Slot berikutnya memakai nama yang sama berakhiran _2, _3 (lihat slot_path()), sehingga simpanan
+## dari versi satu-slot otomatis menjadi Slot 1. Uji otomatis menggantinya supaya tidak menimpa simpanan pemain.
 var save_path := "user://save.json"
+## Slot yang sedang dipakai (0 = Slot 1): tujuan save_game(), termasuk simpan otomatis di penginapan.
+var slot := 0
 
 
 func _ready() -> void:
@@ -423,8 +427,43 @@ func respec_skills(m: Battler) -> bool:
 
 # ---------------------------------------------------------------- simpan dan muat
 
-func has_save() -> bool:
-	return FileAccess.file_exists(save_path)
+## File simpanan sebuah slot (0 = Slot 1). Slot pertama memakai save_path apa adanya.
+func slot_path(index: int) -> String:
+	return save_path if index <= 0 else "%s_%d.%s" % [save_path.get_basename(), index + 1, save_path.get_extension()]
+
+
+## Apakah sebuah slot berisi simpanan; index -1 = slot yang sedang dipakai.
+func has_save(index: int = -1) -> bool:
+	return FileAccess.file_exists(slot_path(slot if index < 0 else index))
+
+
+## Slot-slot yang berisi simpanan.
+func used_slots() -> Array:
+	var used: Array = []
+	for i in SAVE_SLOTS:
+		if has_save(i):
+			used.append(i)
+	return used
+
+
+## Slot yang simpanannya paling baru ditulis; -1 kalau belum ada simpanan sama sekali.
+func latest_slot() -> int:
+	var best := -1
+	var best_time := -1
+	for i: int in used_slots():
+		var time := int(FileAccess.get_modified_time(slot_path(i)))
+		if time > best_time:
+			best = i
+			best_time = time
+	return best
+
+
+## Tulisan sebuah slot untuk daftar pilihan: "Slot 2  ·  Arlen Lv 4 ..." atau "Slot 2  ·  kosong".
+func slot_label(index: int) -> String:
+	if not has_save(index):
+		return Loc.t("Slot %d  ·  kosong") % (index + 1)
+	var summary := save_summary(index)
+	return Loc.t("Slot %d  ·  %s") % [index + 1, summary if summary != "" else Loc.t("tidak bisa dibaca")]
 
 
 ## Simpan keadaan saat ini ke file. Mengembalikan false kalau file tidak bisa ditulis.
@@ -447,7 +486,7 @@ func save_game() -> bool:
 		"respawn_map": respawn_map,
 		"respawn_tile": [respawn_tile.x, respawn_tile.y],
 	}
-	var file := FileAccess.open(save_path, FileAccess.WRITE)
+	var file := FileAccess.open(slot_path(slot), FileAccess.WRITE)
 	if file == null:
 		push_warning("Gagal menulis simpanan: %s" % error_string(FileAccess.get_open_error()))
 		return false
@@ -457,8 +496,8 @@ func save_game() -> bool:
 
 
 ## Ringkasan simpanan untuk layar judul, mis. "Arlen Lv 4 · Lembah Verdane". Kosong kalau tidak ada.
-func save_summary() -> String:
-	var data := _read_save()
+func save_summary(index: int = -1) -> String:
+	var data := _read_save(slot if index < 0 else index)
 	if data.is_empty():
 		return ""
 	var members: Array = data.get("party", [])
@@ -469,9 +508,11 @@ func save_summary() -> String:
 	return Loc.t("%s Lv %d  ·  %d anggota  ·  %s") % [Db.CHARACTERS[lead.id].name, int(lead.level), members.size(), Loc.t(place)]
 
 
-## Muat simpanan. Mengembalikan false (dan tidak mengubah apa pun) kalau file tidak ada atau rusak.
-func load_game() -> bool:
-	var data := _read_save()
+## Muat simpanan sebuah slot (index -1 = slot yang sedang dipakai); slot itu lalu menjadi slot yang dipakai.
+## Mengembalikan false (dan tidak mengubah apa pun) kalau file tidak ada atau rusak.
+func load_game(index: int = -1) -> bool:
+	var from := slot if index < 0 else index
+	var data := _read_save(from)
 	if data.is_empty():
 		return false
 	var loaded: Array = []
@@ -572,14 +613,15 @@ func load_game() -> bool:
 		player_tile = respawn_tile
 		WorldMap.current = map_id
 		world_message = Loc.t("Peta wilayah kini lebih luas. Party kembali ke penginapan terakhir.")
+	slot = from
 	return true
 
 
-func _read_save() -> Dictionary:
-	if not has_save():
+func _read_save(index: int) -> Dictionary:
+	if not has_save(index):
 		return {}
 	var json := JSON.new()  # parse() mengembalikan kode error, tanpa mencetak error ke konsol
-	if json.parse(FileAccess.get_file_as_string(save_path)) != OK:
+	if json.parse(FileAccess.get_file_as_string(slot_path(index))) != OK:
 		return {}
 	var parsed: Variant = json.data
 	if not (parsed is Dictionary) or not (int(parsed.get("version", 0)) in [1, 2, 3, SAVE_VERSION]):

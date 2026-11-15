@@ -246,6 +246,33 @@ func _initialize() -> void:
 		normal += hero.hp - 1
 		plain_healer.mp = plain_healer.max_mp
 	_expect(float(boosted) / normal > 1.25, "Tongkat Cahaya Abadi: penyembuhan lebih kuat (%.2fx)" % (float(boosted) / normal))
+
+	# --- slot simpanan ---
+	game.new_game()
+	game.slot = 0
+	for i in game.SAVE_SLOTS:
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(game.slot_path(i)))
+	_expect(game.SAVE_SLOTS == 3 and game.slot_path(0) == game.save_path and game.slot_path(1) == "user://test_save_2.json"
+		and game.used_slots().is_empty() and game.latest_slot() == -1, "tiga slot; Slot 1 memakai file simpanan lama, dan semuanya kosong di awal")
+	game.gold = 11
+	game.save_game()
+	game.slot = 2
+	game.gold = 33
+	game.save_game()
+	_expect(game.used_slots() == [0, 2] and not game.has_save(1) and game.latest_slot() >= 0, "menyimpan hanya mengisi slot yang sedang dipakai")
+	_expect(game.slot_label(1) == Loc.t("Slot %d  ·  kosong") % 2 and game.slot_label(0).begins_with("Slot 1") and game.slot_label(0).contains("Arlen"),
+		"tulisan slot: kosong, atau ringkasan simpanannya")
+	game.new_game()
+	_expect(game.slot == 2, "permainan baru tidak mengganti slot dengan sendirinya")
+	_expect(game.load_game(0) and game.gold == 11 and game.slot == 0, "memuat Slot 1: isinya kembali dan slot itu yang kini dipakai")
+	_expect(game.load_game(2) and game.gold == 33 and game.slot == 2, "memuat Slot 3: isinya berbeda dari Slot 1")
+	_expect(not game.load_game(1) and game.slot == 2 and game.gold == 33, "slot kosong tidak bisa dimuat dan tidak mengubah apa pun")
+	game.gold = 44
+	game.save_game()
+	_expect(game.load_game(0) and game.gold == 11 and game.load_game(2) and game.gold == 44, "menyimpan di Slot 3 tidak menyentuh Slot 1")
+	for i in game.SAVE_SLOTS:
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(game.slot_path(i)))
+	game.slot = 0
 	print("HASIL: %s" % ("ADA YANG GAGAL" if _failed else "SEMUA LOLOS"))
 	quit(1 if _failed else 0)
 

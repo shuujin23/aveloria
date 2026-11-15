@@ -19,7 +19,8 @@ func _initialize() -> void:
 
 	# Uji memakai file simpanan sendiri supaya simpanan pemain tidak tersentuh.
 	_game.save_path = "user://test_save.json"
-	DirAccess.remove_absolute(ProjectSettings.globalize_path(_game.save_path))
+	for i in _game.SAVE_SLOTS:
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(_game.slot_path(i)))
 
 	_check_maps()
 
@@ -447,6 +448,41 @@ func _initialize() -> void:
 	current_scene.call("_on_continue")
 	await create_timer(0.5).timeout
 	_expect(current_scene.name == "World" and not current_scene.get("_busy") and not (current_scene.get("_npc_at") as Dictionary).has(Vector2i(18, 3)), "Lanjutkan membuka peta tanpa Mira di tepi hutan")
+
+	# --- Beberapa slot simpanan ---
+	current_scene.call("_open_menu")
+	current_scene.call("_pick_slot", true)
+	await create_timer(0.1).timeout
+	await _shot("menu_slot.png")
+	_game.gold = 456
+	current_scene.call("_menu_save", 1)
+	_expect(_game.slot == 1 and _game.has_save(1) and _game.used_slots() == [0, 1] and not current_scene.get("_menu_open"), "menu Simpan: memilih Slot 2 menyimpan di sana dan menjadikannya slot yang dipakai")
+	change_scene_to_file("res://scenes/title.tscn")
+	await create_timer(0.3).timeout
+	current_scene.call("_on_continue")
+	await create_timer(0.1).timeout
+	_expect(current_scene.name == "Title" and (current_scene.get("_slot_box") as Control).visible, "layar judul: dengan dua simpanan, Lanjutkan menampilkan daftar slot")
+	await _shot("judul_slot.png")
+	current_scene.call("_on_slot", 0, false)
+	await create_timer(0.5).timeout
+	_expect(current_scene.name == "World" and _game.slot == 0 and _game.gold == 123, "memilih Slot 1 memuat simpanan pertama")
+	change_scene_to_file("res://scenes/title.tscn")
+	await create_timer(0.3).timeout
+	current_scene.call("_on_new_game")
+	await create_timer(0.1).timeout
+	_expect(current_scene.name == "Title" and (current_scene.get("_slot_box") as Control).visible, "Permainan Baru saat sudah ada simpanan: pilih slot dulu")
+	current_scene.call("_on_slot", 1, true)
+	await create_timer(0.1).timeout
+	_expect(current_scene.name == "Title", "slot berisi tidak langsung ditimpa: butuh tekan kedua")
+	current_scene.call("_on_slot", 2, true)
+	await create_timer(0.5).timeout
+	_expect(current_scene.name == "World" and _game.slot == 2 and _game.party.size() == 1 and _game.has_save(1) and not _game.has_save(2),
+		"slot kosong langsung dipakai untuk permainan baru; simpanan lain tidak tersentuh")
+	await _skip_dialog()
+	_expect(_game.load_game(1) and _game.gold == 456, "simpanan Slot 2 masih utuh")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(_game.slot_path(1)))
+	_expect(_game.load_game(0) and _game.slot == 0, "kembali ke Slot 1 untuk sisa uji")
+	await _open_world(_game.map_id, _game.player_tile)
 
 	var file := FileAccess.open(_game.save_path, FileAccess.WRITE)
 	file.store_string("{ rusak")

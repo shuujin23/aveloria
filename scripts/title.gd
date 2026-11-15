@@ -1,12 +1,15 @@
 extends Control
 ## Layar judul: Lanjutkan (kalau ada simpanan), Permainan Baru, pilihan bahasa, Keluar.
+## Simpanan ada di beberapa slot (Game.SAVE_SLOTS); daftar slot muncul saat perlu memilih.
 
 const SPRITES := "res://assets/sprites/"
 const HEROES := ["selene", "arlen", "mira", "kael"]
 
 var _continue: Button
 var _new_game: Button
-var _confirming := false
+var _menu: VBoxContainer
+var _slot_box: VBoxContainer
+var _confirm_slot := -1  # slot berisi yang sedang menunggu tekan kedua sebelum ditimpa permainan baru
 var _update_button: Button  # muncul di pojok kanan atas kalau ada versi lebih baru
 
 
@@ -52,10 +55,23 @@ func _ready() -> void:
 	menu.add_theme_constant_override("separation", 8)
 	add_child(menu)
 
+	_menu = menu
+	_slot_box = VBoxContainer.new()  # daftar slot; menggantikan menu utama selagi memilih slot
+	_slot_box.anchor_left = 0.5
+	_slot_box.anchor_right = 0.5
+	_slot_box.offset_left = -290
+	_slot_box.offset_right = 290
+	_slot_box.offset_top = 425
+	_slot_box.add_theme_constant_override("separation", 8)
+	_slot_box.visible = false
+	add_child(_slot_box)
+
 	_continue = _add_button(menu, Loc.t("Lanjutkan"), _on_continue)
-	_continue.disabled = not Game.has_save()
-	var summary := Game.save_summary()
-	if summary != "":
+	_continue.disabled = Game.used_slots().is_empty()
+	var summary := Game.save_summary(Game.latest_slot())
+	if Game.used_slots().size() > 1:
+		_continue.text = Loc.t("Lanjutkan\n%d simpanan") % Game.used_slots().size()
+	elif summary != "":
 		_continue.text = Loc.t("Lanjutkan\n%s") % summary
 	_new_game = _add_button(menu, Loc.t("Permainan Baru"), _on_new_game)
 	_add_button(menu, Loc.label(), func() -> void:  # ganti bahasa lalu susun ulang layar ini
@@ -133,19 +149,83 @@ func _add_button(parent: Control, text: String, callback: Callable) -> Button:
 	return button
 
 
+## Satu simpanan: langsung dimuat. Beberapa simpanan: pemain memilih slotnya.
 func _on_continue() -> void:
-	if Game.load_game():
+	var used: Array = Game.used_slots()
+	if used.size() > 1:
+		_show_slots(false)
+	elif used.size() == 1:
+		_load_slot(used[0])
+
+
+func _load_slot(index: int) -> void:
+	if Game.load_game(index):
 		get_tree().change_scene_to_file(Game.WORLD_SCENE)
 	else:
+		_hide_slots()
 		_continue.text = Loc.t("Simpanan tidak bisa dibaca")
 		_continue.disabled = true
+		_new_game.grab_focus()
 
 
-## Kalau sudah ada simpanan, minta konfirmasi sekali lagi sebelum memulai dari awal.
+## Belum ada simpanan: langsung mulai di Slot 1. Kalau sudah ada, pemain memilih slot untuk permainan baru.
 func _on_new_game() -> void:
-	if Game.has_save() and not _confirming:
-		_confirming = true
-		_new_game.text = Loc.t("Mulai dari awal? Tekan sekali lagi\n(simpanan lama tertimpa saat menyimpan)")
-		return
+	if Game.used_slots().is_empty():
+		_start_new(0)
+	else:
+		_show_slots(true)
+
+
+func _start_new(index: int) -> void:
 	Game.new_game()
+	Game.slot = index
 	get_tree().change_scene_to_file(Game.WORLD_SCENE)
+
+
+## Tampilkan daftar slot menggantikan menu utama. for_new = memilih slot untuk permainan baru
+## (slot berisi butuh tekan kedua); kalau tidak, memilih simpanan yang dimuat (slot kosong mati).
+func _show_slots(for_new: bool) -> void:
+	_confirm_slot = -1
+	for child in _slot_box.get_children():
+		_slot_box.remove_child(child)
+		child.queue_free()
+	var head := Label.new()
+	head.text = Loc.t("Pilih slot untuk permainan baru") if for_new else Loc.t("Pilih simpanan yang dilanjutkan")
+	head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	head.add_theme_color_override("font_color", Color("ffd866"))
+	head.add_theme_constant_override("outline_size", 6)
+	head.add_theme_color_override("font_outline_color", Color("10141c"))
+	_slot_box.add_child(head)
+	var focus: Button = null
+	var latest: int = Game.latest_slot()
+	for i in Game.SAVE_SLOTS:
+		var button := _add_button(_slot_box, Game.slot_label(i), func() -> void: _on_slot(i, for_new))
+		if for_new:
+			if focus == null and not Game.has_save(i):  # tawarkan slot kosong pertama
+				focus = button
+		else:
+			button.disabled = not Game.has_save(i)
+			if i == latest:
+				focus = button
+	var back := _add_button(_slot_box, Loc.t("Kembali"), _hide_slots)
+	_menu.visible = false
+	_slot_box.visible = true
+	(focus if focus != null else back).grab_focus()
+
+
+func _hide_slots() -> void:
+	_slot_box.visible = false
+	_menu.visible = true
+	(_new_game if _continue.disabled else _continue).grab_focus()
+
+
+func _on_slot(index: int, for_new: bool) -> void:
+	if not for_new:
+		_load_slot(index)
+	elif Game.has_save(index) and _confirm_slot != index:
+		_confirm_slot = index  # slot berisi: minta tekan sekali lagi
+		for i in Game.SAVE_SLOTS:
+			(_slot_box.get_child(i + 1) as Button).text = Game.slot_label(i)
+		(_slot_box.get_child(index + 1) as Button).text = Loc.t("Slot %d berisi simpanan. Tekan sekali lagi untuk menimpanya") % (index + 1)
+	else:
+		_start_new(index)
