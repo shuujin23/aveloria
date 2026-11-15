@@ -96,6 +96,19 @@ func recalc() -> void:
 	hp = min(hp, max_hp)
 	mp = min(mp, max_mp)
 	skills = loadout.duplicate()  # yang dibawa ke pertarungan
+	immune = []  # kekebalan dari jurus pasif
+	for skill_id: String in unlocked:
+		immune.append_array(Db.SKILLS[skill_id].get("immune", []))
+
+
+## Nilai sebuah efek pasif dari jurus pasif yang sudah dibuka (0 kalau tidak punya). Monster selalu 0.
+func passive(effect: String) -> float:
+	var total := 0.0
+	for skill_id: String in unlocked:
+		var sk: Dictionary = Db.SKILLS[skill_id]
+		if sk.kind == "passive" and sk.effect == effect:
+			total += float(sk.value)
+	return total
 
 
 ## Poin jurus: yang didapat sampai level ini, yang terpakai untuk membuka jurus, dan sisanya.
@@ -127,9 +140,9 @@ func unlock(skill_id: String) -> bool:
 	if not can_unlock(skill_id):
 		return false
 	unlocked.append(skill_id)
-	if loadout.size() < Db.SKILL_SLOTS:
+	if not Db.is_passive(skill_id) and loadout.size() < Db.SKILL_SLOTS:
 		loadout.append(skill_id)
-	skills = loadout.duplicate()
+	recalc()  # jurus pasif bisa mengubah kekebalan; sekaligus menyamakan skills dengan loadout
 	return true
 
 
@@ -154,7 +167,7 @@ func default_build() -> void:
 func auto_loadout() -> void:
 	loadout = []
 	for skill_id: String in Db.CHARACTERS[id].pref:
-		if unlocked.has(skill_id) and loadout.size() < Db.SKILL_SLOTS:
+		if unlocked.has(skill_id) and not Db.is_passive(skill_id) and loadout.size() < Db.SKILL_SLOTS:
 			loadout.append(skill_id)
 	skills = loadout.duplicate()
 

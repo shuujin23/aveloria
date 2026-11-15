@@ -1029,6 +1029,17 @@ func _status_icons() -> void:
 			_px(img, 4, 6, Color("1c4a1c"))  # wajah tengkorak kecil
 			_px(img, 7, 6, Color("1c4a1c"))
 			_rect(img, 5, 8, 6, 8, Color("1c4a1c")), 0],
+		"taunt": [func(img: Image) -> void:  # perisai jingga bertanda seru: memancing serangan
+			shield.call(img, "ffb347", "c87a20")
+			_rect(img, 5, 2, 6, 6, Color.WHITE)
+			_rect(img, 5, 8, 6, 8, Color.WHITE), 0],
+		"stun": [func(img: Image) -> void:  # bintang kuning: terpaku
+			var spans := {1: [5, 6], 2: [5, 6], 3: [4, 7], 4: [1, 10], 5: [2, 9], 6: [3, 8], 7: [3, 8], 8: [2, 9], 9: [2, 3]}
+			for y: int in spans:
+				for x in range(spans[y][0], spans[y][1] + 1):
+					_px(img, x, y, Color("ffe14a"))
+			_rect(img, 8, 9, 9, 9, Color("ffe14a"))
+			_rect(img, 5, 5, 6, 6, Color("fff8c0")), 0],
 	}
 	for status_id: String in icons:
 		var img := _new(12, 12)

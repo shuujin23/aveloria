@@ -28,6 +28,11 @@ const STATUSES := {
 	"speed_up": {"name": "Cepat", "kind": "buff", "stat": "agi", "mult": 1.5, "turns": 3,
 		"cancels": "slow", "tag": "CEPAT", "color": "7fc8ff"},
 	"immunity": {"name": "Kebal", "kind": "buff", "blocks_nerf": true, "turns": 3, "tag": "KEBAL", "color": "ffe080"},
+	# Pancing: serangan monster ke satu sasaran diarahkan ke petarung ini.
+	"taunt": {"name": "Pancing", "kind": "buff", "turns": 3, "tag": "PANCING", "color": "ffb347"},
+	# Terpaku: kehilangan giliran berikutnya, lalu hilang (no_decay = tidak berkurang oleh waktu).
+	# no_boss = semi-bos dan bos kebal.
+	"stun": {"name": "Terpaku", "kind": "nerf", "turns": 1, "no_decay": true, "no_boss": true, "tag": "PAKU", "color": "ffe14a"},
 }
 
 ## Semi-bos dan bos hanya menerima separuh kerusakan dari terbakar/racun.
@@ -44,6 +49,11 @@ const MP_REGEN_DEFEND := 2.0
 #          status  -> hanya memberi efek status (lihat `status`)
 #          cleanse -> menghapus semua nerf dari sasaran, lalu memberi `status` kalau ada
 #          mp      -> power = MP yang dipulihkan (+ seperempat MAG); hanya untuk rekan lain, bukan pemakainya
+#          revive  -> membangkitkan rekan yang tumbang dengan `power` x HP maksimum
+#          passive -> jurus pasif: selalu aktif begitu dibuka, tidak memakai tempat di susunan jurus.
+#                     `effect` + `value` dibaca mesin battle lewat Battler.passive(); `immune` = daftar efek
+#                     status yang tidak mempan pada pemiliknya.
+# hits:    jumlah pukulan jurus fisik (masing-masing dihitung sendiri)
 # target:  enemy, all_enemies, ally, all_allies, self (relatif terhadap pemakai)
 # status:  id efek status yang diberikan jurus bertipe status/cleanse
 # inflict: efek status tambahan pada jurus serangan: {"status": id, "chance": 0..1}
@@ -127,6 +137,42 @@ const SKILLS := {
 	"panah_angin": {"name": "Panah Angin", "mp": 3, "target": "enemy", "kind": "phys", "power": 0.9,
 		"inflict": {"status": "slow", "chance": 0.7},
 		"desc": "Panah cepat ke satu musuh. 70% membuat Lambat."},
+	# --- Skill tree tahap 2: jurus aktif bermekanik baru ---
+	"tantang": {"name": "Tantang", "mp": 4, "target": "self", "kind": "status", "status": "taunt",
+		"desc": "Selama 3 ronde, serangan monster ke satu sasaran diarahkan ke Arlen."},
+	"penjara_es": {"name": "Penjara Es", "mp": 7, "target": "enemy", "kind": "magic", "power": 8,
+		"inflict": {"status": "stun", "chance": 0.6},
+		"desc": "Sihir es ke satu musuh. 60% membuatnya Terpaku: kehilangan giliran berikutnya. Semi-bos dan bos kebal."},
+	"kebangkitan": {"name": "Kebangkitan", "mp": 12, "target": "ally", "kind": "revive", "power": 0.4,
+		"desc": "Membangkitkan rekan yang tumbang dengan 40% HP."},
+	"panah_beruntun": {"name": "Panah Beruntun", "mp": 6, "target": "enemy", "kind": "phys", "power": 0.6, "hits": 3,
+		"desc": "Tiga panah beruntun ke satu musuh."},
+	# --- Skill tree tahap 2: jurus pasif (ujung tiap cabang) ---
+	"haus_darah": {"name": "Haus Darah", "mp": 0, "target": "self", "kind": "passive", "effect": "drain", "value": 0.12,
+		"desc": "Pasif: serangan fisik Arlen memulihkan HP-nya sebesar 12% kerusakan."},
+	"kulit_baja": {"name": "Kulit Baja", "mp": 0, "target": "self", "kind": "passive", "effect": "damage_cut", "value": 0.15,
+		"desc": "Pasif: kerusakan yang diterima Arlen berkurang 15%."},
+	"semangat_juang": {"name": "Semangat Juang", "mp": 0, "target": "self", "kind": "passive", "effect": "open_attack_up", "value": 1.0,
+		"desc": "Pasif: di awal pertarungan seluruh party mendapat ATK Naik."},
+	"bara_abadi": {"name": "Bara Abadi", "mp": 0, "target": "self", "kind": "passive", "effect": "magic_boost", "value": 0.12,
+		"desc": "Pasif: kerusakan sihir Selene 12% lebih besar."},
+	"sihir_jitu": {"name": "Sihir Jitu", "mp": 0, "target": "self", "kind": "passive", "effect": "inflict_bonus", "value": 0.2,
+		"desc": "Pasif: peluang efek status dari jurus Selene +20%."},
+	"aliran_mana": {"name": "Aliran Mana", "mp": 0, "target": "self", "kind": "passive", "effect": "mp_regen_boost", "value": 1.0,
+		"desc": "Pasif: pemulihan MP Selene tiap ronde dua kali lipat."},
+	"tangan_penyembuh": {"name": "Tangan Penyembuh", "mp": 0, "target": "self", "kind": "passive", "effect": "heal_boost", "value": 0.2,
+		"desc": "Pasif: penyembuhan Mira 20% lebih kuat."},
+	"naungan_suci": {"name": "Naungan Suci", "mp": 0, "target": "self", "kind": "passive", "effect": "open_defense_up", "value": 1.0,
+		"desc": "Pasif: di awal pertarungan seluruh party mendapat DEF Naik."},
+	"cahaya_batin": {"name": "Cahaya Batin", "mp": 0, "target": "self", "kind": "passive", "effect": "immune", "value": 1.0,
+		"immune": ["poison", "burn"],
+		"desc": "Pasif: Mira kebal Racun dan Terbakar."},
+	"mata_elang": {"name": "Mata Elang", "mp": 0, "target": "self", "kind": "passive", "effect": "crit_bonus", "value": 0.12,
+		"desc": "Pasif: peluang kritikal Kael +12%."},
+	"oportunis": {"name": "Oportunis", "mp": 0, "target": "self", "kind": "passive", "effect": "exploit", "value": 0.25,
+		"desc": "Pasif: serangan fisik Kael 25% lebih kuat terhadap musuh yang sedang terkena nerf."},
+	"langkah_ringan": {"name": "Langkah Ringan", "mp": 0, "target": "self", "kind": "passive", "effect": "dodge", "value": 0.2,
+		"desc": "Pasif: Kael 20% menghindari serangan fisik."},
 	# --- Monster ---
 	"serangan_buas": {"name": "Serangan Buas", "mp": 2, "target": "enemy", "kind": "phys", "power": 1.4, "desc": ""},
 	"spora": {"name": "Spora Beracun", "mp": 3, "target": "all_enemies", "kind": "magic", "power": 4,
@@ -354,6 +400,7 @@ const SKILL_FX := {
 	"hantaman_bumi": "quake",
 	"hantaman_penghancur": "heavy_slash", "tebasan_pelumpuh": "heavy_slash", "tekad_baja": "buff_self", "pekik_gentar": "debuff",
 	"badai_api": "lava", "meteor": "fire", "tombak_es": "light", "racun_jiwa": "spore", "kabut_pelemah": "debuff",
+	"tantang": "buff_self", "penjara_es": "ice_storm", "kebangkitan": "heal", "panah_beruntun": "arrow",
 	"penyucian": "heal", "sinar_penghakiman": "heal_all", "panah_tembus": "arrow", "panah_api": "arrow", "panah_angin": "arrow",
 	"gigitan_racun": "bite", "jaring": "debuff", "lidah_api": "fire", "jaring_raksasa": "debuff", "semburan_racun": "spore",
 	"gigitan_bara": "bite", "cakar_tajam": "bite", "hantaman_batu": "heavy_slash", "kulit_batu": "buff_self", "semburan_lahar": "lava",
@@ -362,6 +409,7 @@ const SKILL_FX := {
 }
 
 ## Skill tree: tiap tokoh punya tiga cabang; jurus dalam satu cabang dibuka berurutan dengan poin jurus.
+## Tiap cabang berisi tiga jurus aktif dan satu jurus pasif di ujungnya (lihat jenis "passive" di SKILLS).
 ## Tokoh mendapat SKILL_POINTS_PER_LEVEL poin tiap naik level. Jurus ke-n di sebuah cabang berharga n poin;
 ## jurus pertama cabang pertama (jurus awal) sudah terbuka sejak level 1 tanpa biaya.
 ## Paling banyak SKILL_SLOTS jurus yang bisa dibawa ke pertarungan (lihat Battler.loadout).
@@ -369,24 +417,24 @@ const SKILL_SLOTS := 4
 const SKILL_POINTS_PER_LEVEL := 1
 const SKILL_TREES := {
 	"arlen": [
-		{"name": "Serang", "skills": ["tebasan_kuat", "tebasan_berputar", "hantaman_penghancur"]},
-		{"name": "Bertahan", "skills": ["pasang_badan", "tebasan_pelumpuh", "tekad_baja"]},
-		{"name": "Pemimpin", "skills": ["pekik_perang", "pekik_gentar"]},
+		{"name": "Serang", "skills": ["tebasan_kuat", "tebasan_berputar", "hantaman_penghancur", "haus_darah"]},
+		{"name": "Bertahan", "skills": ["pasang_badan", "tebasan_pelumpuh", "tekad_baja", "kulit_baja"]},
+		{"name": "Pemimpin", "skills": ["pekik_perang", "pekik_gentar", "tantang", "semangat_juang"]},
 	],
 	"selene": [
-		{"name": "Api", "skills": ["bola_api", "badai_api", "meteor"]},
-		{"name": "Es", "skills": ["tombak_es", "badai_es"]},
-		{"name": "Kutukan", "skills": ["lemahkan", "racun_jiwa", "kabut_pelemah"]},
+		{"name": "Api", "skills": ["bola_api", "badai_api", "meteor", "bara_abadi"]},
+		{"name": "Es", "skills": ["tombak_es", "badai_es", "penjara_es", "sihir_jitu"]},
+		{"name": "Kutukan", "skills": ["lemahkan", "racun_jiwa", "kabut_pelemah", "aliran_mana"]},
 	],
 	"mira": [
-		{"name": "Penyembuhan", "skills": ["pulih", "pulih_massal", "salur_jiwa"]},
-		{"name": "Perlindungan", "skills": ["doa_pelindung", "berkat_suci", "penyucian"]},
-		{"name": "Cahaya", "skills": ["cahaya_suci", "sinar_penghakiman"]},
+		{"name": "Penyembuhan", "skills": ["pulih", "pulih_massal", "salur_jiwa", "tangan_penyembuh"]},
+		{"name": "Perlindungan", "skills": ["doa_pelindung", "berkat_suci", "penyucian", "naungan_suci"]},
+		{"name": "Cahaya", "skills": ["cahaya_suci", "sinar_penghakiman", "kebangkitan", "cahaya_batin"]},
 	],
 	"kael": [
-		{"name": "Bidik", "skills": ["bidik_jitu", "hujan_panah", "panah_tembus"]},
-		{"name": "Muslihat", "skills": ["panah_racun", "tipu_daya", "panah_api"]},
-		{"name": "Angin", "skills": ["langkah_angin", "panah_angin"]},
+		{"name": "Bidik", "skills": ["bidik_jitu", "hujan_panah", "panah_tembus", "mata_elang"]},
+		{"name": "Muslihat", "skills": ["panah_racun", "tipu_daya", "panah_api", "oportunis"]},
+		{"name": "Angin", "skills": ["langkah_angin", "panah_angin", "panah_beruntun", "langkah_ringan"]},
 	],
 }
 
@@ -399,22 +447,26 @@ const CHARACTERS := {
 		"base": {"hp": 34, "mp": 6, "atk": 12, "defense": 8, "mag": 2, "agi": 6},
 		"growth": {"hp": 7.0, "mp": 1.5, "atk": 2.6, "defense": 2.0, "mag": 0.4, "agi": 1.2},
 		"learn": {1: ["tebasan_kuat"], 3: ["pasang_badan"], 4: ["pekik_perang"], 5: ["tebasan_berputar"]},
-		"pref": ["tebasan_kuat", "tebasan_berputar", "pekik_perang", "hantaman_penghancur", "pasang_badan", "tebasan_pelumpuh", "pekik_gentar", "tekad_baja"]},
+		"pref": ["tebasan_kuat", "tebasan_berputar", "pekik_perang", "hantaman_penghancur", "pasang_badan", "tebasan_pelumpuh", "pekik_gentar", "tekad_baja",
+			"tantang", "haus_darah", "kulit_baja", "semangat_juang"]},
 	"selene": {"name": "Selene", "job": "Penyihir",
 		"base": {"hp": 20, "mp": 16, "atk": 5, "defense": 4, "mag": 12, "agi": 7},
 		"growth": {"hp": 4.0, "mp": 4.0, "atk": 1.0, "defense": 1.0, "mag": 2.8, "agi": 1.4},
 		"learn": {1: ["bola_api"], 2: ["lemahkan"], 3: ["tombak_es"], 4: ["badai_es"]},
-		"pref": ["bola_api", "badai_es", "lemahkan", "meteor", "badai_api", "tombak_es", "kabut_pelemah", "racun_jiwa"]},
+		"pref": ["bola_api", "badai_es", "lemahkan", "meteor", "badai_api", "tombak_es", "kabut_pelemah", "racun_jiwa",
+			"penjara_es", "bara_abadi", "aliran_mana", "sihir_jitu"]},
 	"mira": {"name": "Mira", "job": "Pendeta",
 		"base": {"hp": 24, "mp": 14, "atk": 7, "defense": 6, "mag": 9, "agi": 5},
 		"growth": {"hp": 5.0, "mp": 3.5, "atk": 1.4, "defense": 1.6, "mag": 2.2, "agi": 1.0},
 		"learn": {1: ["pulih"], 3: ["doa_pelindung"], 4: ["cahaya_suci"], 5: ["berkat_suci"], 6: ["pulih_massal"], 7: ["salur_jiwa"]},
-		"pref": ["pulih", "pulih_massal", "berkat_suci", "cahaya_suci", "doa_pelindung", "salur_jiwa", "sinar_penghakiman", "penyucian"]},
+		"pref": ["pulih", "pulih_massal", "berkat_suci", "cahaya_suci", "doa_pelindung", "salur_jiwa", "sinar_penghakiman", "penyucian",
+			"kebangkitan", "tangan_penyembuh", "naungan_suci", "cahaya_batin"]},
 	"kael": {"name": "Kael", "job": "Pemanah",
 		"base": {"hp": 26, "mp": 8, "atk": 10, "defense": 5, "mag": 3, "agi": 12},
 		"growth": {"hp": 5.5, "mp": 2.0, "atk": 2.3, "defense": 1.3, "mag": 0.5, "agi": 2.4},
 		"learn": {1: ["bidik_jitu"], 2: ["panah_racun"], 3: ["hujan_panah"], 4: ["langkah_angin"], 5: ["tipu_daya"]},
-		"pref": ["bidik_jitu", "hujan_panah", "panah_racun", "langkah_angin", "panah_tembus", "tipu_daya", "panah_api", "panah_angin"]},
+		"pref": ["bidik_jitu", "hujan_panah", "panah_racun", "langkah_angin", "panah_tembus", "tipu_daya", "panah_api", "panah_angin",
+			"panah_beruntun", "mata_elang", "oportunis", "langkah_ringan"]},
 }
 
 ## Poin stat: tiap naik level, tiap tokoh mendapat STAT_POINTS_PER_LEVEL poin yang bebas dibagi pemain
@@ -801,6 +853,10 @@ static func skill_prereq(char_id: String, skill_id: String) -> String:
 ## Poin jurus untuk membuka sebuah jurus: urutannya di cabang (1, 2, 3); jurus awal gratis.
 static func unlock_cost(char_id: String, skill_id: String) -> int:
 	return 0 if skill_id == starter_skill(char_id) else int(skill_slot(char_id, skill_id)[1]) + 1
+
+
+static func is_passive(skill_id: String) -> bool:
+	return SKILLS[skill_id].kind == "passive"
 
 
 static func xp_to_next(level: int) -> int:

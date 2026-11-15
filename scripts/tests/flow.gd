@@ -747,6 +747,18 @@ func _initialize() -> void:
 		_expect((fx_units[knight].sprite as Sprite2D).position.distance_to(fx_units[knight].home) > 20.0, "Arlen tetap maju mendekati musuh saat menyerang")
 		await current_scene.call("_end_fx", knight)
 
+		# Terpaku: tokoh yang terkena kehilangan gilirannya tanpa ditanya perintah.
+		var frozen: Battler = eng.party[0]
+		frozen.agi = 999
+		frozen.statuses["stun"] = 1
+		current_scene.call("_start_round")
+		await _wait_until(func() -> bool: return not frozen.has_status("stun"), 60)
+		_expect(not frozen.has_status("stun") and (current_scene.get("_log") as RichTextLabel).get_parsed_text().contains(Loc.t("%s terpaku dan kehilangan gilirannya!") % frozen.display_name),
+			"tokoh yang Terpaku kehilangan gilirannya, lalu efeknya hilang")
+		await _wait_until(func() -> bool: return current_scene.get("_current") != null, 200)
+		for b: Battler in eng.party + eng.enemies:
+			b.hp = b.max_hp
+
 		# Uji tampilan menu battle: perintah hanya dicatat (_hold), dan Arlen dibuat selalu mendapat giliran pertama.
 		current_scene.set("_hold", true)
 		(eng.party[0] as Battler).agi = 999

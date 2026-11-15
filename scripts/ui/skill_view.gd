@@ -153,9 +153,13 @@ func _card(m: Battler, skill_id: String) -> Button:
 	var open_now: bool = m.unlocked.has(skill_id)
 	var carried: bool = m.loadout.has(skill_id)
 	var block := Game.skill_block(m, skill_id)
+	var passive: bool = Db.is_passive(skill_id)
 	var state := ""
 	var color := Color(1, 1, 1, 0.4)
-	if carried:
+	if passive and open_now:
+		state = Loc.t("Pasif: selalu aktif")
+		color = Color("8fd8ff")
+	elif carried:
 		state = Loc.t("Dibawa")
 		color = Color("ffd866")
 	elif open_now:
@@ -178,7 +182,7 @@ func _card(m: Battler, skill_id: String) -> Button:
 		frame.set_border_width_all(2)
 		frame.set_corner_radius_all(4)
 		card.add_theme_stylebox_override(look, frame)
-	_text(card, "%s   %d MP" % [Loc.t(sk.name), m.skill_cost(skill_id)], Vector2(10, 6), 16, color if open_now else Color(1, 1, 1, 0.6 if block == "" else 0.4))
+	_text(card, "%s   %s" % [Loc.t(sk.name), Loc.t("Pasif") if passive else "%d MP" % m.skill_cost(skill_id)], Vector2(10, 6), 16, color if open_now else Color(1, 1, 1, 0.6 if block == "" else 0.4))
 	_text(card, state, Vector2(10, 30), 13, color)
 
 	var hint: String = Loc.t(sk.desc)
@@ -186,6 +190,8 @@ func _card(m: Battler, skill_id: String) -> Button:
 		hint += "\n" + block
 	elif not open_now:
 		hint += "\n" + Loc.t("Tekan untuk membuka jurus ini.")
+	elif passive:
+		hint += "\n" + Loc.t("Jurus pasif selalu aktif dan tidak memakai tempat di susunan.")
 	elif carried:
 		hint += "\n" + Loc.t("Tekan untuk melepasnya dari susunan.")
 	else:
@@ -210,9 +216,15 @@ func _press(m: Battler, skill_id: String) -> void:
 		Audio.sfx("buff")
 		changed.emit()
 		var note: String = Loc.t("%s membuka %s.") % [m.display_name, Loc.t(Db.SKILLS[skill_id].name)]
-		if not m.loadout.has(skill_id):
+		if Db.is_passive(skill_id):
+			note += " " + Loc.t("Jurus pasif selalu aktif dan tidak memakai tempat di susunan.")
+		elif not m.loadout.has(skill_id):
 			note += " " + Loc.t("Susunan sudah penuh; lepas satu jurus kalau ingin membawanya.")
 		_rebuild(skill_id, note)
+		return
+	if Db.is_passive(skill_id):
+		Audio.sfx("ui_move")
+		_detail.text = Loc.t(Db.SKILLS[skill_id].desc) + "\n" + Loc.t("Jurus pasif selalu aktif dan tidak memakai tempat di susunan.")
 		return
 	var was_carried: bool = m.loadout.has(skill_id)
 	if Game.toggle_loadout(m, skill_id):

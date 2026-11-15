@@ -191,3 +191,18 @@ wilayah sebelumnya kalah.
 - Naik level tidak lagi membuka jurus sendiri. Tokoh yang baru bergabung dan simpanan lama memakai `Battler.default_build()`: jurus yang dulu dipelajari lewat level (`learn`) dibuka selama poinnya cukup, sisanya bebas dipilih pemain. Susunan otomatis mengikuti urutan `pref` tiap tokoh.
 - Simpanan menyimpan `unlocked` dan `loadout`; jurus yang tidak terjangkau poin dibuang saat dimuat.
 - AI simulasi membuka jurus menurut urutan `pref` dan membawa empat teratas. Dengan perlengkapan wajar: Ogre 86%, Ratu 84%, Lahar 79%, Raja 79%, jadi angka bos tidak diubah.
+
+## Skill tree (tahap 2): mekanik baru dan jurus pasif
+
+- Tiap cabang kini berisi **tiga jurus aktif dan satu jurus pasif di ujungnya** (12 jurus per tokoh). Biaya 1, 2, 3, 4 poin; seluruh tree berharga 29 poin, jadi pemain tidak bisa membuka semuanya dan harus memilih cabang.
+- **Jurus pasif** (jenis `passive`): selalu aktif begitu dibuka, tidak memakai tempat di susunan 4 jurus. Mesin battle membacanya lewat `Battler.passive(effect)`:
+  - Arlen: Haus Darah (serangan fisik memulihkan 12% kerusakan), Kulit Baja (kerusakan diterima -15%), Semangat Juang (party ATK Naik di awal battle).
+  - Selene: Bara Abadi (sihir +12%), Sihir Jitu (peluang efek status +20%), Aliran Mana (pemulihan MP per ronde 2x).
+  - Mira: Tangan Penyembuh (penyembuhan +20%), Naungan Suci (party DEF Naik di awal battle), Cahaya Batin (kebal Racun dan Terbakar).
+  - Kael: Mata Elang (kritikal +12%), Oportunis (+25% terhadap musuh yang terkena nerf), Langkah Ringan (20% menghindari serangan fisik).
+- **Empat jurus aktif bermekanik baru**:
+  - Tantang (Arlen): efek **Pancing** 3 ronde; serangan monster ke satu sasaran diarahkan ke Arlen (`BattleEngine._enemy_target`).
+  - Penjara Es (Selene): 60% membuat **Terpaku**; sasaran kehilangan satu giliran lalu efeknya hilang (`no_decay`). Semi-bos dan bos kebal (`no_boss`).
+  - Kebangkitan (Mira): jenis `revive`, membangkitkan rekan tumbang dengan 40% HP.
+  - Panah Beruntun (Kael): `hits: 3`, tiga pukulan yang dihitung sendiri-sendiri.
+- Simulasi (AI membuka jurus menurut `pref`, pasif paling akhir), perlengkapan wajar: Ogre 84%, Ratu 81%, Lahar 84%, Raja 74%; angka bos tidak diubah.

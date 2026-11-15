@@ -27,6 +27,14 @@ func _init(p_party: Array, p_enemies: Array) -> void:
 	for m: Battler in party:
 		for slot: String in ["head", "feet"]:
 			_gear_buff(m, slot, opening_lines)
+	# Jurus pasif pembuka: seluruh party mendapat buff di awal pertarungan.
+	for pair: Array in [["open_attack_up", "attack_up"], ["open_defense_up", "defense_up"]]:
+		for m: Battler in party:
+			if m.is_alive() and m.passive(pair[0]) > 0.0:
+				for ally: Battler in living(party):
+					if not ally.has_status(pair[1]):
+						apply_status(ally, pair[1], opening_lines)
+				break
 
 
 ## Sifat buff sebuah perlengkapan: berpeluang memberi efeknya ke pemakainya sendiri.
@@ -105,8 +113,14 @@ func enemy_command(e: Battler) -> Dictionary:
 		usable.append(s)
 	if not usable.is_empty() and rng.randf() < ENEMY_SKILL_CHANCE:
 		return {"actor": e, "kind": "skill", "skill": usable[rng.randi() % usable.size()],
-			"target": _random_living(party)}
-	return {"actor": e, "kind": "attack", "target": _random_living(party)}
+			"target": _enemy_target()}
+	return {"actor": e, "kind": "attack", "target": _enemy_target()}
+
+
+## Sasaran serangan monster: tokoh yang sedang memancing (efek Pancing) kalau ada, selain itu acak.
+func _enemy_target() -> Battler:
+	var taunting := living(party).filter(func(m: Battler) -> bool: return m.has_status("taunt"))
+	return _random_living(party) if taunting.is_empty() else taunting[rng.randi() % taunting.size()]
 
 
 ## Urutan giliran satu ronde: semua petarung yang masih hidup, SPD tertinggi lebih dulu dengan sedikit
@@ -131,6 +145,10 @@ func resolve_targets(cmd: Dictionary) -> Array:
 	var mode := "self"
 	if cmd.kind == "item":  # sasaran barang dipilih pemain dan tidak dialihkan (bisa rekan yang tumbang)
 		return [cmd.target]
+	if cmd.kind == "skill" and Db.SKILLS[cmd.skill].kind == "revive":
+		var fallen := _fallen_target(cmd.get("target"), actor)
+		cmd["target"] = fallen
+		return [fallen] if fallen != null else []
 	if cmd.kind == "attack":
 		mode = "enemy"
 	elif cmd.kind == "skill":
@@ -157,6 +175,10 @@ func execute(cmd: Dictionary) -> Array:
 	if not actor.is_alive():
 		return lines
 	actor.defending = false  # bertahan berlaku sampai giliran berikutnya petarung itu
+	if actor.has_status("stun"):  # Terpaku: kehilangan giliran ini, lalu efeknya hilang
+		actor.statuses.erase("stun")
+		lines.append(Loc.t("%s terpaku dan kehilangan gilirannya!") % actor.display_name)
+		return lines
 	match cmd.kind:
 		"defend":
 			actor.defending = true
@@ -243,6 +265,8 @@ func end_round() -> Array:
 				lines.append(Loc.t("%s menderita %s: %d kerusakan.") % [b.display_name, Loc.t(st.name), dealt])
 				if not b.is_alive():
 					lines.append((Loc.t("%s dikalahkan!") if b.is_enemy else Loc.t("%s tumbang!")) % b.display_name)
+			if st.get("no_decay", false):  # efek yang hilang saat terpakai, bukan oleh waktu
+				continue
 			b.statuses[status_id] -= 1
 			if b.statuses[status_id] <= 0:
 				b.statuses.erase(status_id)
@@ -255,7 +279,7 @@ func end_round() -> Array:
 
 ## MP yang pulih untuk seorang anggota party di akhir ronde ini.
 func mp_gain(m: Battler) -> int:
-	var gain: int = max(1, roundi(m.max_mp * mp_regen)) if mp_regen > 0.0 else 0
+	var gain: int = max(1, roundi(m.max_mp * mp_regen * (1.0 + m.passive("mp_regen_boost")))) if mp_regen > 0.0 else 0
 	return roundi(gain * Db.MP_REGEN_DEFEND) if m.defending else gain
 
 
@@ -264,7 +288,8 @@ func apply_status(target: Battler, status_id: String, lines: Array) -> void:
 	if not target.is_alive():
 		return
 	var st: Dictionary = Db.STATUSES[status_id]
-	if st.kind == "nerf" and (target.immune.has(status_id) or target.blocks_nerf()):
+	var boss_proof: bool = target.is_boss and st.get("no_boss", false)  # semi-bos dan bos kebal Terpaku
+	if st.kind == "nerf" and (target.immune.has(status_id) or target.blocks_nerf() or boss_proof):
 		lines.append(Loc.t("%s kebal terhadap %s.") % [target.display_name, Loc.t(st.name)])
 		return
 	if st.has("cancels"):
@@ -336,7 +361,10 @@ func _use_skill(actor: Battler, skill_id: String, wanted: Variant, lines: Array)
 		"enemy":
 			targets = [_retarget(wanted, _foes(actor))]
 		"ally":
-			targets = [_retarget(wanted, others(actor) if sk.kind == "mp" else _allies(actor))]
+			if sk.kind == "revive":  # hanya rekan yang tumbang
+				targets = [_fallen_target(wanted, actor)]
+			else:
+				targets = [_retarget(wanted, others(actor) if sk.kind == "mp" else _allies(actor))]
 		"all_enemies":
 			targets = living(_foes(actor))
 		"all_allies":
@@ -346,25 +374,34 @@ func _use_skill(actor: Battler, skill_id: String, wanted: Variant, lines: Array)
 
 	for t: Battler in targets:
 		if t == null:
+			if sk.kind == "revive":
+				lines.append(Loc.t("Tidak ada rekan yang tumbang."))
 			continue
 		match sk.kind:
 			"phys":
-				_phys_hit(actor, t, sk.power, sk.get("crit", 0.0), lines)
+				for hit in int(sk.get("hits", 1)):  # jurus beruntun mengenai beberapa kali
+					if t.is_alive():
+						_phys_hit(actor, t, sk.power, sk.get("crit", 0.0), lines)
 				_second_strike(actor, t, sk.power, lines)
-				_inflict(sk, t, lines)
+				_inflict(sk, t, lines, actor)
 				_weapon_nerf(actor, t, lines)
 			"magic":
 				var dmg := (float(sk.power) + actor.stat("mag") * 0.5) * rng.randf_range(0.85, 1.15)
+				dmg *= 1.0 + actor.passive("magic_boost")
 				_apply_damage(t, dmg, lines)
-				_inflict(sk, t, lines)
+				_inflict(sk, t, lines, actor)
 				_weapon_nerf(actor, t, lines)
 			"heal":
 				var amount := int((float(sk.power) + actor.stat("mag") * 0.5) * rng.randf_range(0.9, 1.1))
 				if actor.legend_effect() == "heal_boost":  # Tongkat Cahaya Abadi
 					amount = int(amount * Db.LEGEND_HEAL_BOOST)
+				amount = int(amount * (1.0 + actor.passive("heal_boost")))
 				amount = min(amount, t.max_hp - t.hp)
 				t.hp += amount
 				lines.append(Loc.t("HP %s pulih %d.") % [t.display_name, amount])
+			"revive":
+				t.hp = max(1, int(t.max_hp * float(sk.power)))
+				lines.append(Loc.t("%s bangkit kembali!") % t.display_name)
 			"mp":  # memulihkan MP rekan lain; tidak berlaku untuk pemakainya sendiri
 				if t == actor or t.mp >= t.max_mp:
 					lines.append(Loc.t("Tidak berpengaruh pada %s.") % t.display_name)
@@ -388,23 +425,52 @@ func _use_skill(actor: Battler, skill_id: String, wanted: Variant, lines: Array)
 		_gear_buff(actor, "weapon", lines)
 
 
-## Efek status tambahan dari jurus serangan, dengan peluang tertentu.
-func _inflict(sk: Dictionary, target: Battler, lines: Array) -> void:
-	if sk.has("inflict") and target.is_alive() and rng.randf() < float(sk.inflict.chance):
+## Sasaran jurus pembangkit: rekan tumbang yang diminta, atau rekan tumbang lain; null kalau tidak ada.
+func _fallen_target(wanted: Variant, actor: Battler) -> Battler:
+	var fallen := _allies(actor).filter(func(b: Battler) -> bool: return not b.is_alive())
+	if wanted != null and fallen.has(wanted):
+		return wanted
+	return null if fallen.is_empty() else fallen[0]
+
+
+## Efek status tambahan dari jurus serangan, dengan peluang tertentu (ditambah bonus pasif pemakainya).
+func _inflict(sk: Dictionary, target: Battler, lines: Array, actor: Battler = null) -> void:
+	if not sk.has("inflict") or not target.is_alive():
+		return
+	var chance := float(sk.inflict.chance) + (actor.passive("inflict_bonus") if actor != null else 0.0)
+	if rng.randf() < chance:
 		apply_status(target, sk.inflict.status, lines)
 
 
 func _phys_hit(actor: Battler, target: Battler, power: float, crit_bonus: float, lines: Array) -> void:
+	if rng.randf() < target.passive("dodge"):  # pasif Langkah Ringan
+		lines.append(Loc.t("%s menghindar!") % target.display_name)
+		return
 	var raw := actor.stat("atk") * power
 	var dmg: float
 	if actor.legend_effect() == "first_strike":
 		crit_bonus += Db.LEGEND_CRIT_BONUS
+	crit_bonus += actor.passive("crit_bonus")
 	if rng.randf() < CRIT_CHANCE + crit_bonus:
 		lines.append(Loc.t("Serangan kritikal!"))
 		dmg = raw * 1.5
 	else:
 		dmg = raw - target.stat("defense") * 0.5
-	_apply_damage(target, dmg * rng.randf_range(0.85, 1.15), lines)
+	if actor.passive("exploit") > 0.0 and _has_nerf(target):  # pasif Oportunis
+		dmg *= 1.0 + actor.passive("exploit")
+	var dealt := _apply_damage(target, dmg * rng.randf_range(0.85, 1.15), lines)
+	var drain := actor.passive("drain")  # pasif Haus Darah
+	if drain > 0.0 and actor.is_alive() and actor.hp < actor.max_hp:
+		var healed: int = min(max(1, int(dealt * drain)), actor.max_hp - actor.hp)
+		actor.hp += healed
+		lines.append(Loc.t("%s menyerap %d HP.") % [actor.display_name, healed])
+
+
+func _has_nerf(b: Battler) -> bool:
+	for status_id: String in b.statuses:
+		if Db.STATUSES[status_id].kind == "nerf":
+			return true
+	return false
 
 
 ## Pedang Fajar: serangan fisik berpeluang menebas sekali lagi dengan separuh kekuatan.
@@ -415,9 +481,11 @@ func _second_strike(actor: Battler, target: Battler, power: float, lines: Array)
 	_phys_hit(actor, target, power * 0.5, 0.0, lines)
 
 
-func _apply_damage(target: Battler, amount: float, lines: Array) -> void:
+## Kurangi HP sasaran; mengembalikan kerusakan yang benar-benar diterima.
+func _apply_damage(target: Battler, amount: float, lines: Array) -> int:
 	if target.defending:
 		amount *= 0.5
+	amount *= 1.0 - target.passive("damage_cut")  # pasif Kulit Baja
 	var dmg: int = max(1, int(round(amount)))
 	target.hp = max(0, target.hp - dmg)
 	lines.append(Loc.t("%s menerima %d kerusakan.") % [target.display_name, dmg])
@@ -425,3 +493,4 @@ func _apply_damage(target: Battler, amount: float, lines: Array) -> void:
 		lines.append((Loc.t("%s dikalahkan!") if target.is_enemy else Loc.t("%s tumbang!")) % target.display_name)
 	else:
 		_gear_buff(target, "body", lines)
+	return dmg

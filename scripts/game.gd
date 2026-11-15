@@ -342,7 +342,7 @@ func skill_block(m: Battler, skill_id: String) -> String:
 ## Bawa atau lepas sebuah jurus yang sudah terbuka. Mengembalikan false kalau susunan sudah penuh
 ## atau kalau itu satu-satunya jurus yang dibawa.
 func toggle_loadout(m: Battler, skill_id: String) -> bool:
-	if not m.unlocked.has(skill_id):
+	if not m.unlocked.has(skill_id) or Db.is_passive(skill_id):
 		return false
 	if m.loadout.has(skill_id):
 		if m.loadout.size() <= 1:
@@ -374,7 +374,7 @@ func respec_skills(m: Battler) -> bool:
 	gold -= respec_price(m)
 	m.unlocked = [Db.starter_skill(m.id)]
 	m.loadout = [Db.starter_skill(m.id)]
-	m.skills = m.loadout.duplicate()
+	m.recalc()
 	return true
 
 

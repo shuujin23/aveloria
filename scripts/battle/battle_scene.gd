@@ -177,6 +177,8 @@ func _cmd_text(cmd: Dictionary) -> String:
 			return Loc.t("Serang") + to
 		"defend":
 			return Loc.t("Bertahan")
+		"skip":
+			return Loc.t("Terpaku")
 		"item":
 			return String(Loc.t(Db.ITEMS[cmd.item].name)) + to
 		"skill":
@@ -297,6 +299,10 @@ func _next_turn() -> void:
 		_current = null
 		_refresh()
 		_run_turn(engine.enemy_command(actor))
+	elif actor.has_status("stun"):  # Terpaku: gilirannya hangus tanpa memilih perintah
+		_current = null
+		_refresh()
+		_run_turn({"actor": actor, "kind": "skip"})
 	else:
 		_current = actor
 		_ask_command()
@@ -347,8 +353,10 @@ func _choose_skill(actor: Battler, skill_id: String) -> void:
 			_pick_target(Loc.t("%s ke siapa?") % Loc.t(sk.name), engine.living(engine.enemies), on_pick,
 				func() -> void: _skill_menu(actor))
 		"ally":
-			_pick_target(Loc.t("%s untuk siapa?") % Loc.t(sk.name),
-				engine.living(engine.others(actor) if sk.kind == "mp" else engine.party), on_pick,
+			var allies: Array = engine.living(engine.others(actor) if sk.kind == "mp" else engine.party)
+			if sk.kind == "revive":  # hanya rekan yang tumbang
+				allies = engine.party.filter(func(m: Battler) -> bool: return not m.is_alive())
+			_pick_target(Loc.t("%s untuk siapa?") % Loc.t(sk.name), allies, on_pick,
 				func() -> void: _skill_menu(actor))
 		_:
 			_push(cmd)
@@ -448,7 +456,7 @@ func _run_turn(cmd: Dictionary) -> void:
 	_mark_active(actor)
 	# Mesin battle langsung mengubah HP; tampilan baru diperbarui tepat saat animasi "mengenai".
 	var targets := engine.resolve_targets(cmd)
-	var animate: bool = cmd.kind != "skill" or actor.mp >= actor.skill_cost(cmd.skill)
+	var animate: bool = cmd.kind != "skip" and not actor.has_status("stun") and (cmd.kind != "skill" or actor.mp >= actor.skill_cost(cmd.skill))
 	_set_banner(Loc.t("Giliran %s:   %s") % [actor.display_name, _cmd_text(cmd)])
 	var lines := engine.execute(cmd)
 	if not lines.is_empty():
