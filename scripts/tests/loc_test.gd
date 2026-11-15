@@ -44,6 +44,10 @@ func _initialize() -> void:
 		_need(Db.MATERIALS[id].name, "bahan")
 	for id: String in Db.ENEMIES:
 		_need(Db.ENEMIES[id].name, "monster")
+	for id: String in Db.ENEMIES:  # kalimat pola bos (tanda serangan)
+		var pattern: Dictionary = Db.ENEMIES[id].get("pattern", {})
+		for key: String in ["warn", "hold", "release", "rest"]:
+			_need(pattern.get(key, ""), "pola bos")
 	for id: String in Db.CHARACTERS:
 		_need(Db.CHARACTERS[id].name, "tokoh")
 		_need(Db.CHARACTERS[id].job, "tokoh")
@@ -78,6 +82,18 @@ func _initialize() -> void:
 	for owner: String in Db.LEGEND_WEAPONS:
 		_need(Db.LEGEND_WEAPONS[owner].name, "legend")
 		_need(Db.LEGEND_WEAPONS[owner].desc, "legend")
+
+	# --- tujuan utama di jurnal, di tiap tahap cerita ---
+	var story_flags := {}
+	var seen_goals := {}
+	for flag: String in ["", "quest_mira", "mira_joined", "ogre", "quest_selene", "selene_joined", "ratu", "quest_kael", "kael_joined", "lahar", "raja", "q_naga_purba_done"]:
+		if flag != "":
+			story_flags[flag] = true
+		var objective := Story.main_objective(story_flags)
+		_need(objective.goal, "tujuan utama")
+		_need(objective.recap, "tujuan utama")
+		seen_goals[objective.goal] = true
+	_expect(seen_goals.size() == 12, "tujuan utama berubah di tiap tahap cerita (%d tujuan berbeda)" % seen_goals.size())
 
 	# --- side quest ---
 	for id: String in Quests.LIST:

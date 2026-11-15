@@ -29,6 +29,9 @@ var backdrop := "lembah"  # latar battle berikutnya: lembah, hutan, kabut, gua
 var after_battle_scene := ""  # adegan cerita yang dimainkan kalau battle itu dimenangkan
 var pending_scene := ""  # adegan cerita yang dimainkan begitu peta terbuka
 var world_message := ""  # pesan singkat yang ditampilkan saat kembali ke peta
+## Keadaan tepat sebelum pertarungan terakhir dimulai (salinan, bukan rujukan): HP/MP tiap anggota dan
+## isi tas. Dipakai "Coba lagi" setelah kalah dari bos; lihat retry_battle().
+var _battle_snapshot := {}
 
 ## Lokasi file simpanan (satu slot). Di Windows: %APPDATA%\Godot\app_userdata\Aveloria\save.json.
 ## Uji otomatis menggantinya supaya tidak menimpa simpanan pemain.
@@ -88,12 +91,42 @@ func start_battle(enemy_ids: Array, battle_backdrop: String = "lembah", after_sc
 	encounter = enemy_ids
 	backdrop = battle_backdrop
 	after_battle_scene = after_scene
+	_battle_snapshot = _take_snapshot()
+	get_tree().change_scene_to_file(BATTLE_SCENE)
+
+
+func _take_snapshot() -> Dictionary:
+	var vitals: Array = []
+	for m: Battler in party:
+		vitals.append({"id": m.id, "hp": m.hp, "mp": m.mp})
+	return {"vitals": vitals, "items": items.duplicate(true)}
+
+
+## Apakah pertarungan yang baru saja kalah bisa diulang.
+func can_retry() -> bool:
+	return not _battle_snapshot.is_empty() and not encounter.is_empty()
+
+
+## Ulangi pertarungan terakhir dari keadaan sebelum bertarung: HP, MP, dan isi tas dikembalikan persis
+## seperti saat itu (tidak lebih), tanpa hadiah dan tanpa penalti. Snapshot tetap disimpan supaya bisa
+## diulang lagi.
+func retry_battle() -> void:
+	if not can_retry():
+		return
+	for entry: Dictionary in _battle_snapshot.vitals:
+		var m := member(entry.id)
+		if m != null:
+			m.hp = int(entry.hp)
+			m.mp = int(entry.mp)
+			m.reset_battle_state()
+	items = (_battle_snapshot.items as Dictionary).duplicate(true)
 	get_tree().change_scene_to_file(BATTLE_SCENE)
 
 
 ## Kembali ke peta. won = battle dimenangkan, sehingga adegan lanjutannya (kalau ada) dimainkan.
 func return_to_world(message: String = "", won: bool = false) -> void:
 	encounter = []
+	_battle_snapshot = {}
 	world_message = message
 	pending_scene = after_battle_scene if won else ""
 	after_battle_scene = ""
@@ -413,7 +446,7 @@ func save_game() -> bool:
 	return true
 
 
-## Ringkasan simpanan untuk layar judul, mis. "Arlen Lv 4 · Lembah Hijau". Kosong kalau tidak ada.
+## Ringkasan simpanan untuk layar judul, mis. "Arlen Lv 4 · Lembah Verdane". Kosong kalau tidak ada.
 func save_summary() -> String:
 	var data := _read_save()
 	if data.is_empty():

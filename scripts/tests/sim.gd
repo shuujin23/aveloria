@@ -3,9 +3,9 @@ extends SceneTree
 ##   Godot_console.exe --headless --path . -s res://scripts/tests/sim.gd
 ## Party dimainkan AI sederhana mengikuti alur cerita:
 ## Wilayah 1: Arlen sendirian di padang -> menolong Mira -> berdua berlatih -> Ogre Penjaga.
-## Wilayah 2: berdua di Hutan Kabut -> menolong Selene -> bertiga berlatih -> Ratu Laba-laba.
-## Wilayah 3: bertiga di Pegunungan Abu -> menolong Kael -> berempat berlatih -> Raksasa Lahar.
-## Wilayah 4: berempat di Kastil Kelam -> Raja Monster.
+## Wilayah 2: berdua di Hutan Mistwood -> menolong Selene -> bertiga berlatih -> Ratu Laba-laba.
+## Wilayah 3: bertiga di Pegunungan Ashfell -> menolong Kael -> berempat berlatih -> Raksasa Lahar.
+## Wilayah 4: berempat di Kastil Dreadmoor -> Raja Monster.
 
 const RUNS := 400
 # Tiap tahap: tabel pertemuan, "event:mira" (Mira bergabung lalu battle cerita), atau "boss:<id>".
@@ -240,6 +240,8 @@ func _policy(eng: BattleEngine, a: Battler) -> Dictionary:
 		if f.hp < weakest.hp:
 			weakest = f
 
+	if eng.slam_incoming() == 0 and float(hurt.hp) / hurt.max_hp >= 0.35:  # serangan besar bos lepas ronde ini: bertahan
+		return {"actor": a, "kind": "defend"}
 	var offensive: Array = []
 	for s: String in a.skills:
 		var sk: Dictionary = Db.SKILLS[s]

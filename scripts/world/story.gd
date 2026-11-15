@@ -22,7 +22,7 @@ const DUSUN_INN_PRICE := 20
 const POS_INN_PRICE := 30
 
 ## Adegan pembuka tiap wilayah: awalan nama zona -> adegan (dimainkan sekali; penandanya = nama adegan).
-const ZONE_INTROS := {"Hutan Kabut": "kabut_intro", "Pegunungan Abu": "abu_intro", "Kastil Kelam": "kastil_intro"}
+const ZONE_INTROS := {"Hutan Mistwood": "kabut_intro", "Pegunungan Ashfell": "abu_intro", "Kastil Dreadmoor": "kastil_intro"}
 
 # hide_flag: NPC menghilang dari peta setelah penanda itu tercatat.
 const NPCS := {
@@ -56,9 +56,9 @@ const NPCS := {
 
 const SCENES := {
 	"intro": [
-		{"text": "Negeri Aveloria telah lama damai, sampai Raja Monster bangkit di Kastil Kelam di ujung timur."},
+		{"text": "Negeri Aveloria telah lama damai, sampai Raja Monster bangkit di Kastil Dreadmoor di ujung timur."},
 		{"text": "Sejak itu monster berkeliaran di padang dan hutan, dan jalan antarwilayah dijaga anak buahnya."},
-		{"text": "Di Desa Rindu, seorang ksatria muda bernama Arlen bersiap memulai perjalanannya."},
+		{"text": "Di Desa Willowmere, seorang ksatria muda bernama Arlen bersiap memulai perjalanannya."},
 		{"who": "Arlen", "text": "Sebelum berangkat, aku harus pamit dulu pada Tetua Bram. Rumahnya di barat laut desa."},
 	],
 	"mira_after": [
@@ -76,14 +76,14 @@ const SCENES := {
 	],
 	"kabut_intro": [
 		{"text": "Kabut tipis menyelimuti pepohonan. Udara di sini terasa lebih dingin."},
-		{"who": "Mira", "text": "Hati-hati, Arlen. Monster di Hutan Kabut jauh lebih kuat daripada di lembah."},
+		{"who": "Mira", "text": "Hati-hati, Arlen. Monster di Hutan Mistwood jauh lebih kuat daripada di lembah."},
 		{"who": "Mira", "text": "Kata Tetua ada dusun kecil di tepi jalan ini. Kita cari tempat berteduh dulu."},
 		{"do": "flag", "flag": "kabut_intro"},
 	],
 	"selene_after": [
 		{"who": "Selene", "text": "Lumayan juga kalian. Aku berutang satu."},
 		{"who": "Selene", "text": "Sumber kabut ini adalah Ratu Laba-laba di rimba timur. Jaringnya menutup sarang, tapi apiku bisa membakarnya."},
-		{"who": "Arlen", "text": "Kami sedang menuju Kastil Kelam. Ikutlah dengan kami."},
+		{"who": "Arlen", "text": "Kami sedang menuju Kastil Dreadmoor. Ikutlah dengan kami."},
 		{"who": "Selene", "text": "Melawan Raja Monster? ...Baiklah. Aku ingin tahu sejauh apa sihirku bisa melangkah."},
 		{"text": "Selene kini ikut bertarung. Bola Api membakar musuh, dan Lemahkan meruntuhkan DEF mereka."},
 	],
@@ -94,17 +94,17 @@ const SCENES := {
 	"ratu_defeated": [
 		{"text": "Ratu Laba-laba tumbang. Kabut yang menyelimuti hutan perlahan menipis."},
 		{"who": "Selene", "text": "Akhirnya langit terlihat lagi. Sudah berbulan-bulan dusun ini tidak melihat matahari."},
-		{"who": "Mira", "text": "Celah Abu di timur pasti sudah bisa dilewati. Dari sana jalan menuju Pegunungan Abu."},
+		{"who": "Mira", "text": "Celah Ashfell di timur pasti sudah bisa dilewati. Dari sana jalan menuju Pegunungan Ashfell."},
 	],
 	"abu_intro": [
 		{"text": "Udara panas dan berbau belerang. Abu halus turun dari langit seperti salju kelabu."},
-		{"who": "Selene", "text": "Pegunungan Abu. Gunung api di timur itu tidak pernah benar-benar tidur."},
+		{"who": "Selene", "text": "Pegunungan Ashfell. Gunung api di timur itu tidak pernah benar-benar tidur."},
 		{"who": "Mira", "text": "Para pemburu punya pos di tengah lembah ini. Kita ikuti jalan setapaknya."},
 		{"do": "flag", "flag": "abu_intro"},
 	],
 	"kael_after": [
 		{"who": "Kael", "text": "Bidikan kalian lumayan, untuk orang lembah."},
-		{"who": "Kael", "text": "Raksasa Lahar itulah yang membuat gunung ini mengamuk. Selama dia hidup, jalan ke Kastil Kelam tertutup lahar."},
+		{"who": "Kael", "text": "Raksasa Lahar itulah yang membuat gunung ini mengamuk. Selama dia hidup, jalan ke Kastil Dreadmoor tertutup lahar."},
 		{"who": "Arlen", "text": "Kami memang menuju ke sana."},
 		{"who": "Kael", "text": "Kalau begitu panahku ikut. Sudah lama aku ingin membidik sesuatu yang lebih besar dari elang."},
 		{"text": "Kael kini ikut bertarung. Ia yang tercepat di party; Bidik Jitu dan Panah Racun adalah andalannya."},
@@ -115,11 +115,11 @@ const SCENES := {
 	],
 	"lahar_defeated": [
 		{"text": "Raksasa Lahar runtuh menjadi bongkahan batu dingin. Aliran lahar di timur perlahan mengeras."},
-		{"who": "Kael", "text": "Jalan ke timur terbuka. Di ujungnya, Kastil Kelam."},
+		{"who": "Kael", "text": "Jalan ke timur terbuka. Di ujungnya, Kastil Dreadmoor."},
 		{"who": "Arlen", "text": "Tinggal satu langkah lagi."},
 	],
 	"kastil_intro": [
-		{"text": "Gerbang Kastil Kelam terbuka sendiri. Di dalam, obor-obor biru menyala tanpa minyak."},
+		{"text": "Gerbang Kastil Dreadmoor terbuka sendiri. Di dalam, obor-obor biru menyala tanpa minyak."},
 		{"who": "Kael", "text": "Sepi. Aku tidak suka tempat yang terlalu sepi."},
 		{"who": "Selene", "text": "Karpet merah ini langsung menuju ruang takhta. Dia tidak merasa perlu bersembunyi."},
 		{"who": "Mira", "text": "Aku merasakan cahaya di aula depan. Mungkin ada altar. Kita pulihkan diri dulu sebelum naik."},
@@ -169,7 +169,7 @@ const SCENES := {
 		{"who": "Arlen", "text": "Sekarang Aveloria sungguh aman."},
 	],
 	"ending": [
-		{"text": "Raja Monster roboh. Kegelapan yang menyelimuti Kastil Kelam luruh seperti kabut pagi."},
+		{"text": "Raja Monster roboh. Kegelapan yang menyelimuti Kastil Dreadmoor luruh seperti kabut pagi."},
 		{"who": "Arlen", "text": "Sudah selesai."},
 		{"who": "Mira", "text": "Tetua Bram pasti tidak percaya waktu kita ceritakan semua ini."},
 		{"who": "Selene", "text": "Aku akan menuliskannya. Harus ada yang mencatat betapa cerobohnya kalian bertarung."},
@@ -179,6 +179,47 @@ const SCENES := {
 		{"do": "credits"},
 	],
 }
+
+
+## Tujuan utama cerita untuk jurnal, diturunkan dari penanda progres (tidak disimpan tersendiri):
+## {"goal": tindakan berikutnya beserta tempatnya, "recap": ringkasan kejadian terakhir}.
+## Tujuan baru muncul setelah sebuah peristiwa berhasil, karena penandanya baru tercatat saat itu.
+static func main_objective(flags: Dictionary) -> Dictionary:
+	if flags.has("raja"):
+		if flags.has("q_naga_purba_done"):
+			return {"goal": "Tidak ada lagi yang mengancam Aveloria. Jelajahi sesukamu.",
+				"recap": "Raja Monster dan Naga Purba sudah tumbang."}
+		return {"goal": "Aveloria aman. Tuntaskan quest yang tersisa, atau cari kabar di Pos Hawkrest.",
+			"recap": "Raja Monster tumbang di Kastil Dreadmoor."}
+	if flags.has("lahar"):
+		return {"goal": "Masuki Kastil Dreadmoor lewat Jalan Emberdeep di timur dan kalahkan Raja Monster.",
+			"recap": "Raksasa Lahar tumbang dan aliran lahar di timur mengeras."}
+	if flags.has("kael_joined"):
+		return {"goal": "Kalahkan Raksasa Lahar di Kawah Emberdeep, timur laut Pegunungan Ashfell.",
+			"recap": "Kael bergabung. Selama Raksasa Lahar hidup, jalan ke Kastil Dreadmoor tertutup lahar."}
+	if flags.has("quest_kael"):
+		return {"goal": "Cari Kael di punggung bukit utara Pegunungan Ashfell.",
+			"recap": "Tetua Aldric di Pos Hawkrest belum mendapat kabar dari Kael selama tiga hari."}
+	if flags.has("ratu"):
+		return {"goal": "Lewati Celah Ashfell di timur dan cari Pos Hawkrest di Pegunungan Ashfell.",
+			"recap": "Ratu Laba-laba tumbang dan kabut di Hutan Mistwood menipis."}
+	if flags.has("selene_joined"):
+		return {"goal": "Kalahkan Ratu Laba-laba di Sarang Silkmaw, rimba timur Hutan Mistwood.",
+			"recap": "Selene bergabung. Apinya bisa membakar jaring yang menutup sarang."}
+	if flags.has("quest_selene"):
+		return {"goal": "Cari Selene di altar tua, rimba utara Hutan Mistwood.",
+			"recap": "Tetua Elowen di Dusun Dewfall meminta kalian mencari Selene."}
+	if flags.has("ogre"):
+		return {"goal": "Seberangi Gerbang Eastwatch dan cari Dusun Dewfall di Hutan Mistwood.",
+			"recap": "Ogre Penjaga tumbang dan Gerbang Eastwatch terbuka."}
+	if flags.has("mira_joined"):
+		return {"goal": "Kalahkan Ogre Penjaga di Gua Grimhollow, ujung jalan utara Lembah Verdane.",
+			"recap": "Mira bergabung. Gerbang Eastwatch tetap tertutup selama Ogre Penjaga hidup."}
+	if flags.has("quest_mira"):
+		return {"goal": "Cari Mira di tepi hutan utara Lembah Verdane.",
+			"recap": "Tetua Bram meminta Arlen mencari Mira, pendeta desa, yang belum kembali."}
+	return {"goal": "Temui Tetua Bram di barat laut Desa Willowmere.",
+		"recap": "Raja Monster bangkit di Kastil Dreadmoor, dan Arlen bersiap berangkat."}
 
 
 static func scene(key: String) -> Array:
@@ -210,7 +251,7 @@ static func _talk_base(npc_id: String, flags: Dictionary, gold: int) -> Array:
 			if flags.has("ogre"):
 				return [
 					{"who": "Tetua Bram", "text": "Kalian mengalahkan Ogre Penjaga! Seluruh desa berutang budi pada kalian."},
-					{"who": "Tetua Bram", "text": "Di seberang gerbang timur terbentang Hutan Kabut. Konon seorang penyihir bernama Selene tinggal di sana."},
+					{"who": "Tetua Bram", "text": "Di seberang gerbang timur terbentang Hutan Mistwood. Konon seorang penyihir bernama Selene tinggal di sana."},
 				]
 			if flags.has("mira_joined"):
 				return [
@@ -240,7 +281,7 @@ static func _talk_base(npc_id: String, flags: Dictionary, gold: int) -> Array:
 					{"text": "HP dan MP seluruh party pulih. Permainan disimpan."},
 				]
 			return [
-				{"who": "Marla", "text": "Selamat datang di Penginapan Rindu. Menginap semalam %d emas.", "args": [INN_PRICE]},
+				{"who": "Marla", "text": "Selamat datang di Penginapan Willowmere. Menginap semalam %d emas.", "args": [INN_PRICE]},
 				{"choice": [
 					{"text": "Menginap", "steps": stay},
 					{"text": "Tidak sekarang", "steps": [{"who": "Marla", "text": "Mampirlah kalau lelah."}]},
@@ -258,7 +299,7 @@ static func _talk_base(npc_id: String, flags: Dictionary, gold: int) -> Array:
 				return [
 					{"who": "Doran", "text": "Gerbang terbuka, kiriman dari timur datang lagi! Silakan lihat daganganku."},
 					{"do": "shop", "stock": ["ramuan", "penawar", "ramuan_besar", "eter", "air_kehidupan", "ramuan_kekuatan", "ramuan_pelindung", "ramuan_angin"]},
-					{"who": "Doran", "text": "Hati-hati di Hutan Kabut."},
+					{"who": "Doran", "text": "Hati-hati di Hutan Mistwood."},
 				]
 			return [
 				{"who": "Doran", "text": "Kiriman dari timur tertahan sejak Ogre itu menutup gerbang. Tapi ramuan racikanku sendiri masih ada."},
@@ -280,7 +321,7 @@ static func _talk_base(npc_id: String, flags: Dictionary, gold: int) -> Array:
 			]
 		"rekso":
 			return [
-				{"who": "Varek", "text": "Mitril dari perut gunung. Mahal, tapi tidak ada yang lebih baik sebelum Kastil Kelam."},
+				{"who": "Varek", "text": "Mitril dari perut gunung. Mahal, tapi tidak ada yang lebih baik sebelum Kastil Dreadmoor."},
 				{"do": "forge", "tier": 3, "name": "Tungku Varek"},
 				{"who": "Varek", "text": "Kalau ketemu kura-kura magma, jangan lari. Cangkangnya bahan tempa langka."},
 			]
@@ -297,17 +338,17 @@ static func _talk_base(npc_id: String, flags: Dictionary, gold: int) -> Array:
 			if flags.has("ratu"):
 				return [
 					{"who": "Tetua Elowen", "text": "Kabutnya menipis! Sudah lama sekali aku tidak melihat cahaya sejernih ini."},
-					{"who": "Tetua Elowen", "text": "Celah Abu di ujung timur kini terbuka. Di baliknya Pegunungan Abu, lalu Kastil Kelam."},
+					{"who": "Tetua Elowen", "text": "Celah Ashfell di ujung timur kini terbuka. Di baliknya Pegunungan Ashfell, lalu Kastil Dreadmoor."},
 				]
 			if flags.has("selene_joined"):
 				return [
 					{"who": "Tetua Elowen", "text": "Selene selamat. Syukurlah."},
-					{"who": "Tetua Elowen", "text": "Sarang Ratu Laba-laba ada di rimba timur. Gigitannya beracun dan jaringnya melambatkan; bawalah Penawar."},
+					{"who": "Tetua Elowen", "text": "Ratu Laba-laba bersarang di Sarang Silkmaw, rimba timur. Gigitannya beracun dan jaringnya melambatkan; bawalah Penawar."},
 				]
 			if flags.has("quest_selene"):
 				return [{"who": "Tetua Elowen", "text": "Altar tua ada di rimba utara, di tengah pepohonan paling rapat."}]
 			return [
-				{"who": "Tetua Elowen", "text": "Pendatang dari lembah? Jarang ada yang sampai ke Dusun Embun sejak gerbang ditutup."},
+				{"who": "Tetua Elowen", "text": "Pendatang dari lembah? Jarang ada yang sampai ke Dusun Dewfall sejak gerbang ditutup."},
 				{"who": "Tetua Elowen", "text": "Kabut ini bukan kabut biasa. Ia datang sejak Ratu Laba-laba bersarang di rimba timur."},
 				{"who": "Tetua Elowen", "text": "Selene, penyihir muda dusun ini, pergi ke altar tua di rimba utara mencari cara mengusirnya. Sudah tiga hari belum kembali."},
 				{"who": "Tetua Elowen", "text": "Kalau kalian memang hendak ke timur, tolong cari dia."},
@@ -325,7 +366,7 @@ static func _talk_base(npc_id: String, flags: Dictionary, gold: int) -> Array:
 					{"text": "HP dan MP seluruh party pulih. Permainan disimpan."},
 				]
 			return [
-				{"who": "Osric", "text": "Penginapan Embun. Semalam %d emas, sudah termasuk bubur hangat.", "args": [DUSUN_INN_PRICE]},
+				{"who": "Osric", "text": "Penginapan Dewfall. Semalam %d emas, sudah termasuk bubur hangat.", "args": [DUSUN_INN_PRICE]},
 				{"choice": [
 					{"text": "Menginap", "steps": night},
 					{"text": "Tidak sekarang", "steps": [{"who": "Osric", "text": "Pintu selalu terbuka."}]},
@@ -352,7 +393,7 @@ static func _talk_base(npc_id: String, flags: Dictionary, gold: int) -> Array:
 			if flags.has("lahar"):
 				return [
 					{"who": "Tetua Aldric", "text": "Gunungnya tenang. Seumur hidupku belum pernah sesunyi ini."},
-					{"who": "Tetua Aldric", "text": "Jalan lahar di timur sudah mengeras. Kastil Kelam ada di ujungnya. Semoga langkah kalian ringan."},
+					{"who": "Tetua Aldric", "text": "Jalan lahar di timur sudah mengeras. Kastil Dreadmoor ada di ujungnya. Semoga langkah kalian ringan."},
 				]
 			if flags.has("kael_joined"):
 				return [

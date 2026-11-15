@@ -23,13 +23,13 @@ func _initialize() -> void:
 	_ground("path", "c2a471", "d4b986", "a98c5c", 3, "path")
 	_ground("water", "3a6fb5", "6b9ddb", "2f5e9e", 3, "water")
 	_ground("rock", "6b6558", "7c7566", "59544a", 2, "path")
-	# Pegunungan Abu
+	# Pegunungan Ashfell
 	_ground("ash", "8a8478", "9c968a", "767064", 3, "path")
 	_ground("cinder", "5c5650", "6e6860", "4a4540", 2, "path")
 	_ground("lava", "e0622a", "ffb040", "b03a1c", 3, "water")
 	_dead_tree("dead_tree_0", false)
 	_dead_tree("dead_tree_1", true)
-	# Kastil Kelam
+	# Kastil Dreadmoor
 	_ground("floor", "5a5866", "68667a", "4a4856", 3, "path")
 	_ground("floor_dark", "44424e", "525060", "36343e", 2, "path")
 	_ground("carpet", "8a2a34", "a03a44", "6e1e28", 2, "path")
@@ -78,11 +78,11 @@ func _initialize() -> void:
 	_hero("npc_sari", {"h": "6a4028", "H": "4a2a18", "b": "4a8a6a", "B": "346a50", "c": "f0f0f8", "C": "c8ccdc", "p": "4a8a6a"}, _dress_sari)
 	_hero("npc_dimas", {"h": "3a2c28", "H": "241a18", "b": "e0b040", "B": "b88a28", "c": "e0b040", "C": "b88a28", "p": "5a6a9a"}, _dress_dimas)
 	_hero("npc_joko", {"h": "3a2c28", "H": "241a18", "b": "3a8a8a", "B": "2a6a6a", "c": "e0b040", "C": "b88a28", "p": "6a5644"}, _dress_joko)
-	# Warga Pos Pemburu.
+	# Warga Pos Hawkrest.
 	_hero("npc_darma", {"h": "8a8a8a", "H": "6a6a6a", "b": "6a5a4a", "B": "4e4236", "c": "7a5a3a", "C": "5f4326", "p": "4a4038"}, _dress_darma)
 	_hero("npc_ningsih", {"h": "3a2c28", "H": "241a18", "b": "9a4a3a", "B": "7a342a", "c": "e8e0d0", "C": "c8c0b0", "p": "9a4a3a"}, _dress_ningsih)
 	_hero("npc_sabar", {"h": "5a4030", "H": "3a2818", "b": "5a7a5a", "B": "425c42", "c": "d8b860", "C": "b09040", "p": "5a4a3a"}, _dress_sabar)
-	# Warga Dusun Embun.
+	# Warga Dusun Dewfall.
 	_hero("npc_laras", {"h": "d8d8e0", "H": "a8a8b8", "b": "3a7a78", "B": "2a5a5c", "c": "2a5a5c", "C": "1c4448", "p": "3a7a78"}, _dress_laras)
 	_hero("npc_wiryo", {"h": "5a4030", "H": "3a2818", "b": "8a6a4a", "B": "6a4e34", "c": "c8ccdc", "C": "a0a4b4", "p": "4a4a5a"}, _dress_wiryo)
 	_hero("npc_rumi", {"h": "3a2c28", "H": "241a18", "b": "8a4a8a", "B": "6a346a", "c": "e0b040", "C": "b88a28", "p": "8a4a8a"}, _dress_rumi)
@@ -115,16 +115,16 @@ func _initialize() -> void:
 	_monster_serigala()
 	_monster_goblin()
 	_monster_ogre()
-	# Hutan Kabut
+	# Hutan Mistwood
 	_spider("monster_laba_laba", 1.0, ["8a7ab8", "5e4e8c", "44386a", "2c2448"], false)
 	_spider("monster_ratu", 1.75, ["a05a9a", "7a3a78", "5a2a5c", "3a1a40"], true)
 	_wisp("monster_roh_kabut", ["f0ffff", "b0ecf8", "6cc0e8", "4a8ad0"], ["ffffff", "f0ffff", "d0f4fc", "b0ecf8"], "244a8a", "244a8a")
-	# Pegunungan Abu
+	# Pegunungan Ashfell
 	_monster_kadal_bara()
 	_bird("monster_elang_abu", ["e0dcd4", "b0aaa0", "807a72", "565048"], ["5e5850", "c8c2b8", "948e84"], "ffe14a")
 	_golem("monster_golem_batu", 1.0, ["a8a296", "847e72", "625c52", "443f38"], "2c2824", "7fe0f0")
 	_golem("monster_lahar", 1.7, ["8a6258", "5e4038", "44302a", "2c1e1a"], "ff8a2a", "ffd23a")
-	# Kastil Kelam
+	# Kastil Dreadmoor
 	_golem("monster_ksatria_kelam", 1.0, ["8a8aa8", "5e5e7c", "42425c", "2a2a40"], "c8503f", "ff4a3a", 0, false, true)
 	_wisp("monster_bayangan", ["b08ae0", "7a4ab8", "56308a", "341c5c"], ["e8d8ff", "c8a8f0", "a880e0", "8a5ac8"], "ffe14a", "1c1030")
 	_bird("monster_gargoyle", ["9a94a8", "726c84", "524c62", "363246"], ["363246", "8a84a0", "625c78"], "ff4a3a")
@@ -1029,6 +1029,13 @@ func _status_icons() -> void:
 			_px(img, 4, 6, Color("1c4a1c"))  # wajah tengkorak kecil
 			_px(img, 7, 6, Color("1c4a1c"))
 			_rect(img, 5, 8, 6, 8, Color("1c4a1c")), 0],
+		"charge": [func(img: Image) -> void:  # lingkaran merah bertanda seru: ancang-ancang serangan besar
+			var spans := {1: [4, 7], 2: [3, 8], 3: [2, 9], 4: [2, 9], 5: [2, 9], 6: [2, 9], 7: [2, 9], 8: [3, 8], 9: [4, 7]}
+			for y: int in spans:
+				for x in range(spans[y][0], spans[y][1] + 1):
+					_px(img, x, y, Color("e03a3a"))
+			_rect(img, 5, 2, 6, 6, Color.WHITE)
+			_rect(img, 5, 8, 6, 8, Color.WHITE), 0],
 		"taunt": [func(img: Image) -> void:  # perisai jingga bertanda seru: memancing serangan
 			shield.call(img, "ffb347", "c87a20")
 			_rect(img, 5, 2, 6, 6, Color.WHITE)
@@ -1717,7 +1724,7 @@ func _chest(sprite_name: String, open: bool) -> void:
 	_save(img, sprite_name)
 
 
-## Altar Cahaya: tumpuan batu dengan kristal biru bercahaya (32x34, jangkar 16,30).
+## Altar Lumen: tumpuan batu dengan kristal biru bercahaya (32x34, jangkar 16,30).
 func _altar() -> void:
 	var img := _new(32, 34)
 	_rect(img, 11, 19, 20, 29, Color("8a8894"))
@@ -1735,7 +1742,7 @@ func _altar() -> void:
 	_save(img, "altar")
 
 
-## Pohon mati di lereng Pegunungan Abu (28x36, jangkar 14,32). mirror membalik arah dahan.
+## Pohon mati di lereng Pegunungan Ashfell (28x36, jangkar 14,32). mirror membalik arah dahan.
 func _dead_tree(sprite_name: String, mirror: bool) -> void:
 	var img := _new(28, 36)
 	var bark := Color("5a4a40")

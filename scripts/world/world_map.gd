@@ -5,17 +5,17 @@ extends RefCounted
 
 # Peta dunia:
 #   ^ gunung   ~ air      = jalan    S (tidak dipakai lagi, dianggap jalan)
-#   . padang   f hutan    (Lembah Hijau)
-#   , padang   F hutan    (Hutan Kabut)
-#   T Desa Rindu          D Dusun Embun       (pintu masuk ke peta desa/dusun)
+#   . padang   f hutan    (Lembah Verdane)
+#   , padang   F hutan    (Hutan Mistwood)
+#   T Desa Willowmere          D Dusun Dewfall       (pintu masuk ke peta desa/dusun)
 #   B sarang Ogre         G gerbang timur (terbuka setelah Ogre kalah)
-#   Q sarang Ratu Laba-laba   P Celah Abu (terbuka setelah Ratu kalah)   E jalan ke Pegunungan Abu
-# Peta Pegunungan Abu ("abu"):
-#   a padang abu   c lereng berbatu   L lahar (tak bisa dilewati)   W jalan kembali ke Hutan Kabut
-#   K Pos Pemburu  N kawah Raksasa Lahar   R jalan lahar (terbuka setelah Raksasa kalah)   Z ujung jalan (bersambung)
-# Peta Kastil Kelam ("kastil"):
-#   C karpet (aman)   o aula   d ruang dalam   w tembok   V gerbang (kembali ke Pegunungan Abu)
-#   A Altar Cahaya (memulihkan party)   M takhta Raja Monster
+#   Q sarang Ratu Laba-laba   P Celah Ashfell (terbuka setelah Ratu kalah)   E jalan ke Pegunungan Ashfell
+# Peta Pegunungan Ashfell ("abu"):
+#   a padang abu   c lereng berbatu   L lahar (tak bisa dilewati)   W jalan kembali ke Hutan Mistwood
+#   K Pos Hawkrest  N kawah Raksasa Lahar   R jalan lahar (terbuka setelah Raksasa kalah)   Z ujung jalan (bersambung)
+# Peta Kastil Dreadmoor ("kastil"):
+#   C karpet (aman)   o aula   d ruang dalam   w tembok   V gerbang (kembali ke Pegunungan Ashfell)
+#   A Altar Lumen (memulihkan party)   M takhta Raja Monster
 # Peta desa/dusun/pos:
 #   g tanah lapang (aman)  h rumah    I penginapan   Y pohon   X jalan keluar (ke peta "exit")
 # Peta dungeon ("gua", "sarang", "kawah"): lorong berliku menuju semi-bos, dimasuki dari B / Q / N.
@@ -61,7 +61,7 @@ const MAPS := {
 		],
 	},
 	"abu": {
-		"name": "Pegunungan Abu", "outside": "^",
+		"name": "Pegunungan Ashfell", "outside": "^",
 		"chests": {Vector2i(4, 1): {"mats": {"sisik_bara": 3}}, Vector2i(51, 3): {"gold": 150}},
 		"rows": [
 			"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
@@ -87,7 +87,7 @@ const MAPS := {
 		],
 	},
 	"kastil": {
-		"name": "Kastil Kelam", "outside": "w", "theme": "castle", "floor": "floor_dark",
+		"name": "Kastil Dreadmoor", "outside": "w", "theme": "castle", "floor": "floor_dark",
 		"chests": {Vector2i(4, 6): {"gold": 300}, Vector2i(20, 7): {"item": "air_kehidupan", "count": 1}},
 		"rows": [
 			"wwwwwwwwwwwwwwwwwwwwwwwwwwwwww",
@@ -109,7 +109,7 @@ const MAPS := {
 		],
 	},
 	"desa": {
-		"name": "Desa Rindu", "outside": "Y", "spawn": Vector2i(7, 11), "exit": "dunia",
+		"name": "Desa Willowmere", "outside": "Y", "spawn": Vector2i(7, 11), "exit": "dunia",
 		"rows": [
 			"YYYYYYYYYYYYYYYYYY",
 			"YgggggggggggggggYY",
@@ -127,7 +127,7 @@ const MAPS := {
 		],
 	},
 	"gua": {
-		"name": "Gua Ogre", "outside": "^", "dungeon": true, "exit": "dunia", "spawn": Vector2i(9, 11), "floor": "path",
+		"name": "Gua Grimhollow", "outside": "^", "dungeon": true, "exit": "dunia", "spawn": Vector2i(9, 11), "floor": "path",
 		"chests": {Vector2i(1, 1): {"mats": {"taring_serigala": 2}}, Vector2i(15, 6): {"gold": 60}},
 		"rows": [
 			"^^^^^^^^^^^^^^^^^^^^",
@@ -147,7 +147,7 @@ const MAPS := {
 		],
 	},
 	"sarang": {
-		"name": "Sarang Ratu Laba-laba", "outside": "^", "theme": "mist", "dungeon": true, "exit": "dunia",
+		"name": "Sarang Silkmaw", "outside": "^", "theme": "mist", "dungeon": true, "exit": "dunia",
 		"spawn": Vector2i(10, 10), "floor": "mist_floor",
 		"chests": {Vector2i(16, 2): {"mats": {"bara_roh": 2}}, Vector2i(3, 7): {"item": "eter", "count": 2}},
 		"rows": [
@@ -167,7 +167,7 @@ const MAPS := {
 		],
 	},
 	"kawah": {
-		"name": "Kawah Lahar", "outside": "^", "theme": "ash", "dungeon": true, "exit": "abu",
+		"name": "Kawah Emberdeep", "outside": "^", "theme": "ash", "dungeon": true, "exit": "abu",
 		"spawn": Vector2i(8, 9), "floor": "cinder",
 		"chests": {Vector2i(1, 2): {"mats": {"inti_batu": 2}}, Vector2i(17, 5): {"item": "air_kehidupan", "count": 1}},
 		"rows": [
@@ -185,9 +185,9 @@ const MAPS := {
 			"^^^^^^^^^^^^^^^^^^^^",
 		],
 	},
-	# theme: "mist" = warna Hutan Kabut; "ash" = tanah abu dan pohon mati.
+	# theme: "mist" = warna Hutan Mistwood; "ash" = tanah abu dan pohon mati.
 	"dusun": {
-		"name": "Dusun Embun", "outside": "Y", "spawn": Vector2i(7, 6), "exit": "dunia", "theme": "mist",
+		"name": "Dusun Dewfall", "outside": "Y", "spawn": Vector2i(7, 6), "exit": "dunia", "theme": "mist",
 		"rows": [
 			"YYYYYYYYYYYYYY",
 			"YggggggggggggY",
@@ -200,7 +200,7 @@ const MAPS := {
 		],
 	},
 	"pos": {
-		"name": "Pos Pemburu", "outside": "Y", "spawn": Vector2i(7, 6), "exit": "abu", "theme": "ash",
+		"name": "Pos Hawkrest", "outside": "Y", "spawn": Vector2i(7, 6), "exit": "abu", "theme": "ash",
 		"rows": [
 			"YYYYYYYYYYYYYY",
 			"YggggggggggggY",
@@ -229,46 +229,46 @@ const TILES := {
 	"~": {"walk": false, "zone": ""},
 	"=": {"walk": true, "zone": ""},
 	"S": {"walk": true, "zone": ""},
-	"T": {"walk": true, "zone": "Desa Rindu", "portal": "desa"},
-	"D": {"walk": true, "zone": "Dusun Embun", "portal": "dusun"},
-	".": {"walk": true, "zone": "Lembah Hijau", "rate": 0.065, "table": "lembah_padang"},
-	"f": {"walk": true, "zone": "Lembah Hijau - hutan", "rate": 0.13, "table": "lembah_hutan"},
-	",": {"walk": true, "zone": "Hutan Kabut", "rate": 0.075, "table": "kabut_padang"},
-	"F": {"walk": true, "zone": "Hutan Kabut - rimba", "rate": 0.14, "table": "kabut_hutan"},
-	"B": {"walk": true, "zone": "Sarang Ogre", "dungeon": "ogre", "portal": "gua"},
-	"G": {"walk": true, "zone": "Gerbang Timur", "gate": "ogre",
+	"T": {"walk": true, "zone": "Desa Willowmere", "portal": "desa"},
+	"D": {"walk": true, "zone": "Dusun Dewfall", "portal": "dusun"},
+	".": {"walk": true, "zone": "Lembah Verdane", "rate": 0.065, "table": "lembah_padang"},
+	"f": {"walk": true, "zone": "Lembah Verdane - hutan", "rate": 0.13, "table": "lembah_hutan"},
+	",": {"walk": true, "zone": "Hutan Mistwood", "rate": 0.075, "table": "kabut_padang"},
+	"F": {"walk": true, "zone": "Hutan Mistwood - rimba", "rate": 0.14, "table": "kabut_hutan"},
+	"B": {"walk": true, "zone": "Mulut Gua Grimhollow", "dungeon": "ogre", "portal": "gua"},
+	"G": {"walk": true, "zone": "Gerbang Eastwatch", "gate": "ogre",
 		"locked": "Gerbang terkunci. Konon penjaganya bersarang di ujung jalan utara."},
-	"Q": {"walk": true, "zone": "Sarang Ratu Laba-laba", "dungeon": "ratu", "portal": "sarang"},
-	"P": {"walk": true, "zone": "Celah Abu", "gate": "ratu",
+	"Q": {"walk": true, "zone": "Sarang Silkmaw", "dungeon": "ratu", "portal": "sarang"},
+	"P": {"walk": true, "zone": "Celah Ashfell", "gate": "ratu",
 		"locked": "Kabut pekat menutup celah gunung ini. Mustahil melihat jalan di depan."},
-	"E": {"walk": true, "zone": "Jalan ke Pegunungan Abu", "portal": "abu"},
-	"W": {"walk": true, "zone": "Celah Abu", "portal": "dunia"},
-	"a": {"walk": true, "zone": "Pegunungan Abu", "rate": 0.075, "table": "abu_padang"},
-	"c": {"walk": true, "zone": "Pegunungan Abu - lereng", "rate": 0.14, "table": "abu_lereng"},
+	"E": {"walk": true, "zone": "Jalan ke Pegunungan Ashfell", "portal": "abu"},
+	"W": {"walk": true, "zone": "Celah Ashfell", "portal": "dunia"},
+	"a": {"walk": true, "zone": "Pegunungan Ashfell", "rate": 0.075, "table": "abu_padang"},
+	"c": {"walk": true, "zone": "Pegunungan Ashfell - lereng", "rate": 0.14, "table": "abu_lereng"},
 	"L": {"walk": false, "zone": ""},
-	"K": {"walk": true, "zone": "Pos Pemburu", "portal": "pos"},
-	"N": {"walk": true, "zone": "Kawah Lahar", "dungeon": "lahar", "portal": "kawah"},
-	"R": {"walk": true, "zone": "Jalan Lahar", "gate": "lahar",
+	"K": {"walk": true, "zone": "Pos Hawkrest", "portal": "pos"},
+	"N": {"walk": true, "zone": "Kawah Emberdeep", "dungeon": "lahar", "portal": "kawah"},
+	"R": {"walk": true, "zone": "Jalan Emberdeep", "gate": "lahar",
 		"locked": "Aliran lahar menutup jalan ke timur. Mustahil diseberangi."},
-	"Z": {"walk": true, "zone": "Jalan ke Kastil Kelam", "portal": "kastil"},
+	"Z": {"walk": true, "zone": "Jalan ke Kastil Dreadmoor", "portal": "kastil"},
 	"V": {"walk": true, "zone": "Gerbang Kastil", "portal": "abu"},
-	"C": {"walk": true, "zone": "Kastil Kelam"},
-	"o": {"walk": true, "zone": "Kastil Kelam - aula", "rate": 0.10, "table": "kastil_aula"},
-	"d": {"walk": true, "zone": "Kastil Kelam - ruang dalam", "rate": 0.15, "table": "kastil_dalam"},
+	"C": {"walk": true, "zone": "Kastil Dreadmoor"},
+	"o": {"walk": true, "zone": "Kastil Dreadmoor - aula", "rate": 0.10, "table": "kastil_aula"},
+	"d": {"walk": true, "zone": "Kastil Dreadmoor - ruang dalam", "rate": 0.15, "table": "kastil_dalam"},
 	"w": {"walk": false, "zone": ""},
-	"A": {"walk": true, "zone": "Altar Cahaya", "scene": "altar"},
+	"A": {"walk": true, "zone": "Altar Lumen", "scene": "altar"},
 	"M": {"walk": true, "zone": "Ruang Takhta", "boss": "raja"},
 	"g": {"walk": true, "zone": ""},
 	"h": {"walk": false, "zone": ""},
 	"I": {"walk": false, "zone": ""},
 	"Y": {"walk": false, "zone": ""},
 	"X": {"walk": true, "zone": "", "portal": "@exit"},  # tujuan = "exit" milik peta ini
-	"r": {"walk": true, "zone": "Gua Ogre", "rate": 0.11, "table": "lembah_gua"},
-	"s": {"walk": true, "zone": "Sarang Ratu Laba-laba", "rate": 0.11, "table": "kabut_sarang"},
-	"k": {"walk": true, "zone": "Kawah Lahar", "rate": 0.11, "table": "abu_kawah"},
-	"O": {"walk": true, "zone": "Sarang Ogre", "boss": "ogre"},
-	"U": {"walk": true, "zone": "Sarang Ratu Laba-laba", "boss": "ratu"},
-	"J": {"walk": true, "zone": "Kawah Lahar", "boss": "lahar"},
+	"r": {"walk": true, "zone": "Gua Grimhollow", "rate": 0.11, "table": "lembah_gua"},
+	"s": {"walk": true, "zone": "Sarang Silkmaw", "rate": 0.11, "table": "kabut_sarang"},
+	"k": {"walk": true, "zone": "Kawah Emberdeep", "rate": 0.11, "table": "abu_kawah"},
+	"O": {"walk": true, "zone": "Gua Grimhollow", "boss": "ogre"},
+	"U": {"walk": true, "zone": "Sarang Silkmaw", "boss": "ratu"},
+	"J": {"walk": true, "zone": "Kawah Emberdeep", "boss": "lahar"},
 	"x": {"walk": true, "zone": "", "chest": true},
 	# Tempat side quest (lihat Quests): dijaga monster elite selama quest-nya berjalan.
 	"1": {"walk": true, "zone": "Sarang Perampok", "quest": "perampok"},
@@ -298,7 +298,7 @@ static func outside() -> String:
 	return MAPS[current].outside
 
 
-## Nuansa peta: "" biasa, "mist" Hutan Kabut, "ash" Pegunungan Abu (warna tanah dan pohon berbeda).
+## Nuansa peta: "" biasa, "mist" Hutan Mistwood, "ash" Pegunungan Ashfell (warna tanah dan pohon berbeda).
 static func theme() -> String:
 	return MAPS[current].get("theme", "")
 

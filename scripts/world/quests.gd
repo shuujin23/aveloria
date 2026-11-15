@@ -20,8 +20,8 @@ const LIST := {
 	"perampok": {
 		"name": "Palu Warisan", "need": "mira_joined", "giver": "gatot", "boss": "goblin_kepala", "backdrop": "hutan",
 		"place": "Sarang Perampok",
-		"goal": "Cari sarang perampok di hutan barat daya Lembah Hijau dan kalahkan pemimpinnya.",
-		"back": "Kembalikan palu itu kepada Garrick di Desa Rindu.",
+		"goal": "Cari sarang perampok di hutan barat daya Lembah Verdane dan kalahkan pemimpinnya.",
+		"back": "Kembalikan palu itu kepada Garrick di Desa Willowmere.",
 		"offer": [
 			"Sebelum kalian pergi... Gerombolan goblin mencuri palu tempa warisan ayahku dan membawanya ke sarang mereka di hutan barat daya.",
 			"Pemimpin mereka besar dan licik. Kalau kalian bisa merebutnya kembali, akan kutempa senjata terbaikku untuk salah satu dari kalian.",
@@ -33,8 +33,8 @@ const LIST := {
 	"roh_tua": {
 		"name": "Lentera Dusun", "need": "selene_joined", "giver": "wiryo", "boss": "roh_tua", "backdrop": "kabut",
 		"place": "Altar Tua",
-		"goal": "Cari altar tua di sudut barat laut Hutan Kabut dan usir roh yang bersemayam di sana.",
-		"back": "Bawa lentera itu kepada Osric di Dusun Embun.",
+		"goal": "Cari altar tua di sudut barat laut Hutan Mistwood dan usir roh yang bersemayam di sana.",
+		"back": "Bawa lentera itu kepada Osric di Dusun Dewfall.",
 		"offer": [
 			"Kalian yang menolong Selene, ya? Aku punya permintaan.",
 			"Lentera penuntun dusun ini dulu tergantung di altar tua di sudut barat laut hutan. Sejak sesosok roh tua bersemayam di sana, tak ada yang berani mengambilnya.",
@@ -47,8 +47,8 @@ const LIST := {
 	"golem_purba": {
 		"name": "Tambang yang Terkubur", "need": "kael_joined", "giver": "sabar", "boss": "golem_purba", "backdrop": "abu",
 		"place": "Mulut Tambang",
-		"goal": "Cari mulut tambang di sudut barat daya Pegunungan Abu dan singkirkan golem penjaganya.",
-		"back": "Kabari Tobin di Pos Pemburu.",
+		"goal": "Cari mulut tambang di sudut barat daya Pegunungan Ashfell dan singkirkan golem penjaganya.",
+		"back": "Kabari Tobin di Pos Hawkrest.",
 		"offer": [
 			"Kalian kelihatan tangguh. Mau dengar tawaran?",
 			"Tambang mitril di sudut barat daya pegunungan ini dijaga golem purba sejak gunung mengamuk. Para penambang tak bisa masuk.",
@@ -62,22 +62,22 @@ const LIST := {
 	"pedang_fajar": {
 		"name": "Ujian Sang Ksatria", "need": "lahar", "giver": "tetua", "boss": "panglima_kelam", "backdrop": "kastil",
 		"place": "Ruang Panglima", "hard": true,
-		"goal": "Kalahkan Panglima Kelam di ruang dalam sebelah timur Kastil Kelam.",
-		"back": "Bawa Pedang Fajar kepada Tetua Bram di Desa Rindu.",
+		"goal": "Kalahkan Panglima Kelam di ruang dalam sebelah timur Kastil Dreadmoor.",
+		"back": "Bawa Pedang Fajar kepada Tetua Bram di Desa Willowmere.",
 		"offer": [
 			"Arlen. Sebelum kau menantang Raja Monster, ada yang harus kau tahu.",
-			"Pedang Fajar, pusaka ksatria desa ini, dirampas Panglima Kelam saat kastil itu jatuh. Ia menjaganya di ruang dalam sebelah timur Kastil Kelam.",
+			"Pedang Fajar, pusaka ksatria desa ini, dirampas Panglima Kelam saat kastil itu jatuh. Ia menjaganya di ruang dalam sebelah timur Kastil Dreadmoor.",
 			"Rebut kembali pedang itu. Hanya ksatria yang mengalahkannya yang pantas memegangnya.",
 		],
-		"remind": "Panglima Kelam ada di ruang dalam sebelah timur Kastil Kelam. Jangan remehkan dia.",
+		"remind": "Panglima Kelam ada di ruang dalam sebelah timur Kastil Dreadmoor. Jangan remehkan dia.",
 		"thanks": ["Pedang Fajar... Sudah puluhan tahun aku tidak melihat cahayanya.", "Ia memilihmu, Arlen. Bawalah."],
 		"reward": {"slot": "weapon", "tier": 3, "rarity": "legend", "for": "arlen", "gold": 400},
 	},
 	"tongkat_cahaya": {
 		"name": "Doa yang Tertinggal", "need": "lahar", "giver": "sari", "boss": "induk_pucat", "backdrop": "lembah",
 		"place": "Kapel Runtuh", "hard": true,
-		"goal": "Kalahkan Induk Pucat di kapel runtuh, padang timur laut Lembah Hijau.",
-		"back": "Tunjukkan tongkat itu kepada Marla di Desa Rindu.",
+		"goal": "Kalahkan Induk Pucat di kapel runtuh, padang timur laut Lembah Verdane.",
+		"back": "Tunjukkan tongkat itu kepada Marla di Desa Willowmere.",
 		"offer": [
 			"Mira, ada yang ingin kusampaikan sejak dulu.",
 			"Gurumu meninggalkan tongkatnya di kapel runtuh di padang timur laut lembah, dekat sungai. Sekarang seekor induk laba-laba pucat bersarang di sana.",
@@ -90,22 +90,22 @@ const LIST := {
 	"tongkat_bintang": {
 		"name": "Bintang yang Jatuh", "need": "lahar", "giver": "laras", "boss": "penjaga_kristal", "backdrop": "kabut",
 		"place": "Kawah Bintang", "hard": true,
-		"goal": "Kalahkan Penjaga Kristal di kawah bintang, ujung selatan Hutan Kabut.",
-		"back": "Kabari Tetua Elowen di Dusun Embun.",
+		"goal": "Kalahkan Penjaga Kristal di kawah bintang, ujung selatan Hutan Mistwood.",
+		"back": "Kabari Tetua Elowen di Dusun Dewfall.",
 		"offer": [
 			"Selene, kau ingat cahaya yang jatuh di selatan hutan waktu kau kecil?",
 			"Itu pecahan bintang. Dari sanalah Tongkat Bintang Jatuh ditempa, lalu disegel di kawah itu oleh penjaga kristal supaya tidak jatuh ke tangan yang salah.",
 			"Kau sudah siap sekarang. Buktikan pada penjaganya.",
 		],
-		"remind": "Kawah bintang ada di ujung selatan Hutan Kabut. Penjaganya keras seperti batu permata.",
+		"remind": "Kawah bintang ada di ujung selatan Hutan Mistwood. Penjaganya keras seperti batu permata.",
 		"thanks": ["Jadi penjaga itu mengakuimu. Aku tahu hari ini akan datang.", "Tongkat itu milikmu, Selene."],
 		"reward": {"slot": "weapon", "tier": 3, "rarity": "legend", "for": "selene", "gold": 400},
 	},
 	"busur_angin": {
 		"name": "Angin dari Timur", "need": "lahar", "giver": "darma", "boss": "rajawali_badai", "backdrop": "abu",
 		"place": "Puncak Angin", "hard": true,
-		"goal": "Kalahkan Rajawali Badai di puncak utara Pegunungan Abu.",
-		"back": "Bawa busur itu kepada Tetua Aldric di Pos Pemburu.",
+		"goal": "Kalahkan Rajawali Badai di puncak utara Pegunungan Ashfell.",
+		"back": "Bawa busur itu kepada Tetua Aldric di Pos Hawkrest.",
 		"offer": [
 			"Kael. Ayahmu dulu memburu Rajawali Badai di puncak utara, dan busurnya tertinggal di sarang burung itu.",
 			"Tak ada pemburu yang berani ke sana sejak itu. Tapi kau bukan pemburu biasa lagi.",
@@ -119,8 +119,8 @@ const LIST := {
 	"naga_purba": {
 		"name": "Naga Purba", "need": "raja", "giver": "rekso", "boss": "naga_purba", "backdrop": "kawah",
 		"place": "Sarang Naga", "hard": true,
-		"goal": "Kalahkan Naga Purba di sarangnya, timur laut Pegunungan Abu.",
-		"back": "Kabari Varek di Pos Pemburu.",
+		"goal": "Kalahkan Naga Purba di sarangnya, timur laut Pegunungan Ashfell.",
+		"back": "Kabari Varek di Pos Hawkrest.",
 		"offer": [
 			"Raja Monster sudah tumbang, tapi gunung ini belum tenang.",
 			"Di balik lahar timur laut ada naga yang lebih tua dari kastil itu. Selama ini ia tidur. Sekarang ia bangun.",

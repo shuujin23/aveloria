@@ -17,6 +17,10 @@ var items := {}
 var opening_lines: Array = []
 ## Bagian MP maksimum yang pulih tiap akhir ronde (lihat Db.MP_REGEN); simulasi bisa mengubahnya.
 var mp_regen := Db.MP_REGEN
+## Nomor ronde yang sedang berjalan (bertambah tiap round_order() dipanggil), dan langkah pola tiap bos
+## berpola (lihat "pattern" di Db.ENEMIES). Keduanya milik pertarungan ini, bukan data global.
+var round_no := 0
+var _pattern_step := {}
 
 
 func _init(p_party: Array, p_enemies: Array) -> void:
@@ -103,6 +107,13 @@ func try_flee() -> bool:
 
 
 func enemy_command(e: Battler) -> Dictionary:
+	var pattern: Dictionary = Db.ENEMIES[e.id].get("pattern", {})
+	if not pattern.is_empty():  # bos berpola: giliran mengikuti urutan langkahnya
+		var steps: Array = pattern.steps
+		var index := int(_pattern_step.get(e, 0))
+		_pattern_step[e] = index + 1
+		if steps[index % steps.size()] != "attack":
+			return {"actor": e, "kind": steps[index % steps.size()]}
 	var usable: Array = []
 	for s: String in e.skills:
 		var sk: Dictionary = Db.SKILLS[s]
@@ -126,6 +137,7 @@ func _enemy_target() -> Battler:
 ## Urutan giliran satu ronde: semua petarung yang masih hidup, SPD tertinggi lebih dulu dengan sedikit
 ## unsur acak. Diundi sekali di awal ronde; tiap petarung lalu beraksi saat gilirannya tiba.
 func round_order() -> Array:
+	round_no += 1
 	var keyed: Array = []
 	for b: Battler in living(party + enemies):
 		var key := b.stat("agi") * rng.randf_range(0.75, 1.25)
@@ -180,6 +192,14 @@ func execute(cmd: Dictionary) -> Array:
 		lines.append(Loc.t("%s terpaku dan kehilangan gilirannya!") % actor.display_name)
 		return lines
 	match cmd.kind:
+		"windup":  # tanda serangan: serangan besarnya lepas di akhir ronde berikutnya
+			actor.statuses["charge"] = 1
+			actor.slam_round = round_no + 1
+			lines.append(Loc.t(Db.ENEMIES[actor.id].pattern.warn) % actor.display_name)
+		"hold":
+			lines.append(Loc.t(Db.ENEMIES[actor.id].pattern.hold) % actor.display_name)
+		"rest":
+			lines.append(Loc.t(Db.ENEMIES[actor.id].pattern.rest) % actor.display_name)
 		"defend":
 			actor.defending = true
 			lines.append(Loc.t("%s bersiaga menahan serangan.") % actor.display_name)
@@ -252,6 +272,14 @@ static func apply_item(item_id: String, target: Battler, lines: Array) -> bool:
 ## Bisa menumbangkan petarung, jadi pemanggil perlu memeriksa menang/kalah sesudahnya.
 func end_round() -> Array:
 	var lines: Array = []
+	for e: Battler in enemies:  # serangan besar bos berpola lepas di sini, setelah semua giliran ronde ini
+		if e.is_alive() and e.slam_round == round_no:
+			var pattern: Dictionary = Db.ENEMIES[e.id].pattern
+			lines.append(Loc.t(pattern.release) % e.display_name)
+			for m: Battler in living(party):
+				_phys_hit(e, m, float(pattern.power), 0.0, lines)
+			e.statuses.erase("charge")
+			e.slam_round = -1
 	for m: Battler in party:  # MP pulih sedikit tiap ronde; lebih banyak untuk yang bertahan
 		if m.is_alive():
 			m.mp = min(m.max_mp, m.mp + mp_gain(m))
@@ -275,6 +303,16 @@ func end_round() -> Array:
 		if not b.is_alive():
 			b.statuses.clear()
 	return lines
+
+
+## Jarak ke serangan besar bos berpola: 0 = lepas di akhir ronde ini, 1 = akhir ronde depan, -1 = tidak ada.
+func slam_incoming() -> int:
+	var nearest := -1
+	for e: Battler in enemies:
+		if e.is_alive() and e.slam_round >= round_no:
+			var wait := e.slam_round - round_no
+			nearest = wait if nearest < 0 else min(nearest, wait)
+	return nearest
 
 
 ## MP yang pulih untuk seorang anggota party di akhir ronde ini.

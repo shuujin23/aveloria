@@ -179,6 +179,12 @@ func _cmd_text(cmd: Dictionary) -> String:
 			return Loc.t("Bertahan")
 		"skip":
 			return Loc.t("Terpaku")
+		"windup":
+			return Loc.t("Ancang-ancang")
+		"hold":
+			return Loc.t("Menahan ancang-ancang")
+		"rest":
+			return Loc.t("Lengah")
 		"item":
 			return String(Loc.t(Db.ITEMS[cmd.item].name)) + to
 		"skill":
@@ -308,6 +314,16 @@ func _next_turn() -> void:
 		_ask_command()
 
 
+## Peringatan serangan besar bos yang sedang ancang-ancang; kosong kalau tidak ada.
+func _slam_warning() -> String:
+	match engine.slam_incoming():
+		0:
+			return Loc.t("Hantaman besar mengenai seluruh party di akhir ronde ini. Bertahanlah!")
+		1:
+			return Loc.t("Musuh mengambil ancang-ancang: hantaman besar datang di akhir ronde depan.")
+	return ""
+
+
 ## Tampilkan menu perintah untuk tokoh yang sedang mendapat giliran.
 func _ask_command() -> void:
 	var actor := _current
@@ -327,7 +343,9 @@ func _ask_command() -> void:
 			"disabled": not engine.can_flee(), "cb": _attempt_flee},
 	]
 	_show_menu(Loc.t("Giliran %s (%s)") % [actor.display_name, Loc.t(actor.job)], items)
-	_set_banner(Loc.t("Giliran %s: pilih perintah") % actor.display_name)
+	var banner: String = Loc.t("Giliran %s: pilih perintah") % actor.display_name
+	var warning := _slam_warning()
+	_set_banner(banner if warning == "" else "%s\n%s" % [banner, warning])
 	_mark_active(actor)
 
 
@@ -456,7 +474,7 @@ func _run_turn(cmd: Dictionary) -> void:
 	_mark_active(actor)
 	# Mesin battle langsung mengubah HP; tampilan baru diperbarui tepat saat animasi "mengenai".
 	var targets := engine.resolve_targets(cmd)
-	var animate: bool = cmd.kind != "skip" and not actor.has_status("stun") and (cmd.kind != "skill" or actor.mp >= actor.skill_cost(cmd.skill))
+	var animate: bool = not cmd.kind in ["skip", "hold", "rest"] and not actor.has_status("stun") and (cmd.kind != "skill" or actor.mp >= actor.skill_cost(cmd.skill))
 	_set_banner(Loc.t("Giliran %s:   %s") % [actor.display_name, _cmd_text(cmd)])
 	var lines := engine.execute(cmd)
 	if not lines.is_empty():
@@ -486,10 +504,17 @@ func _end_round() -> void:
 	_mark_active(null)
 	_order_box.visible = false
 	_set_banner("")
+	var slam: bool = engine.slam_incoming() == 0  # serangan besar bos lepas sekarang: arena berguncang
+	if slam:
+		Audio.sfx("quake")
+		_tint_to(Color(0.5, 0.3, 0.1, 0.3))
+		_shake(15.0, 0.5)
 	for line: String in engine.end_round():
 		_refresh()
 		await _say(line)
 	_refresh()
+	if slam:
+		create_tween().tween_property(_tint, "color:a", 0.0, 0.25)
 	if engine.is_victory():
 		_victory()
 	elif engine.is_defeat():
@@ -687,8 +712,14 @@ func _fill_xp(row: Dictionary, from: int, to: int, need: int) -> void:
 func _defeat() -> void:
 	Audio.play_jingle("game_over", false)
 	await _say(Loc.t("Seluruh party tumbang..."))
-	_show_menu(Loc.t("Kalah"), [{"text": Loc.t("Kembali ke desa"), "hint": Loc.t("Party dipulihkan, tetapi separuh emas hilang."),
-		"cb": Game.defeat_to_respawn}])
+	var options: Array = []
+	if not engine.can_flee() and Game.can_retry():  # bos dan penjaga quest boleh diulang tanpa penalti
+		options.append({"text": Loc.t("Coba lagi"),
+			"hint": Loc.t("Ulangi pertarungan ini dari awal, dengan HP, MP, dan barang seperti sebelum bertarung."),
+			"cb": Game.retry_battle})
+	options.append({"text": Loc.t("Kembali ke penginapan"), "hint": Loc.t("Party dipulihkan, tetapi separuh emas hilang."),
+		"cb": Game.defeat_to_respawn})
+	_show_menu(Loc.t("Kalah"), options)
 
 
 func _say(text: String) -> void:
@@ -716,6 +747,8 @@ func _play_fx(cmd: Dictionary, targets: Array) -> void:
 		fx = "heal"
 	elif cmd.kind == "skill":
 		fx = Db.SKILL_FX.get(cmd.skill, "heavy_slash")
+	elif cmd.kind == "windup":  # bos mengambil ancang-ancang
+		fx = "buff_self"
 	elif RANGED_HEROES.has(actor.id):  # pemanah: anak panahnya yang terbang, bukan orangnya
 		fx = "arrow"
 	var area := Vector2.ZERO  # titik tengah semua sasaran

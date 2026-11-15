@@ -21,6 +21,7 @@ var agi := 1
 
 var skills: Array = []
 var defending := false
+var slam_round := -1  # bos berpola: nomor ronde saat serangan besarnya lepas (-1 = tidak sedang ancang-ancang)
 var statuses := {}  # id efek status (lihat Db.STATUSES) -> sisa ronde
 var immune: Array = []  # id efek status yang tidak mempan pada petarung ini
 
@@ -239,6 +240,7 @@ func blocks_nerf() -> bool:
 
 func reset_battle_state() -> void:
 	defending = false
+	slam_round = -1
 	statuses.clear()
 
 

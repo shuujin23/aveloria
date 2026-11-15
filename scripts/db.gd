@@ -32,6 +32,9 @@ const STATUSES := {
 	"taunt": {"name": "Pancing", "kind": "buff", "turns": 3, "tag": "PANCING", "color": "ffb347"},
 	# Terpaku: kehilangan giliran berikutnya, lalu hilang (no_decay = tidak berkurang oleh waktu).
 	# no_boss = semi-bos dan bos kebal.
+	# Ancang-ancang: penanda bos sedang menyiapkan serangan besar (lihat "pattern" di ENEMIES). internal =
+	# bukan efek dari jurus atau barang.
+	"charge": {"name": "Ancang-ancang", "kind": "buff", "turns": 1, "no_decay": true, "internal": true, "tag": "!", "color": "ff5a5a"},
 	"stun": {"name": "Terpaku", "kind": "nerf", "turns": 1, "no_decay": true, "no_boss": true, "tag": "PAKU", "color": "ffe14a"},
 }
 
@@ -182,7 +185,7 @@ const SKILLS := {
 	"tipu_muslihat": {"name": "Tipu Muslihat", "mp": 3, "target": "enemy", "kind": "status", "status": "attack_break", "desc": ""},
 	"hantaman_bumi": {"name": "Hantaman Bumi", "mp": 4, "target": "all_enemies", "kind": "phys", "power": 0.8,
 		"inflict": {"status": "defense_break", "chance": 0.35}, "desc": ""},
-	# --- Monster Hutan Kabut ---
+	# --- Monster Hutan Mistwood ---
 	"gigitan_racun": {"name": "Gigitan Racun", "mp": 2, "target": "enemy", "kind": "phys", "power": 1.2,
 		"inflict": {"status": "poison", "chance": 0.5}, "desc": ""},
 	"jaring": {"name": "Jaring Lengket", "mp": 3, "target": "enemy", "kind": "status", "status": "slow", "desc": ""},
@@ -191,7 +194,7 @@ const SKILLS := {
 	"jaring_raksasa": {"name": "Jaring Raksasa", "mp": 5, "target": "all_enemies", "kind": "status", "status": "slow", "desc": ""},
 	"semburan_racun": {"name": "Semburan Racun", "mp": 5, "target": "all_enemies", "kind": "magic", "power": 9,
 		"inflict": {"status": "poison", "chance": 0.5}, "desc": ""},
-	# --- Monster Pegunungan Abu ---
+	# --- Monster Pegunungan Ashfell ---
 	"gigitan_bara": {"name": "Gigitan Bara", "mp": 2, "target": "enemy", "kind": "phys", "power": 1.3,
 		"inflict": {"status": "burn", "chance": 0.4}, "desc": ""},
 	"cakar_tajam": {"name": "Cakar Tajam", "mp": 2, "target": "enemy", "kind": "phys", "power": 1.2,
@@ -200,7 +203,7 @@ const SKILLS := {
 	"kulit_batu": {"name": "Kulit Batu", "mp": 3, "target": "self", "kind": "status", "status": "defense_up", "desc": ""},
 	"semburan_lahar": {"name": "Semburan Lahar", "mp": 6, "target": "all_enemies", "kind": "magic", "power": 14,
 		"inflict": {"status": "burn", "chance": 0.5}, "desc": ""},
-	# --- Monster Kastil Kelam ---
+	# --- Monster Kastil Dreadmoor ---
 	"tebasan_gelap": {"name": "Tebasan Gelap", "mp": 3, "target": "enemy", "kind": "phys", "power": 1.5, "desc": ""},
 	"sumpah_perang": {"name": "Sumpah Perang", "mp": 3, "target": "self", "kind": "status", "status": "attack_up", "desc": ""},
 	"kutukan": {"name": "Kutukan", "mp": 3, "target": "enemy", "kind": "status", "status": "attack_break", "desc": ""},
@@ -259,7 +262,7 @@ const RARITIES := {
 	"super": {"name": "Super Rare", "color": "c890ff"},
 	"ultra": {"name": "Ultra Rare", "color": "ffb347"},
 }
-const REGION_NAMES := {1: "Lembah Hijau", 2: "Hutan Kabut", 3: "Pegunungan Abu", 4: "Kastil Kelam"}
+const REGION_NAMES := {1: "Lembah Verdane", 2: "Hutan Mistwood", 3: "Pegunungan Ashfell", 4: "Kastil Dreadmoor"}
 
 ## Bahan tempa hasil drop monster: satu per kategori di tiap wilayah. Disimpan di kantong bahan
 ## (Game.mats), terpisah dari tas. sell = harga jual ke pandai besi.
@@ -494,9 +497,17 @@ const ENEMIES := {
 		"xp": 9, "gold": 6, "skills": ["serangan_buas", "raungan"], "immune": []},
 	"goblin": {"name": "Goblin Perampok", "hp": 42, "mp": 6, "atk": 16, "defense": 7, "mag": 0, "agi": 7,
 		"xp": 12, "gold": 12, "skills": ["serangan_buas", "tipu_muslihat"], "immune": []},
-	"ogre": {"name": "Ogre Penjaga", "hp": 276, "mp": 30, "atk": 28, "defense": 9, "mag": 0, "agi": 5,
-		"xp": 80, "gold": 100, "skills": ["hantaman_bumi", "raungan", "serangan_buas"], "immune": ["slow"],
-		"boss": true},
+	"ogre": {"name": "Ogre Penjaga", "hp": 312, "mp": 30, "atk": 32, "defense": 9, "mag": 0, "agi": 5,
+		"xp": 80, "gold": 100, "skills": ["raungan", "serangan_buas"], "immune": ["slow"],
+		"boss": true,
+		# Pola giliran yang berulang: attack = AI biasa; windup = ancang-ancang (tanda serangan);
+		# hold = menahan, lalu serangan besarnya lepas di AKHIR ronde itu, setelah semua tokoh sempat
+		# bergerak sekali sejak tanda muncul; rest = lengah, tidak berbuat apa-apa.
+		"pattern": {"steps": ["attack", "windup", "hold", "rest"], "power": 1.7,
+			"warn": "%s mengangkat gadanya tinggi-tinggi! Hantaman Dahsyat akan mengenai seluruh party di akhir ronde berikutnya.",
+			"hold": "%s menahan ancang-ancangnya...",
+			"release": "%s melepaskan Hantaman Dahsyat!",
+			"rest": "%s terengah-engah dan lengah."}},
 	"lendir_emas": {"name": "Lendir Emas", "hp": 70, "mp": 10, "atk": 15, "defense": 9, "mag": 0, "agi": 8,
 		"xp": 30, "gold": 45, "skills": ["serangan_buas", "kulit_batu"], "immune": [], "voice": "soft"},
 	"mata_kabut": {"name": "Mata Kabut", "hp": 150, "mp": 30, "atk": 14, "defense": 14, "mag": 24, "agi": 13,
@@ -528,7 +539,7 @@ const ENEMIES := {
 	"naga_purba": {"name": "Naga Purba", "hp": 3276, "mp": 300, "atk": 70, "defense": 28, "mag": 38, "agi": 14,
 		"xp": 2000, "gold": 0, "skills": ["semburan_lahar", "badai_kegelapan", "auman_raja", "hantaman_bumi"], "immune": ["burn", "slow"],
 		"boss": true},
-	# --- Hutan Kabut ---
+	# --- Hutan Mistwood ---
 	"laba_laba": {"name": "Laba-laba Kabut", "hp": 52, "mp": 8, "atk": 22, "defense": 8, "mag": 0, "agi": 12,
 		"xp": 16, "gold": 10, "skills": ["gigitan_racun", "jaring"], "immune": ["poison"]},
 	"roh_kabut": {"name": "Roh Kabut", "hp": 38, "mp": 20, "atk": 9, "defense": 14, "mag": 18, "agi": 9,
@@ -536,7 +547,7 @@ const ENEMIES := {
 	"ratu": {"name": "Ratu Laba-laba", "hp": 734, "mp": 60, "atk": 43, "defense": 11, "mag": 19, "agi": 9,
 		"xp": 180, "gold": 220, "skills": ["gigitan_racun", "jaring_raksasa", "semburan_racun"], "immune": ["poison", "slow"],
 		"boss": true},
-	# --- Pegunungan Abu ---
+	# --- Pegunungan Ashfell ---
 	"kadal_bara": {"name": "Kadal Bara", "hp": 74, "mp": 8, "atk": 30, "defense": 12, "mag": 0, "agi": 12,
 		"xp": 26, "gold": 16, "skills": ["gigitan_bara"], "immune": ["burn"]},
 	"elang_abu": {"name": "Elang Abu", "hp": 56, "mp": 8, "atk": 28, "defense": 8, "mag": 0, "agi": 21,
@@ -546,7 +557,7 @@ const ENEMIES := {
 	"lahar": {"name": "Raksasa Lahar", "hp": 1111, "mp": 80, "atk": 56, "defense": 17, "mag": 26, "agi": 7,
 		"xp": 340, "gold": 420, "skills": ["semburan_lahar", "hantaman_bumi", "kulit_batu"], "immune": ["burn", "slow"],
 		"boss": true},
-	# --- Kastil Kelam ---
+	# --- Kastil Dreadmoor ---
 	"ksatria_kelam": {"name": "Ksatria Kelam", "hp": 140, "mp": 12, "atk": 40, "defense": 22, "mag": 0, "agi": 12,
 		"xp": 48, "gold": 30, "skills": ["tebasan_gelap", "sumpah_perang"], "immune": []},
 	"bayangan": {"name": "Arwah Bayangan", "hp": 86, "mp": 30, "atk": 14, "defense": 16, "mag": 26, "agi": 17,

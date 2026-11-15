@@ -91,6 +91,8 @@ func _init() -> void:
 		_expect(used.size() < all_ids.size(), "%s memakai %d dari %d efek: %s" % [Db.ENEMIES[enemy_id].name, used.size(), all_ids.size(), ", ".join(names)])
 	for status_id: String in all_ids:
 		var st: Dictionary = Db.STATUSES[status_id]
+		if st.get("internal", false):  # penanda mesin battle, bukan efek dari jurus
+			continue
 		var users: Array = []
 		for skill_id: String in Db.SKILLS:
 			var sk: Dictionary = Db.SKILLS[skill_id]

@@ -721,7 +721,7 @@ func _open_menu() -> void:
 		{"text": Loc.t("Status"), "cb": func() -> void:
 			_stats_from_menu = true
 			_open_stats()},
-		{"text": Loc.t("Quest"), "cb": func() -> void:
+		{"text": Loc.t("Jurnal"), "cb": func() -> void:
 			_quests_from_menu = true
 			_open_quests()},
 		{"text": Loc.t("Simpan permainan"), "cb": _menu_save},
@@ -945,7 +945,7 @@ func _update_hud() -> void:
 	var zone: String = WorldMap.tile_at(_tile).zone
 	if zone == "":
 		zone = WorldMap.map_name() if (WorldMap.is_settlement(Game.map_id) or WorldMap.is_dungeon(Game.map_id)) else Loc.t("Jalan")
-	_zone_label.text = Loc.t("%s\nEmas: %d\nEsc: menu   I: tas   E: perlengkapan\nC: status   J: jurus   Q: quest") % [Loc.t(zone), Game.gold]
+	_zone_label.text = Loc.t("%s\nEmas: %d\nEsc: menu   I: tas   E: perlengkapan\nC: status   J: jurus   Q: jurnal") % [Loc.t(zone), Game.gold]
 	var lines: Array = []
 	for m: Battler in Game.party:
 		var line := "%-7s Lv %d   HP %d/%d   MP %d/%d" % [m.display_name, m.level, m.hp, m.max_hp, m.mp, m.max_mp]

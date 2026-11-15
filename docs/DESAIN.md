@@ -5,9 +5,9 @@ Target: game utuh berdurasi 2–3 jam.
 
 ## Cerita singkat
 
-Arlen, ksatria muda dari desa kecil di Lembah Hijau, berangkat untuk mengalahkan
+Arlen, ksatria muda dari desa kecil di Lembah Verdane, berangkat untuk mengalahkan
 Raja Monster yang mengancam dunia Aveloria. Di perjalanan ia bertemu tiga rekan,
-dan bersama-sama mereka menembus tiga wilayah menuju Kastil Kelam.
+dan bersama-sama mereka menembus tiga wilayah menuju Kastil Dreadmoor.
 
 Nama tokoh, wilayah, dan bos di bawah ini masih usulan dan boleh diganti.
 
@@ -26,10 +26,10 @@ Satu peta dunia yang bebas dijelajahi; tiap wilayah berisi kota/desa, area
 monster, dan satu sarang semi-bos. Wilayah berikutnya terbuka setelah semi-bos
 wilayah sebelumnya kalah.
 
-1. **Lembah Hijau** — desa awal. Semi-bos: Ogre Penjaga.
-2. **Hutan Kabut** — Dusun Embun; Selene bergabung di altar tua. Semi-bos: Ratu Laba-laba.
-3. **Pegunungan Abu** — Pos Pemburu; Kael bergabung di punggung bukit utara. Semi-bos: Raksasa Lahar.
-4. **Kastil Kelam** — Altar Cahaya untuk memulihkan diri; bos utama Raja Monster, lalu adegan penutup dan layar tamat.
+1. **Lembah Verdane** — desa awal. Semi-bos: Ogre Penjaga.
+2. **Hutan Mistwood** — Dusun Dewfall; Selene bergabung di altar tua. Semi-bos: Ratu Laba-laba.
+3. **Pegunungan Ashfell** — Pos Hawkrest; Kael bergabung di punggung bukit utara. Semi-bos: Raksasa Lahar.
+4. **Kastil Dreadmoor** — Altar Lumen untuk memulihkan diri; bos utama Raja Monster, lalu adegan penutup dan layar tamat.
 
 ## Sistem battle
 
@@ -74,9 +74,9 @@ wilayah sebelumnya kalah.
 
 ## Armory: perlengkapan, bahan, dan tempa
 
-- **Perlengkapan**: 4 slot per tokoh (senjata, kepala, dada, kaki), 3 tingkat. Tiap barang milik satu tokoh, langsung dipakai saat dibeli, dan tidak memakan slot tas. Dijual pandai besi: Garrick (Desa Rindu, tingkat 1), Halvard (Dusun Embun, tingkat 2), Varek (Pos Pemburu, tingkat 3).
+- **Perlengkapan**: 4 slot per tokoh (senjata, kepala, dada, kaki), 3 tingkat. Tiap barang milik satu tokoh, langsung dipakai saat dibeli, dan tidak memakan slot tas. Dijual pandai besi: Garrick (Desa Willowmere, tingkat 1), Halvard (Dusun Dewfall, tingkat 2), Varek (Pos Hawkrest, tingkat 3).
 - **Kategori monster**: common, rare, super rare (satu per wilayah, peluang muncul 7%, hanya saat party berisi 2 orang atau lebih), ultra rare (semi-bos dan bos).
-- **Bahan**: satu bahan per kategori di tiap wilayah (16 macam), disimpan di kantong bahan tanpa batas. Bos selalu menjatuhkan 3 ultra, 2 super, 3 rare, 4 common. Bahan Kastil Kelam tidak dipakai menempa; hanya untuk dijual.
+- **Bahan**: satu bahan per kategori di tiap wilayah (16 macam), disimpan di kantong bahan tanpa batas. Bos selalu menjatuhkan 3 ultra, 2 super, 3 rare, 4 common. Bahan Kastil Dreadmoor tidak dipakai menempa; hanya untuk dijual.
 - **Tempa**: +1 sampai +5 dengan emas dan bahan dari wilayah yang sama dengan tingkat barang (+1/+2 common, +3 rare, +4 super rare, +5 ultra rare). Stat andalan naik di tiap tingkat.
 - **Sifat**: tiap tempa berpeluang memberi satu efek status (20%, 20%, 35%, 50%, pasti di +5). Di battle sifat aktif dengan peluang 15% (+1) sampai 35% (+5). Senjata: nerf ke musuh yang diserang atau ATK Naik ke pemakai; kepala: Kebal di awal battle; dada: DEF Naik saat terkena serangan; kaki: Cepat di awal battle.
 - **Tempa ulang**: mengacak sifat senjata dengan emas dan 1 bahan rare.
@@ -97,7 +97,7 @@ wilayah sebelumnya kalah.
 - Kalimat dengan angka memakai `Loc.t("... %d ...") % nilai`; di adegan cerita, isi `"args": [..]` pada langkah dialognya.
 - Menambah teks baru: tulis dalam bahasa Indonesia, bungkus dengan `Loc.t`, lalu tambahkan padanannya di `loc_en.gd`. `scripts/tests/loc_test.gd` gagal kalau ada teks tampil yang belum punya padanan atau kalau penanda format (`%s`, `%d`) tidak cocok.
 - Uji otomatis (dijalankan dengan `-s`) selalu berbahasa Indonesia dan tidak menulis file pengaturan; tambahkan `-- <folder> --lang=en` pada `flow.gd` untuk melihat tangkapan layar versi Inggris.
-- Nama tokoh dan NPC memakai nama fantasi yang sama di kedua bahasa (Marla, Finn, Doran, Garrick, Elowen, Osric, Nessa, Halvard, Aldric, Brenna, Tobin, Varek). Gelar ikut diterjemahkan (Tetua -> Elder), begitu juga nama tempat (Desa Rindu -> Willowmere Village).
+- Nama tokoh dan NPC memakai nama fantasi yang sama di kedua bahasa (Marla, Finn, Doran, Garrick, Elowen, Osric, Nessa, Halvard, Aldric, Brenna, Tobin, Varek). Gelar ikut diterjemahkan (Tetua -> Elder), begitu juga nama tempat (Desa Willowmere -> Willowmere Village).
 
 ## Pemulihan MP di pertarungan
 
@@ -117,21 +117,21 @@ wilayah sebelumnya kalah.
 
 ## Dungeon semi-bos dan peti harta
 
-- Tiga semi-bos kini menunggu di ujung dungeon tersendiri: **Gua Ogre** (`gua`), **Sarang Ratu Laba-laba** (`sarang`), dan **Kawah Lahar** (`kawah`). Petak B / Q / N di peta wilayah menjadi pintu masuknya (`"dungeon"` + `"portal"` di `WorldMap.TILES`); syarat rekan dari `Db.BOSS_RULES` diperiksa di pintu itu.
+- Tiga semi-bos kini menunggu di ujung dungeon tersendiri: **Gua Grimhollow** (`gua`), **Sarang Silkmaw** (`sarang`), dan **Kawah Emberdeep** (`kawah`). Petak B / Q / N di peta wilayah menjadi pintu masuknya (`"dungeon"` + `"portal"` di `WorldMap.TILES`); syarat rekan dari `Db.BOSS_RULES` diperiksa di pintu itu.
 - Tiap dungeon sekitar 50-60 petak lorong dengan cabang dan jalan buntu, monster wilayahnya (tabel `lembah_gua`, `kabut_sarang`, `abu_kawah`, peluang 11% per langkah), dan tidak ada penginapan di dalamnya. Semi-bos tampak berdiri di petaknya sampai dikalahkan. Petak `e` adalah jalan keluar ke peta induk.
 - Dinding dungeon memakai bukit batu rendah supaya lorong satu petak tetap terlihat; pohon terlalu tinggi dan menutupi lorong.
-- **Peti harta** (petak `x`): isinya di `"chests"` tiap peta, berupa `{"gold"}`, `{"item", "count"}`, atau `{"mats"}`. Menginjak peti membukanya sekali; penandanya `chest_<peta>_<x>_<y>` di `Game.flags`, jadi ikut tersimpan. Peti berisi barang tetap tertutup kalau tas penuh. Ada dua peti di tiap dungeon dan dua di Kastil Kelam.
-- Kastil Kelam sudah berbentuk dungeon (aula, ruang dalam, altar), jadi hanya ditambah peti.
+- **Peti harta** (petak `x`): isinya di `"chests"` tiap peta, berupa `{"gold"}`, `{"item", "count"}`, atau `{"mats"}`. Menginjak peti membukanya sekali; penandanya `chest_<peta>_<x>_<y>` di `Game.flags`, jadi ikut tersimpan. Peti berisi barang tetap tertutup kalau tas penuh. Ada dua peti di tiap dungeon dan dua di Kastil Dreadmoor.
+- Kastil Dreadmoor sudah berbentuk dungeon (aula, ruang dalam, altar), jadi hanya ditambah peti.
 - Simulasi: tiga pertarungan dungeon sebelum tiap semi-bos, tanpa menginap di antaranya; kalah berarti mengulang dari pintu masuk. Dengan perlengkapan wajar: Ogre 77%, Ratu 79%, Lahar 79%, Raja 78%, jadi angka bos tidak diubah.
 
 ## Peta wilayah diperbesar 1,5x
 
-- Peta dunia (Lembah Hijau + Hutan Kabut) menjadi 66 x 29 petak (dari 44 x 19), dan Pegunungan Abu 54 x 20 (dari 36 x 14). Kastil Kelam dan peta permukiman tidak diubah.
+- Peta dunia (Lembah Verdane + Hutan Mistwood) menjadi 66 x 29 petak (dari 44 x 19), dan Pegunungan Ashfell 54 x 20 (dari 36 x 14). Kastil Dreadmoor dan peta permukiman tidak diubah.
 - Caranya meregangkan peta lama: baris dan kolom tertentu digandakan, dipilih yang tidak memuat petak khusus (desa, gerbang, sarang) dan tidak memotong jalan searah, jadi jalan tetap selebar satu petak dan semua tempat tetap tersambung. Bentuk wilayahnya sama, hanya lebih lapang.
 - Peluang bertemu monster per langkah diturunkan (padang 8% -> 6,5%, hutan 16% -> 13%, dan setara di wilayah lain), supaya jarak 1,5x hanya menambah pertarungan sekitar 20%.
 - Enam peti baru di sudut-sudut wilayah (dua per wilayah). Petak peti di peta wilayah memakai bahan tanah petak tetangganya.
 - Posisi Mira, Selene, dan Kael ikut dipindah ke padanan tempat lamanya.
-- Simpanan: `SAVE_VERSION` 3. Simpanan versi lama yang posisinya di peta dunia atau Pegunungan Abu dimuat di penginapan terakhir (posisi lama tidak berlaku di peta baru); progres, party, dan barang tetap. Simpanan di permukiman, dungeon, dan kastil tidak terpengaruh.
+- Simpanan: `SAVE_VERSION` 3. Simpanan versi lama yang posisinya di peta dunia atau Pegunungan Ashfell dimuat di penginapan terakhir (posisi lama tidak berlaku di peta baru); progres, party, dan barang tetap. Simpanan di permukiman, dungeon, dan kastil tidak terpengaruh.
 
 ## Salur Jiwa (jurus pemulih MP)
 
@@ -157,9 +157,9 @@ wilayah sebelumnya kalah.
   - Legend belum ada (tahap 2).
 - Tab Beli di pandai besi menampilkan Common di kiri dan Rare di kanan. Boleh naik dari Common ke Rare di tingkat yang sama; tingkat tempa dan sifat barang lama tetap tidak ikut pindah saat membeli. Barang lama di simpanan dimuat sebagai Common.
 - **Side quest** (`scripts/world/quests.gd`): satu per wilayah, masing-masing dari seorang penduduk, dengan satu tempat di peta wilayah (petak `1`, `2`, `3`) yang dijaga monster elite.
-  - Palu Warisan (Garrick, Desa Rindu): Goblin Kepala di hutan barat daya Lembah Hijau.
-  - Lentera Dusun (Osric, Dusun Embun): Roh Tua di altar tua, sudut barat laut Hutan Kabut.
-  - Tambang yang Terkubur (Tobin, Pos Pemburu): Golem Purba di sudut barat daya Pegunungan Abu.
+  - Palu Warisan (Garrick, Desa Willowmere): Goblin Kepala di hutan barat daya Lembah Verdane.
+  - Lentera Dusun (Osric, Dusun Dewfall): Roh Tua di altar tua, sudut barat laut Hutan Mistwood.
+  - Tambang yang Terkubur (Tobin, Pos Hawkrest): Golem Purba di sudut barat daya Pegunungan Ashfell.
 - Jalannya: bicara dengan pemberi (quest diterima otomatis, lalu dialog biasanya berlanjut) -> kalahkan penjaga -> kembali ke pemberi. Penanda: `q_<id>`, `<boss>`, `q_<id>_done`. Hadiah: senjata Ultra Rare tingkat wilayah itu untuk satu anggota party pilihan pemain (tingkat tempa senjata lamanya ikut pindah) plus emas.
 - Monster elite memakai gambar monster lain dengan warna pembeda (`"sprite"` dan `"tint"` di `Db.ENEMIES`), tidak bisa ditinggal kabur, dan menjatuhkan bahan super rare.
 - Daftar quest: tombol `Q` di peta atau menu Esc.
@@ -173,11 +173,11 @@ wilayah sebelumnya kalah.
   - Tongkat Bintang Jatuh (Selene): semua jurus memakai MP 30% lebih sedikit (`Battler.skill_cost`).
   - Busur Angin Timur (Kael): selalu paling dulu di urutan ronde, peluang kritikal +10%.
 - **Empat quest sulit**, satu per tokoh, terbuka setelah Raksasa Lahar kalah. Hadiahnya senjata Legend tokoh itu (tanpa pilihan penerima) plus 400 emas:
-  - Ujian Sang Ksatria (Tetua Bram): Panglima Kelam di ruang dalam timur Kastil Kelam (petak `4`).
-  - Doa yang Tertinggal (Marla): Induk Pucat di kapel runtuh, timur laut Lembah Hijau (`5`).
-  - Bintang yang Jatuh (Tetua Elowen): Penjaga Kristal di kawah bintang, selatan Hutan Kabut (`6`).
-  - Angin dari Timur (Tetua Aldric): Rajawali Badai di puncak utara Pegunungan Abu (`7`).
-- **Bos super**: Naga Purba (Varek, petak `8` di timur laut Pegunungan Abu), terbuka setelah Raja Monster kalah; hadiah 3000 emas. Disetel untuk party yang memegang keempat senjata Legend.
+  - Ujian Sang Ksatria (Tetua Bram): Panglima Kelam di ruang dalam timur Kastil Dreadmoor (petak `4`).
+  - Doa yang Tertinggal (Marla): Induk Pucat di kapel runtuh, timur laut Lembah Verdane (`5`).
+  - Bintang yang Jatuh (Tetua Elowen): Penjaga Kristal di kawah bintang, selatan Hutan Mistwood (`6`).
+  - Angin dari Timur (Tetua Aldric): Rajawali Badai di puncak utara Pegunungan Ashfell (`7`).
+- **Bos super**: Naga Purba (Varek, petak `8` di timur laut Pegunungan Ashfell), terbuka setelah Raja Monster kalah; hadiah 3000 emas. Disetel untuk party yang memegang keempat senjata Legend.
 - Sprite: Naga Purba digambar tersendiri; empat bos quest memakai pembuat bentuk yang sudah ada dengan ukuran dan warna baru (golem berpedang, laba-laba, golem, burung yang diperbesar).
 - Kesulitan (simulasi `sim.gd -- quests runs=60`, dikerjakan berurutan): quest sulit 60-68% dengan perlengkapan wajar dan 67-76% dengan perlengkapan rajin; Naga Purba 50% dan 64%. Setelah keempat quest sulit selesai, Raja Monster dimenangkan hampir selalu; itu imbalan untuk konten pilihan.
 
@@ -206,3 +206,56 @@ wilayah sebelumnya kalah.
   - Kebangkitan (Mira): jenis `revive`, membangkitkan rekan tumbang dengan 40% HP.
   - Panah Beruntun (Kael): `hits: 3`, tiga pukulan yang dihitung sendiri-sendiri.
 - Simulasi (AI membuka jurus menurut `pref`, pasif paling akhir), perlengkapan wajar: Ogre 84%, Ratu 81%, Lahar 84%, Raja 74%; angka bos tidak diubah.
+
+## M1a dari rencana pengembangan (AVELORIA_RENCANA_PENGEMBANGAN_AI.md)
+
+Yang dikerjakan: A00 (audit), A02 (tujuan utama di jurnal), A07 (coba lagi), A05 (pola Ogre). M1b (A01, A03, A04, A06: pembuka, percakapan party, jalur damai quest, desa merespons) belum dikerjakan.
+
+### Nama tempat
+
+Semua nama tempat kini memakai nama fantasi yang sama di kedua bahasa; hanya kata jenisnya yang diterjemahkan (Desa Willowmere / Willowmere Village). Bagian lama dokumen ini sudah ikut diganti.
+
+| Lama | Sekarang | Inggris |
+|---|---|---|
+| Desa Rindu | Desa Willowmere | Willowmere Village |
+| Dusun Embun | Dusun Dewfall | Dewfall Hamlet |
+| Pos Pemburu | Pos Hawkrest | Hawkrest Outpost |
+| Lembah Hijau | Lembah Verdane | Verdane Vale |
+| Hutan Kabut | Hutan Mistwood | Mistwood |
+| Pegunungan Abu | Pegunungan Ashfell | Ashfell Mountains |
+| Kastil Kelam | Kastil Dreadmoor | Dreadmoor Castle |
+| Celah Abu | Celah Ashfell | Ashfell Pass |
+| Gerbang Timur | Gerbang Eastwatch | Eastwatch Gate |
+| Kawah Lahar / Jalan Lahar | Kawah Emberdeep / Jalan Emberdeep | Emberdeep Crater / Emberdeep Road |
+| Gua Ogre | Gua Grimhollow | Grimhollow Cave |
+| Sarang Ratu Laba-laba | Sarang Silkmaw | Silkmaw Nest |
+| Altar Cahaya | Altar Lumen | Altar of Lumen |
+
+Tempat side quest (Sarang Perampok, Altar Tua, Kapel Runtuh, dan lainnya) masih memakai nama deskriptif. Nama zona dipakai juga oleh logika (`Story.ZONE_INTROS`), jadi kalau diganti lagi harus diganti di semua tempat sekaligus.
+
+### A00: baseline yang dicatat
+
+- Alur awal: adegan `intro` (tiga narasi dan satu kalimat Arlen) lalu pemain bebas bergerak; Tetua Bram memberi `quest_mira`; Mira bergabung lewat `Story.talk("mira")` yang mencatat `mira_joined` lalu memulai battle; kalah di battle itu tidak mengulang rekrutmen karena penandanya sudah tercatat.
+- Progres cerita seluruhnya di `Game.flags` (ikut tersimpan sebagai daftar kunci). `SAVE_VERSION` 3; tambahan M1a tidak mengubah format simpanan.
+- Semua tes lolos sebelum M1a dimulai (rilis v1.10).
+- Waktu ke kontrol pertama dan waktu sampai Ogre tidak diukur: itu butuh pemain manusia.
+
+### A02: tujuan utama di jurnal
+
+- Layar Quest menjadi **Jurnal** (tombol `Q`): bagian atas menampilkan tujuan utama (satu kalimat tindakan beserta tempatnya) dan ringkasan kejadian terakhir, lalu side quest di bawahnya.
+- `Story.main_objective(flags)` menurunkannya dari penanda progres; tidak ada keadaan baru yang disimpan, jadi simpanan lama langsung mendapat tujuan yang sesuai. Ada 12 tahap, dari "Temui Tetua Bram" sampai setelah Naga Purba.
+- Tujuan berganti saat sebuah peristiwa berhasil, karena penandanya baru tercatat saat itu.
+
+### A07: coba lagi setelah kalah dari bos
+
+- Kalah dari pertarungan yang tidak bisa ditinggal kabur (bos cerita, penjaga quest, bos super) menampilkan **Coba lagi** dan **Kembali ke penginapan**. Rencana meminta Ogre saja; kodenya sama untuk semua bos, jadi langsung berlaku untuk semuanya.
+- `Game.start_battle()` menyimpan snapshot (salinan HP/MP tiap anggota dan isi tas). `Game.retry_battle()` mengembalikannya persis, tanpa pemulihan tambahan, tanpa hadiah, tanpa penalti emas, dan tanpa menyentuh file simpanan. Snapshot dipakai ulang untuk percobaan berikutnya dan dibuang saat kembali ke peta.
+- Kembali ke penginapan tetap seperti dulu (separuh emas hilang). Pertarungan acak tidak punya Coba lagi.
+
+### A05: pola Ogre dengan tanda serangan
+
+- Giliran Ogre berulang (`"pattern"` di `Db.ENEMIES`): **bebas** (AI lama: serang, Raungan, Serangan Buas) -> **ancang-ancang** -> **menahan** -> **lengah**. Hantaman Bumi dicabut dari jurus Ogre; serangan ke seluruh party kini hanya lewat pola ini.
+- Saat ancang-ancang, Ogre mendapat penanda `charge` (ikon di bawah batang HP) dan `slam_round` diisi ronde berikutnya. **Hantaman Dahsyat lepas di akhir ronde berikutnya** (`BattleEngine.end_round()`), bukan pada giliran Ogre. Karena itu tiap tokoh yang hidup pasti mendapat satu giliran penuh setelah tanda muncul, apa pun urutan rondenya, dan Bertahan yang dipilih di ronde itu masih berlaku saat hantaman mengenai.
+- Layar battle: banner memperingatkan "akhir ronde depan" lalu "akhir ronde ini", dan arena berguncang saat hantaman lepas.
+- Keadaan pola (`round_no`, `_pattern_step`) milik instance `BattleEngine`, jadi pertarungan baru dan Coba lagi selalu mulai dari awal pola.
+- AI simulasi bertahan di ronde hantaman. Dengan itu Ogre terlalu mudah (94%), jadi diperkuat ke HP 312 dan ATK 32; hasil dengan perlengkapan wajar: Ogre 83%, Ratu 81%, Lahar 75%, Raja 78%.
