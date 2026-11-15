@@ -135,6 +135,33 @@ func _initialize() -> void:
 	await _shot("perlengkapan.png")
 	current_scene.call("_toggle_gear")
 	_expect(not current_scene.get("_gear_open") and not current_scene.get("_busy"), "pintasan sekali lagi menutup layar Perlengkapan")
+	# --- Layar Jurus: membuka jurus dengan poin dan menyusun yang dibawa ---
+	arlen.level = 4
+	arlen.default_build()
+	arlen.unlocked = ["tebasan_kuat"]
+	arlen.loadout = ["tebasan_kuat"]
+	arlen.recalc()
+	current_scene.call("_update_hud")
+	_expect((current_scene.get("_party_label") as Label).text.contains(Loc.t("   +%d jurus") % 3), "HUD menandai tokoh yang masih punya poin jurus")
+	current_scene.call("_toggle_skills")
+	_expect(current_scene.get("_skills_open") and current_scene.get("_busy"), "pintasan membuka layar Jurus")
+	await create_timer(0.1).timeout
+	var skill_view: Control = current_scene.get("_skill_view")
+	skill_view.call("_press", arlen, "pasang_badan")
+	skill_view.call("_press", arlen, "pekik_perang")
+	await create_timer(0.1).timeout
+	await _shot("jurus.png")
+	_expect(arlen.unlocked == ["tebasan_kuat", "pasang_badan", "pekik_perang"] and arlen.skills.size() == 3 and arlen.skill_points_left() == 1,
+		"menekan jurus yang terjangkau membukanya dan langsung membawanya")
+	skill_view.call("_press", arlen, "hantaman_penghancur")
+	_expect(not arlen.unlocked.has("hantaman_penghancur"), "jurus yang prasyaratnya belum terbuka tidak bisa dibuka")
+	skill_view.call("_press", arlen, "pasang_badan")
+	_expect(arlen.skills == ["tebasan_kuat", "pekik_perang"], "menekan jurus yang dibawa melepasnya dari susunan")
+	current_scene.call("_toggle_skills")
+	_expect(not current_scene.get("_skills_open") and not current_scene.get("_busy"), "pintasan sekali lagi menutup layar Jurus")
+	arlen.level = 1
+	arlen.default_build()
+
 	# --- Layar Status: membagi poin stat ---
 	arlen.level = 3
 	arlen.recalc()

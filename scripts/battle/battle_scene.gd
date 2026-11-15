@@ -661,6 +661,7 @@ func _animate_xp(m: Battler, was: Dictionary, row: Dictionary) -> void:
 		if not learned.is_empty():
 			text += Loc.t("\nJurus baru: ") + ", ".join(learned)
 		text += "\n" + Loc.t("+%d poin stat. Bagikan di layar Status (tombol C di peta).") % ((m.level - int(was.level)) * Db.STAT_POINTS_PER_LEVEL)
+		text += "\n" + Loc.t("+%d poin jurus. Buka jurus baru di layar Jurus (tombol J di peta).") % ((m.level - int(was.level)) * Db.SKILL_POINTS_PER_LEVEL)
 		(row.note as Label).text = text
 
 

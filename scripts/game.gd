@@ -325,6 +325,59 @@ func respec(m: Battler) -> bool:
 	return true
 
 
+# ---------------------------------------------------------------- skill tree
+
+## Alasan sebuah jurus tidak bisa dibuka; kosong kalau bisa.
+func skill_block(m: Battler, skill_id: String) -> String:
+	if m.unlocked.has(skill_id):
+		return ""
+	var prereq := Db.skill_prereq(m.id, skill_id)
+	if prereq != "" and not m.unlocked.has(prereq):
+		return Loc.t("Buka %s lebih dulu.") % Loc.t(Db.SKILLS[prereq].name)
+	if Db.unlock_cost(m.id, skill_id) > m.skill_points_left():
+		return Loc.t("Poin jurus belum cukup (butuh %d).") % Db.unlock_cost(m.id, skill_id)
+	return ""
+
+
+## Bawa atau lepas sebuah jurus yang sudah terbuka. Mengembalikan false kalau susunan sudah penuh
+## atau kalau itu satu-satunya jurus yang dibawa.
+func toggle_loadout(m: Battler, skill_id: String) -> bool:
+	if not m.unlocked.has(skill_id):
+		return false
+	if m.loadout.has(skill_id):
+		if m.loadout.size() <= 1:
+			return false
+		m.loadout.erase(skill_id)
+	elif m.loadout.size() >= Db.SKILL_SLOTS:
+		return false
+	else:
+		m.loadout.append(skill_id)
+	m.skills = m.loadout.duplicate()
+	return true
+
+
+## Alasan skill tree seorang tokoh tidak bisa diatur ulang; kosong kalau bisa.
+func skill_respec_block(m: Battler) -> String:
+	if m.unlocked.size() <= 1:
+		return Loc.t("Belum ada jurus yang dibuka dengan poin.")
+	if not WorldMap.is_settlement(map_id):
+		return Loc.t("Jurus hanya bisa diatur ulang di desa, dusun, atau pos.")
+	if gold < respec_price(m):
+		return Loc.t("Emas belum cukup.")
+	return ""
+
+
+## Kembalikan semua poin jurus seorang tokoh; hanya jurus awalnya yang tetap terbuka.
+func respec_skills(m: Battler) -> bool:
+	if skill_respec_block(m) != "":
+		return false
+	gold -= respec_price(m)
+	m.unlocked = [Db.starter_skill(m.id)]
+	m.loadout = [Db.starter_skill(m.id)]
+	m.skills = m.loadout.duplicate()
+	return true
+
+
 # ---------------------------------------------------------------- simpan dan muat
 
 func has_save() -> bool:
@@ -335,7 +388,8 @@ func has_save() -> bool:
 func save_game() -> bool:
 	var members: Array = []
 	for m: Battler in party:
-		members.append({"id": m.id, "level": m.level, "xp": m.xp, "hp": m.hp, "mp": m.mp, "equip": m.equip, "alloc": m.alloc})
+		members.append({"id": m.id, "level": m.level, "xp": m.xp, "hp": m.hp, "mp": m.mp, "equip": m.equip, "alloc": m.alloc,
+			"unlocked": m.unlocked, "loadout": m.loadout})
 	var data := {
 		"version": SAVE_VERSION,
 		"party": members,
@@ -401,6 +455,22 @@ func load_game() -> bool:
 					m.alloc[String(stat_name)] = int(saved_alloc[stat_name])
 			if m.points_spent() > m.points_total():  # simpanan yang tidak masuk akal: poin dikembalikan
 				m.alloc = {}
+		# Skill tree: simpanan lama tanpa data ini memakai susunan awal dari Battler.default_build().
+		var saved_unlocked: Variant = entry.get("unlocked", null)
+		if saved_unlocked is Array:
+			var starter := Db.starter_skill(m.id)
+			m.unlocked = [starter]
+			for round_no in 4:  # diulang supaya urutan di file tidak menentukan (jurus prasyarat dulu)
+				for skill_id: Variant in saved_unlocked:
+					m.unlock(str(skill_id))
+			m.loadout = []
+			var saved_loadout: Variant = entry.get("loadout", [])
+			if saved_loadout is Array:
+				for skill_id: Variant in saved_loadout:
+					if m.unlocked.has(str(skill_id)) and not m.loadout.has(str(skill_id)) and m.loadout.size() < Db.SKILL_SLOTS:
+						m.loadout.append(str(skill_id))
+			if m.loadout.is_empty():
+				m.auto_loadout()
 		m.recalc()
 		m.xp = max(0, int(entry.get("xp", 0)))
 		m.hp = clampi(int(entry.get("hp", m.max_hp)), 1, m.max_hp)

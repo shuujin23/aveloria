@@ -180,3 +180,14 @@ wilayah sebelumnya kalah.
 - **Bos super**: Naga Purba (Varek, petak `8` di timur laut Pegunungan Abu), terbuka setelah Raja Monster kalah; hadiah 3000 emas. Disetel untuk party yang memegang keempat senjata Legend.
 - Sprite: Naga Purba digambar tersendiri; empat bos quest memakai pembuat bentuk yang sudah ada dengan ukuran dan warna baru (golem berpedang, laba-laba, golem, burung yang diperbesar).
 - Kesulitan (simulasi `sim.gd -- quests runs=60`, dikerjakan berurutan): quest sulit 60-68% dengan perlengkapan wajar dan 67-76% dengan perlengkapan rajin; Naga Purba 50% dan 64%. Setelah keempat quest sulit selesai, Raja Monster dimenangkan hampir selalu; itu imbalan untuk konten pilihan.
+
+## Skill tree (tahap 1)
+
+- Tiap tokoh punya **tiga cabang** berisi total 8 jurus (`Db.SKILL_TREES`): jurus lama ditambah 14 jurus baru. Semua jurus baru memakai jenis yang sudah ada di mesin battle (fisik, sihir, status, cleanse); mekanik baru dan jurus pasif menunggu tahap 2.
+  - Arlen: Serang, Bertahan, Pemimpin. Selene: Api, Es, Kutukan. Mira: Penyembuhan, Perlindungan, Cahaya. Kael: Bidik, Muslihat, Angin.
+- **Poin jurus**: 1 per naik level (`Db.SKILL_POINTS_PER_LEVEL`), terpisah dari poin stat. Jurus dalam satu cabang dibuka berurutan; jurus ke-n berharga n poin, dan jurus pertama cabang pertama terbuka gratis sejak level 1. Seluruh tree berharga 14 poin, jadi terbuka semua di level 15.
+- **Paling banyak 4 jurus dibawa ke pertarungan** (`Db.SKILL_SLOTS`, `Battler.loadout`; `Battler.skills` selalu sama dengan loadout). Susunan diganti di layar Jurus, hanya di luar pertarungan.
+- **Layar Jurus**: tombol `J` di peta atau menu Esc. Menekan jurus yang belum terbuka membukanya; menekan jurus yang terbuka membawa atau melepasnya. Atur ulang seluruh tree seorang tokoh seharga `Db.RESPEC_GOLD` x level, hanya di permukiman.
+- Naik level tidak lagi membuka jurus sendiri. Tokoh yang baru bergabung dan simpanan lama memakai `Battler.default_build()`: jurus yang dulu dipelajari lewat level (`learn`) dibuka selama poinnya cukup, sisanya bebas dipilih pemain. Susunan otomatis mengikuti urutan `pref` tiap tokoh.
+- Simpanan menyimpan `unlocked` dan `loadout`; jurus yang tidak terjangkau poin dibuang saat dimuat.
+- AI simulasi membuka jurus menurut urutan `pref` dan membawa empat teratas. Dengan perlengkapan wajar: Ogre 86%, Ratu 84%, Lahar 79%, Raja 79%, jadi angka bos tidak diubah.

@@ -101,6 +101,9 @@ var _gear_from_menu := false
 var _stats_view: PanelContainer  # layar Status (scripts/ui/stats_view.gd)
 var _stats_open := false
 var _stats_from_menu := false
+var _skill_view: PanelContainer  # layar Jurus / skill tree (scripts/ui/skill_view.gd)
+var _skills_open := false
+var _skills_from_menu := false
 var _quest_view: PanelContainer  # daftar quest (scripts/ui/quest_view.gd)
 var _quests_open := false
 var _quests_from_menu := false
@@ -217,6 +220,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		_toggle_quests()
 		return
+	if key != null and key.pressed and not key.echo and key.keycode == KEY_J:  # J: buka/tutup layar Jurus
+		get_viewport().set_input_as_handled()
+		_toggle_skills()
+		return
 	if key != null and key.pressed and not key.echo and key.keycode == KEY_C:  # C: buka/tutup layar Status
 		get_viewport().set_input_as_handled()
 		_toggle_stats()
@@ -226,7 +233,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if _shop_open:
 			Audio.sfx("ui_cancel")
 			shop_closed.emit()
-		elif _bag_open or _gear_open or _forge_open or _stats_open or _quests_open:
+		elif _bag_open or _gear_open or _forge_open or _stats_open or _quests_open or _skills_open:
 			pass  # tampilan itu menangani Esc sendiri
 		elif _menu_open:
 			Audio.sfx("ui_cancel")
@@ -708,6 +715,9 @@ func _open_menu() -> void:
 		{"text": Loc.t("Perlengkapan"), "cb": func() -> void:
 			_gear_from_menu = true
 			_open_gear()},
+		{"text": Loc.t("Jurus"), "cb": func() -> void:
+			_skills_from_menu = true
+			_open_skills()},
 		{"text": Loc.t("Status"), "cb": func() -> void:
 			_stats_from_menu = true
 			_open_stats()},
@@ -831,6 +841,33 @@ func _close_gear() -> void:
 		_busy = false
 
 
+## Pintasan layar Jurus (tombol J): skill tree dan susunan jurus tiap tokoh.
+func _toggle_skills() -> void:
+	if _skills_open:
+		_close_skills()
+	elif not _busy and not _moving:
+		_busy = true
+		_cancel_path()
+		_skills_from_menu = false
+		_open_skills()
+
+
+func _open_skills() -> void:
+	_menu_panel.visible = false
+	_skills_open = true
+	_skill_view.open()
+
+
+func _close_skills() -> void:
+	_skill_view.visible = false
+	_skills_open = false
+	if _skills_from_menu:
+		_open_menu()
+	else:
+		_dir_held = -0.25
+		_busy = false
+
+
 ## Pintasan layar Status (tombol C): stat tiap tokoh dan pembagian poin stat.
 func _toggle_stats() -> void:
 	if _stats_open:
@@ -908,12 +945,14 @@ func _update_hud() -> void:
 	var zone: String = WorldMap.tile_at(_tile).zone
 	if zone == "":
 		zone = WorldMap.map_name() if (WorldMap.is_settlement(Game.map_id) or WorldMap.is_dungeon(Game.map_id)) else Loc.t("Jalan")
-	_zone_label.text = Loc.t("%s\nEmas: %d\nEsc: menu   I: tas   E: perlengkapan\nC: status   Q: quest") % [Loc.t(zone), Game.gold]
+	_zone_label.text = Loc.t("%s\nEmas: %d\nEsc: menu   I: tas   E: perlengkapan\nC: status   J: jurus   Q: quest") % [Loc.t(zone), Game.gold]
 	var lines: Array = []
 	for m: Battler in Game.party:
 		var line := "%-7s Lv %d   HP %d/%d   MP %d/%d" % [m.display_name, m.level, m.hp, m.max_hp, m.mp, m.max_mp]
 		if m.points_left() > 0:  # masih ada poin stat yang belum dibagi
 			line += Loc.t("   +%d poin") % m.points_left()
+		if m.skill_points_left() > 0:  # masih ada poin jurus
+			line += Loc.t("   +%d jurus") % m.skill_points_left()
 		lines.append(line)
 	_party_label.text = "\n".join(lines)
 
@@ -1326,6 +1365,11 @@ func _build_hud() -> void:
 	_quest_view = (load("res://scripts/ui/quest_view.gd") as GDScript).new()
 	_quest_view.closed.connect(_close_quests)
 	root.add_child(_quest_view)
+
+	_skill_view = (load("res://scripts/ui/skill_view.gd") as GDScript).new()
+	_skill_view.changed.connect(_update_hud)
+	_skill_view.closed.connect(_close_skills)
+	root.add_child(_skill_view)
 
 	_stats_view = (load("res://scripts/ui/stats_view.gd") as GDScript).new()
 	_stats_view.changed.connect(_update_hud)

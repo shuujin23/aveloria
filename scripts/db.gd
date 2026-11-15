@@ -91,6 +91,42 @@ const SKILLS := {
 		"desc": "Cepat untuk seluruh party selama 3 ronde."},
 	"tipu_daya": {"name": "Tipu Daya", "mp": 3, "target": "enemy", "kind": "status", "status": "attack_break",
 		"desc": "ATK Runtuh pada satu musuh selama 3 ronde."},
+	# --- Jurus tambahan dari skill tree (lihat SKILL_TREES) ---
+	"hantaman_penghancur": {"name": "Hantaman Penghancur", "mp": 8, "target": "enemy", "kind": "phys", "power": 2.2, "crit": 0.1,
+		"desc": "Hantaman terkuat ke satu musuh, peluang kritikal lebih tinggi."},
+	"tebasan_pelumpuh": {"name": "Tebasan Pelumpuh", "mp": 4, "target": "enemy", "kind": "phys", "power": 1.1,
+		"inflict": {"status": "attack_break", "chance": 0.7},
+		"desc": "Menebas satu musuh. 70% membuat ATK Runtuh."},
+	"tekad_baja": {"name": "Tekad Baja", "mp": 5, "target": "self", "kind": "cleanse", "status": "immunity",
+		"desc": "Menghapus semua nerf dari diri sendiri dan memberi Kebal selama 3 ronde."},
+	"pekik_gentar": {"name": "Pekik Gentar", "mp": 6, "target": "all_enemies", "kind": "status", "status": "attack_break",
+		"desc": "ATK Runtuh pada semua musuh selama 3 ronde."},
+	"badai_api": {"name": "Badai Api", "mp": 9, "target": "all_enemies", "kind": "magic", "power": 10,
+		"inflict": {"status": "burn", "chance": 0.4},
+		"desc": "Sihir api ke semua musuh. 40% membuat Terbakar."},
+	"meteor": {"name": "Meteor", "mp": 11, "target": "enemy", "kind": "magic", "power": 26,
+		"desc": "Sihir api terkuat ke satu musuh."},
+	"tombak_es": {"name": "Tombak Es", "mp": 4, "target": "enemy", "kind": "magic", "power": 11,
+		"inflict": {"status": "slow", "chance": 0.6},
+		"desc": "Sihir es ke satu musuh. 60% membuat Lambat."},
+	"racun_jiwa": {"name": "Racun Jiwa", "mp": 3, "target": "enemy", "kind": "magic", "power": 6,
+		"inflict": {"status": "poison", "chance": 0.9},
+		"desc": "Sihir lemah ke satu musuh. 90% membuat Racun."},
+	"kabut_pelemah": {"name": "Kabut Pelemah", "mp": 8, "target": "all_enemies", "kind": "status", "status": "defense_break",
+		"desc": "DEF Runtuh pada semua musuh selama 3 ronde."},
+	"penyucian": {"name": "Penyucian", "mp": 2, "target": "ally", "kind": "cleanse",
+		"desc": "Menghapus semua nerf dari satu rekan."},
+	"sinar_penghakiman": {"name": "Sinar Penghakiman", "mp": 8, "target": "all_enemies", "kind": "magic", "power": 9,
+		"desc": "Sihir cahaya ke semua musuh."},
+	"panah_tembus": {"name": "Panah Tembus", "mp": 5, "target": "enemy", "kind": "phys", "power": 1.5,
+		"inflict": {"status": "defense_break", "chance": 0.5},
+		"desc": "Panah kuat ke satu musuh. 50% membuat DEF Runtuh."},
+	"panah_api": {"name": "Panah Api", "mp": 4, "target": "enemy", "kind": "phys", "power": 1.1,
+		"inflict": {"status": "burn", "chance": 0.7},
+		"desc": "Panah berapi ke satu musuh. 70% membuat Terbakar."},
+	"panah_angin": {"name": "Panah Angin", "mp": 3, "target": "enemy", "kind": "phys", "power": 0.9,
+		"inflict": {"status": "slow", "chance": 0.7},
+		"desc": "Panah cepat ke satu musuh. 70% membuat Lambat."},
 	# --- Monster ---
 	"serangan_buas": {"name": "Serangan Buas", "mp": 2, "target": "enemy", "kind": "phys", "power": 1.4, "desc": ""},
 	"spora": {"name": "Spora Beracun", "mp": 3, "target": "all_enemies", "kind": "magic", "power": 4,
@@ -316,30 +352,69 @@ const SKILL_FX := {
 	"bidik_jitu": "arrow", "panah_racun": "arrow", "hujan_panah": "arrow_rain", "langkah_angin": "bless", "tipu_daya": "debuff",
 	"serangan_buas": "bite", "spora": "spore", "jeritan": "debuff", "raungan": "buff_self", "tipu_muslihat": "debuff",
 	"hantaman_bumi": "quake",
+	"hantaman_penghancur": "heavy_slash", "tebasan_pelumpuh": "heavy_slash", "tekad_baja": "buff_self", "pekik_gentar": "debuff",
+	"badai_api": "lava", "meteor": "fire", "tombak_es": "light", "racun_jiwa": "spore", "kabut_pelemah": "debuff",
+	"penyucian": "heal", "sinar_penghakiman": "heal_all", "panah_tembus": "arrow", "panah_api": "arrow", "panah_angin": "arrow",
 	"gigitan_racun": "bite", "jaring": "debuff", "lidah_api": "fire", "jaring_raksasa": "debuff", "semburan_racun": "spore",
 	"gigitan_bara": "bite", "cakar_tajam": "bite", "hantaman_batu": "heavy_slash", "kulit_batu": "buff_self", "semburan_lahar": "lava",
 	"tebasan_gelap": "heavy_slash", "sumpah_perang": "buff_self", "kutukan": "debuff", "api_hitam": "fire", "cakar_batu": "bite",
 	"tebasan_kegelapan": "heavy_slash", "badai_kegelapan": "dark", "auman_raja": "buff_self", "rantai_bayangan": "debuff",
 }
 
-# base = stat di level 1, growth = tambahan per level, learn = level -> jurus baru
+## Skill tree: tiap tokoh punya tiga cabang; jurus dalam satu cabang dibuka berurutan dengan poin jurus.
+## Tokoh mendapat SKILL_POINTS_PER_LEVEL poin tiap naik level. Jurus ke-n di sebuah cabang berharga n poin;
+## jurus pertama cabang pertama (jurus awal) sudah terbuka sejak level 1 tanpa biaya.
+## Paling banyak SKILL_SLOTS jurus yang bisa dibawa ke pertarungan (lihat Battler.loadout).
+const SKILL_SLOTS := 4
+const SKILL_POINTS_PER_LEVEL := 1
+const SKILL_TREES := {
+	"arlen": [
+		{"name": "Serang", "skills": ["tebasan_kuat", "tebasan_berputar", "hantaman_penghancur"]},
+		{"name": "Bertahan", "skills": ["pasang_badan", "tebasan_pelumpuh", "tekad_baja"]},
+		{"name": "Pemimpin", "skills": ["pekik_perang", "pekik_gentar"]},
+	],
+	"selene": [
+		{"name": "Api", "skills": ["bola_api", "badai_api", "meteor"]},
+		{"name": "Es", "skills": ["tombak_es", "badai_es"]},
+		{"name": "Kutukan", "skills": ["lemahkan", "racun_jiwa", "kabut_pelemah"]},
+	],
+	"mira": [
+		{"name": "Penyembuhan", "skills": ["pulih", "pulih_massal", "salur_jiwa"]},
+		{"name": "Perlindungan", "skills": ["doa_pelindung", "berkat_suci", "penyucian"]},
+		{"name": "Cahaya", "skills": ["cahaya_suci", "sinar_penghakiman"]},
+	],
+	"kael": [
+		{"name": "Bidik", "skills": ["bidik_jitu", "hujan_panah", "panah_tembus"]},
+		{"name": "Muslihat", "skills": ["panah_racun", "tipu_daya", "panah_api"]},
+		{"name": "Angin", "skills": ["langkah_angin", "panah_angin"]},
+	],
+}
+
+# base = stat di level 1, growth = tambahan per level.
+# learn = jurus yang otomatis dibuka saat tokoh baru bergabung (atau simpanan lama dimuat), berurutan
+#         menurut level, selama poin jurusnya cukup; setelah itu pemain yang memilih lewat layar Jurus.
+# pref  = urutan jurus yang diutamakan saat susunan jurus diisi otomatis.
 const CHARACTERS := {
 	"arlen": {"name": "Arlen", "job": "Ksatria",
 		"base": {"hp": 34, "mp": 6, "atk": 12, "defense": 8, "mag": 2, "agi": 6},
 		"growth": {"hp": 7.0, "mp": 1.5, "atk": 2.6, "defense": 2.0, "mag": 0.4, "agi": 1.2},
-		"learn": {1: ["tebasan_kuat"], 3: ["pasang_badan"], 4: ["pekik_perang"], 5: ["tebasan_berputar"]}},
+		"learn": {1: ["tebasan_kuat"], 3: ["pasang_badan"], 4: ["pekik_perang"], 5: ["tebasan_berputar"]},
+		"pref": ["tebasan_kuat", "tebasan_berputar", "pekik_perang", "hantaman_penghancur", "pasang_badan", "tebasan_pelumpuh", "pekik_gentar", "tekad_baja"]},
 	"selene": {"name": "Selene", "job": "Penyihir",
 		"base": {"hp": 20, "mp": 16, "atk": 5, "defense": 4, "mag": 12, "agi": 7},
 		"growth": {"hp": 4.0, "mp": 4.0, "atk": 1.0, "defense": 1.0, "mag": 2.8, "agi": 1.4},
-		"learn": {1: ["bola_api"], 2: ["lemahkan"], 4: ["badai_es"]}},
+		"learn": {1: ["bola_api"], 2: ["lemahkan"], 3: ["tombak_es"], 4: ["badai_es"]},
+		"pref": ["bola_api", "badai_es", "lemahkan", "meteor", "badai_api", "tombak_es", "kabut_pelemah", "racun_jiwa"]},
 	"mira": {"name": "Mira", "job": "Pendeta",
 		"base": {"hp": 24, "mp": 14, "atk": 7, "defense": 6, "mag": 9, "agi": 5},
 		"growth": {"hp": 5.0, "mp": 3.5, "atk": 1.4, "defense": 1.6, "mag": 2.2, "agi": 1.0},
-		"learn": {1: ["pulih"], 3: ["doa_pelindung"], 4: ["cahaya_suci"], 5: ["berkat_suci"], 6: ["pulih_massal"], 7: ["salur_jiwa"]}},
+		"learn": {1: ["pulih"], 3: ["doa_pelindung"], 4: ["cahaya_suci"], 5: ["berkat_suci"], 6: ["pulih_massal"], 7: ["salur_jiwa"]},
+		"pref": ["pulih", "pulih_massal", "berkat_suci", "cahaya_suci", "doa_pelindung", "salur_jiwa", "sinar_penghakiman", "penyucian"]},
 	"kael": {"name": "Kael", "job": "Pemanah",
 		"base": {"hp": 26, "mp": 8, "atk": 10, "defense": 5, "mag": 3, "agi": 12},
 		"growth": {"hp": 5.5, "mp": 2.0, "atk": 2.3, "defense": 1.3, "mag": 0.5, "agi": 2.4},
-		"learn": {1: ["bidik_jitu"], 2: ["panah_racun"], 3: ["hujan_panah"], 4: ["langkah_angin"], 5: ["tipu_daya"]}},
+		"learn": {1: ["bidik_jitu"], 2: ["panah_racun"], 3: ["hujan_panah"], 4: ["langkah_angin"], 5: ["tipu_daya"]},
+		"pref": ["bidik_jitu", "hujan_panah", "panah_racun", "langkah_angin", "panah_tembus", "tipu_daya", "panah_api", "panah_angin"]},
 }
 
 ## Poin stat: tiap naik level, tiap tokoh mendapat STAT_POINTS_PER_LEVEL poin yang bebas dibagi pemain
@@ -698,6 +773,34 @@ static func mats_text(mats: Dictionary, owned: Dictionary) -> String:
 	for mat_id: String in mats:
 		parts.append("%s %d/%d" % [Loc.t(MATERIALS[mat_id].name), int(owned.get(mat_id, 0)), mats[mat_id]])
 	return ", ".join(parts)
+
+
+# ---------------------------------------------------------------- skill tree
+
+## Posisi sebuah jurus di skill tree tokoh: [indeks cabang, urutan dalam cabang]; [-1, -1] kalau bukan jurusnya.
+static func skill_slot(char_id: String, skill_id: String) -> Array:
+	var tree: Array = SKILL_TREES[char_id]
+	for branch in tree.size():
+		var at: int = (tree[branch].skills as Array).find(skill_id)
+		if at >= 0:
+			return [branch, at]
+	return [-1, -1]
+
+
+## Jurus yang sudah terbuka sejak awal tanpa biaya.
+static func starter_skill(char_id: String) -> String:
+	return SKILL_TREES[char_id][0].skills[0]
+
+
+## Jurus yang harus dibuka lebih dulu; kosong kalau jurus ini yang pertama di cabangnya.
+static func skill_prereq(char_id: String, skill_id: String) -> String:
+	var slot := skill_slot(char_id, skill_id)
+	return "" if int(slot[1]) <= 0 else String(SKILL_TREES[char_id][int(slot[0])].skills[int(slot[1]) - 1])
+
+
+## Poin jurus untuk membuka sebuah jurus: urutannya di cabang (1, 2, 3); jurus awal gratis.
+static func unlock_cost(char_id: String, skill_id: String) -> int:
+	return 0 if skill_id == starter_skill(char_id) else int(skill_slot(char_id, skill_id)[1]) + 1
 
 
 static func xp_to_next(level: int) -> int:

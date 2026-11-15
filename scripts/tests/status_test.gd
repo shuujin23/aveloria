@@ -115,6 +115,7 @@ func _init() -> void:
 	regen.end_round()
 	_expect(mage.mp == 10 + roundi(roundi(mage.max_mp * Db.MP_REGEN) * Db.MP_REGEN_DEFEND), "Bertahan melipatgandakan pemulihan MP (+%d)" % (mage.mp - 10))
 	_expect(mage.defending, "Bertahan tetap berlaku melewati akhir ronde, sampai giliran berikutnya")
+	regen_bat.hp = 999  # supaya serangan uji (termasuk kritikal) tidak menumbangkannya
 	regen.execute({"actor": mage, "kind": "attack", "target": regen_bat})
 	_expect(not mage.defending, "Bertahan berakhir saat tokoh itu mendapat giliran lagi")
 	var order := regen.round_order()
@@ -128,7 +129,7 @@ func _init() -> void:
 	_expect(mage.mp == 5, "anggota yang tumbang tidak memulihkan MP")
 
 	# Salur Jiwa (Mira): memulihkan MP rekan lain, tidak untuk diri sendiri
-	_expect(not Battler.from_character("mira", 6).skills.has("salur_jiwa") and Battler.from_character("mira", 7).skills.has("salur_jiwa"), "Mira mempelajari Salur Jiwa di level 7")
+	_expect(Db.skill_slot("mira", "salur_jiwa") == [0, 2] and Battler.from_character("mira", 10).unlocked.has("salur_jiwa"), "Salur Jiwa adalah jurus ketiga cabang Penyembuhan Mira")
 	var priest := Battler.from_character("mira", 7)
 	var caster := Battler.from_character("selene", 7)
 	var channel := BattleEngine.new([priest, caster], [Battler.from_enemy("kelelawar")])

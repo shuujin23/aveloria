@@ -173,6 +173,14 @@ func _run(rest_every: int, geared: int) -> void:
 
 ## Bagi poin stat yang belum terpakai sesuai _alloc_mode.
 func _allocate(party: Array) -> void:
+	for m: Battler in party:  # poin jurus: buka sebanyak mungkin menurut urutan prioritas tokoh, lalu bawa empat teratas
+		var grew_skills := true
+		while grew_skills:
+			grew_skills = false
+			for skill_id: String in Db.CHARACTERS[m.id].pref:
+				if m.unlock(skill_id):
+					grew_skills = true
+		m.auto_loadout()
 	if _alloc_mode == "none":
 		return
 	for m: Battler in party:

@@ -3,10 +3,10 @@ extends SceneTree
 ##   Godot_console.exe --headless --path . -s res://scripts/tests/loc_test.gd
 
 ## Nama diri yang sama di kedua bahasa, jadi tidak perlu ada di kamus.
-const SAME := ["", "Legend", "Arlen", "Mira", "Selene", "Kael", "Marla", "Finn", "Doran", "Garrick", "Osric", "Nessa",
+const SAME := ["", "Legend", "Meteor", "Arlen", "Mira", "Selene", "Kael", "Marla", "Finn", "Doran", "Garrick", "Osric", "Nessa",
 	"Halvard", "Brenna", "Tobin", "Varek", "Aveloria", "Gargoyle", "Common", "Rare", "Super Rare", "Ultra Rare"]
 const SOURCES := ["battle/battle_engine.gd", "battle/battler.gd", "battle/battle_scene.gd", "world/world.gd", "game.gd",
-	"title.gd", "ending.gd", "db.gd", "world/quests.gd", "ui/bag_view.gd", "ui/stats_view.gd", "ui/quest_view.gd", "ui/forge_view.gd", "ui/gear_view.gd", "ui/shop_view.gd"]
+	"title.gd", "ending.gd", "db.gd", "world/quests.gd", "ui/bag_view.gd", "ui/stats_view.gd", "ui/quest_view.gd", "ui/skill_view.gd", "ui/forge_view.gd", "ui/gear_view.gd", "ui/shop_view.gd"]
 
 var _failed := false
 var _missing := {}
@@ -72,6 +72,9 @@ func _initialize() -> void:
 				for gold: int in [0, 999]:
 					_need_steps(Story.talk(npc.id, flags, gold), "dialog " + npc.id)
 
+	for owner: String in Db.SKILL_TREES:
+		for branch: Dictionary in Db.SKILL_TREES[owner]:
+			_need(branch.name, "skill tree")
 	for owner: String in Db.LEGEND_WEAPONS:
 		_need(Db.LEGEND_WEAPONS[owner].name, "legend")
 		_need(Db.LEGEND_WEAPONS[owner].desc, "legend")

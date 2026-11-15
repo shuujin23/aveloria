@@ -30,6 +30,10 @@ var equip := {}
 
 ## Poin stat yang sudah dibagi pemain (khusus anggota party): nama stat -> jumlah poin.
 var alloc := {}
+## Skill tree (khusus anggota party): jurus yang sudah dibuka, dan yang dibawa ke pertarungan
+## (paling banyak Db.SKILL_SLOTS; `skills` selalu sama dengan loadout).
+var unlocked: Array = []
+var loadout: Array = []
 
 var xp_reward := 0
 var gold_reward := 0
@@ -42,6 +46,7 @@ static func from_character(char_id: String, at_level: int) -> Battler:
 	b.display_name = c.name
 	b.job = c.job
 	b.level = at_level
+	b.default_build()
 	b.recalc()
 	b.hp = b.max_hp
 	b.mp = b.max_mp
@@ -90,13 +95,68 @@ func recalc() -> void:
 			set(stat_name, int(get(stat_name)) + int(bonus[stat_name]))
 	hp = min(hp, max_hp)
 	mp = min(mp, max_mp)
-	skills.clear()
+	skills = loadout.duplicate()  # yang dibawa ke pertarungan
+
+
+## Poin jurus: yang didapat sampai level ini, yang terpakai untuk membuka jurus, dan sisanya.
+func skill_points_total() -> int:
+	return (level - 1) * Db.SKILL_POINTS_PER_LEVEL
+
+
+func skill_points_spent() -> int:
+	var spent := 0
+	for skill_id: String in unlocked:
+		spent += Db.unlock_cost(id, skill_id)
+	return spent
+
+
+func skill_points_left() -> int:
+	return skill_points_total() - skill_points_spent()
+
+
+## Apakah sebuah jurus bisa dibuka sekarang: belum terbuka, jurus sebelumnya di cabang itu sudah, poin cukup.
+func can_unlock(skill_id: String) -> bool:
+	if unlocked.has(skill_id) or int(Db.skill_slot(id, skill_id)[0]) < 0:
+		return false
+	var prereq := Db.skill_prereq(id, skill_id)
+	return (prereq == "" or unlocked.has(prereq)) and Db.unlock_cost(id, skill_id) <= skill_points_left()
+
+
+## Buka sebuah jurus; kalau susunan jurus belum penuh, jurus itu langsung dibawa.
+func unlock(skill_id: String) -> bool:
+	if not can_unlock(skill_id):
+		return false
+	unlocked.append(skill_id)
+	if loadout.size() < Db.SKILL_SLOTS:
+		loadout.append(skill_id)
+	skills = loadout.duplicate()
+	return true
+
+
+## Susunan awal seorang tokoh: jurus awal, lalu jurus di `learn` sampai level ini selama poinnya cukup.
+## Dipakai saat tokoh baru bergabung dan saat memuat simpanan lama yang belum punya skill tree.
+func default_build() -> void:
+	var c: Dictionary = Db.CHARACTERS[id]
+	unlocked = [Db.starter_skill(id)]
+	loadout = []
 	var learn: Dictionary = c.learn
 	var levels: Array = learn.keys()
 	levels.sort()
 	for lv: int in levels:
 		if lv <= level:
-			skills.append_array(learn[lv])
+			for skill_id: String in learn[lv]:
+				if can_unlock(skill_id):
+					unlocked.append(skill_id)
+	auto_loadout()
+
+
+## Isi susunan jurus dari yang sudah terbuka, mengikuti urutan `pref` tokoh itu.
+func auto_loadout() -> void:
+	loadout = []
+	for skill_id: String in Db.CHARACTERS[id].pref:
+		if unlocked.has(skill_id) and loadout.size() < Db.SKILL_SLOTS:
+			loadout.append(skill_id)
+	skills = loadout.duplicate()
 
 
 ## Poin stat yang sudah didapat sampai level ini, yang sudah dibagi, dan yang masih tersisa.
