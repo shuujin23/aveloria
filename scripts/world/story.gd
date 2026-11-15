@@ -16,6 +16,7 @@ extends RefCounted
 ##   {"do": "gold", "amount": 60}            party menerima emas
 ##   {"do": "reward_gear", "slot", "tier", "rarity"}   pemain memilih anggota party yang menerima perlengkapan itu
 ##   {"do": "quest_note", "title", "quest", "hint"}    pemberitahuan quest baru / quest selesai
+##   {"do": "xp", "amount": 45}              tiap anggota party yang masih berdiri menerima XP
 
 const INN_PRICE := 10
 const DUSUN_INN_PRICE := 20
@@ -24,7 +25,8 @@ const POS_INN_PRICE := 30
 ## Adegan pembuka tiap wilayah: awalan nama zona -> adegan (dimainkan sekali; penandanya = nama adegan).
 const ZONE_INTROS := {"Hutan Mistwood": "kabut_intro", "Pegunungan Ashfell": "abu_intro", "Kastil Dreadmoor": "kastil_intro"}
 
-# hide_flag: NPC menghilang dari peta setelah penanda itu tercatat.
+# hide_flag: NPC menghilang dari peta setelah penanda itu tercatat.  show_flag: baru muncul setelah penanda itu tercatat.
+# prop: benda yang bisa diperiksa (nama sprite-nya), bukan orang.  tint: warna pengali sprite.
 const NPCS := {
 	"desa": [
 		{"id": "tetua", "name": "Tetua Bram", "sprite": "npc_tetua", "tile": Vector2i(3, 2)},
@@ -32,6 +34,9 @@ const NPCS := {
 		{"id": "dimas", "name": "Finn", "sprite": "npc_dimas", "tile": Vector2i(8, 5)},
 		{"id": "joko", "name": "Doran", "sprite": "npc_joko", "tile": Vector2i(12, 6)},
 		{"id": "gatot", "name": "Garrick", "sprite": "npc_gatot", "tile": Vector2i(13, 8)},
+		{"id": "kurir_desa", "name": "Corin", "sprite": "npc_sabar", "tint": Color(0.78, 0.92, 1.0), "tile": Vector2i(9, 10), "show_flag": "kurir_safe"},
+		{"id": "peti_kiriman", "name": "Peti Kiriman", "prop": "crate_stack", "tile": Vector2i(12, 5), "show_flag": "ogre"},
+		{"id": "peti_kiriman2", "name": "Peti Kiriman", "prop": "crate_stack", "tile": Vector2i(10, 10), "show_flag": "ogre"},
 	],
 	"dusun": [
 		{"id": "laras", "name": "Tetua Elowen", "sprite": "npc_laras", "tile": Vector2i(3, 2)},
@@ -42,6 +47,11 @@ const NPCS := {
 	"dunia": [
 		{"id": "mira", "name": "Mira", "sprite": "mira", "tile": Vector2i(18, 3), "hide_flag": "mira_joined"},
 		{"id": "selene", "name": "Selene", "sprite": "selene", "tile": Vector2i(51, 8), "hide_flag": "selene_joined"},
+		{"id": "kurir", "name": "Corin", "sprite": "npc_sabar", "tint": Color(0.78, 0.92, 1.0), "tile": Vector2i(18, 2), "hide_flag": "kurir_safe"},
+		{"id": "peti_obat", "name": "Peti Obat", "prop": "crate_medicine", "tile": Vector2i(20, 2), "hide_flag": "kurir_safe"},
+		# Dua benda di sekitar Sarang Perampok untuk jalur tanpa bertarung quest Palu Warisan (lihat Quests).
+		{"id": "gerobak", "name": "Gerobak Rampasan", "prop": "cart", "tile": Vector2i(13, 18), "show_flag": "q_perampok", "hide_flag": "q_perampok_done"},
+		{"id": "kentungan", "name": "Gong Penjaga", "prop": "gong", "tile": Vector2i(5, 18), "show_flag": "q_perampok", "hide_flag": "q_perampok_done"},
 	],
 	"pos": [
 		{"id": "darma", "name": "Tetua Aldric", "sprite": "npc_darma", "tile": Vector2i(3, 2)},
@@ -58,21 +68,27 @@ const SCENES := {
 	"intro": [
 		{"text": "Negeri Aveloria telah lama damai, sampai Raja Monster bangkit di Kastil Dreadmoor di ujung timur."},
 		{"text": "Sejak itu monster berkeliaran di padang dan hutan, dan jalan antarwilayah dijaga anak buahnya."},
-		{"text": "Di Desa Willowmere, seorang ksatria muda bernama Arlen bersiap memulai perjalanannya."},
-		{"who": "Arlen", "text": "Sebelum berangkat, aku harus pamit dulu pada Tetua Bram. Rumahnya di barat laut desa."},
+		{"text": "Di Desa Willowmere, kiriman obat dari timur sudah tiga hari terlambat. Pagi ini Tetua Bram memanggil Arlen, ksatria muda desa itu."},
+		{"who": "Arlen", "text": "Tetua tidak pernah memanggil tanpa alasan. Rumahnya di barat laut desa."},
 	],
 	"mira_after": [
-		{"who": "Mira", "text": "Terima kasih, Arlen. Kalau sendirian, aku pasti sudah celaka."},
-		{"who": "Mira", "text": "Tetua pasti cemas... tapi aku tidak mau pulang hanya untuk menunggu. Izinkan aku ikut perjalananmu."},
-		{"who": "Arlen", "text": "Dengan senang hati. Penyembuh sepertimu sangat kubutuhkan."},
-		{"text": "Mira kini ikut bertarung. Jurus Pulih miliknya memulihkan HP seorang rekan."},
+		{"do": "flag", "flag": "kurir_safe"},
+		{"who": "Arlen", "text": "Kawanan itu datang dari arah gua di utara. Kalau kukejar sekarang, mereka tidak sempat berkumpul lagi."},
+		{"who": "Mira", "text": "Dan Corin kau tinggal di sini dengan kaki terkilir? Obat ini harus sampai ke desa dulu, Arlen. Serigala bisa menunggu."},
+		{"who": "Corin", "text": "Jangan bertengkar gara-gara aku. Kakiku sudah dibalut, dan jalan tanah aman. Peti ini kubawa pulang sendiri."},
+		{"who": "Mira", "text": "...Baiklah. Tapi aku ikut denganmu, Arlen. Harus ada yang memastikan kau pulang utuh."},
+		{"who": "Arlen", "text": "Lambang di peti itu sama dengan ukiran di pusaka desa. Tetua Bram pasti tahu sesuatu."},
+		{"text": "Corin pulang ke Desa Willowmere membawa peti obat. Mira kini ikut bertarung; jurus Pulih miliknya memulihkan HP seorang rekan."},
 	],
 	"lair_alone": [
 		{"who": "Arlen", "text": "Geraman dari dalam gua itu... Terlalu berbahaya kalau sendirian. Aku harus mencari rekan dulu."},
 	],
 	"ogre_defeated": [
 		{"text": "Ogre Penjaga tumbang, dan gerbang timur pun terbuka."},
-		{"who": "Mira", "text": "Kita berhasil! Ayo kabari Tetua Bram sebelum menyeberang."},
+		{"text": "Di lehernya tergantung kepingan logam hangus. Di permukaannya terukir lingkaran bersayap, lambang yang sama dengan di peti obat."},
+		{"who": "Mira", "text": "Ini bukan rampasan. Kepingan ini dipasangkan, seperti kalung pada anjing penjaga."},
+		{"who": "Arlen", "text": "Berarti ada yang menaruhnya di sini. Dan Tetua Bram belum menceritakan semuanya."},
+		{"who": "Mira", "text": "Kita tanyakan baik-baik. Ayo kabari desa sebelum menyeberang."},
 	],
 	"kabut_intro": [
 		{"text": "Kabut tipis menyelimuti pepohonan. Udara di sini terasa lebih dingin."},
@@ -136,6 +152,32 @@ const SCENES := {
 		]},
 	],
 	# Adegan setelah penjaga tempat side quest kalah (lihat Quests).
+	# Percakapan sekali jalan saat pertama kali menginap bersama Mira (lihat talk()).
+	"inn_talk": [
+		{"who": "Mira", "text": "Belum tidur? Kau memandangi pedangmu sejak tadi."},
+		{"who": "Arlen", "text": "Semua orang menyebutku ksatria desa. Padahal yang kulakukan selama ini baru mengusir serigala dari kandang."},
+		{"who": "Mira", "text": "Guruku pergi ke timur waktu kastil itu jatuh, dan tidak kembali. Aku jadi pendeta bukan karena siap, tapi karena tidak ada orang lain."},
+		{"who": "Arlen", "text": "Jadi kita berdua sama-sama belum pantas."},
+		{"who": "Mira", "text": "Kita berdua sama-sama sudah berangkat. Tidurlah, ksatria desa."},
+		{"do": "flag", "flag": "talk_inn"},
+	],
+	# Jalur tanpa bertarung quest Palu Warisan: dimainkan di petak sarang setelah para goblin teralihkan.
+	"q_perampok_sneak": [
+		{"text": "Sarang itu lengang. Dari barat terdengar gong dipukul bertalu-talu dan goblin saling berebut tong madu."},
+		{"choice": [
+			{"text": "Menyelinap masuk dan mengambil palunya", "steps": [
+				{"text": "Kalian menyelinap melewati tumpukan rampasan. Palu tempa tua itu tergeletak di samping tempat tidur Goblin Kepala."},
+				{"who": "Mira", "text": "Dapat. Ayo pergi sebelum mereka sadar tongnya sudah kosong."},
+				{"do": "flag", "flag": "q_perampok_got"},
+				{"do": "xp", "amount": 45},
+				{"text": "Palu Garrick sudah di tangan. Goblin Kepala masih hidup, dan sarangnya tetap berbahaya."},
+			]},
+			{"text": "Serang pemimpinnya selagi ia sendirian", "steps": [
+				{"do": "battle", "ids": ["goblin_kepala"], "backdrop": "hutan", "after": "q_perampok_won"},
+			]},
+			{"text": "Mundur dulu", "steps": []},
+		]},
+	],
 	"q_perampok_won": [
 		{"text": "Goblin Kepala tumbang. Di antara barang rampasannya ada sebuah palu tempa tua."},
 		{"who": "Mira", "text": "Itu pasti palu Garrick. Ayo kembalikan ke desa."},
@@ -213,13 +255,19 @@ static func main_objective(flags: Dictionary) -> Dictionary:
 		return {"goal": "Seberangi Gerbang Eastwatch dan cari Dusun Dewfall di Hutan Mistwood.",
 			"recap": "Ogre Penjaga tumbang dan Gerbang Eastwatch terbuka."}
 	if flags.has("mira_joined"):
+		if not flags.has("kurir_safe"):
+			return {"goal": "Usir serigala yang mengepung peti obat di tepi hutan utara Lembah Verdane.",
+				"recap": "Mira bergabung, tetapi kawanan serigala belum terusir dan Corin masih menunggu."}
 		return {"goal": "Kalahkan Ogre Penjaga di Gua Grimhollow, ujung jalan utara Lembah Verdane.",
-			"recap": "Mira bergabung. Gerbang Eastwatch tetap tertutup selama Ogre Penjaga hidup."}
+			"recap": "Corin dan obatnya selamat, dan Mira bergabung. Gerbang Eastwatch tetap tertutup selama Ogre Penjaga hidup."}
+	if flags.has("kurir_met"):
+		return {"goal": "Ambil peti obat di sebelah timur tempat Mira dan Corin, di tepi hutan utara.",
+			"recap": "Mira menjaga Corin, kurir yang terluka. Peti obatnya terseret tidak jauh dari sana."}
 	if flags.has("quest_mira"):
-		return {"goal": "Cari Mira di tepi hutan utara Lembah Verdane.",
-			"recap": "Tetua Bram meminta Arlen mencari Mira, pendeta desa, yang belum kembali."}
+		return {"goal": "Cari Mira dan kurir yang hilang di tepi hutan utara Lembah Verdane.",
+			"recap": "Kiriman obat terlambat tiga hari. Mira, pendeta desa, pergi mencari kurirnya dan belum kembali."}
 	return {"goal": "Temui Tetua Bram di barat laut Desa Willowmere.",
-		"recap": "Raja Monster bangkit di Kastil Dreadmoor, dan Arlen bersiap berangkat."}
+		"recap": "Raja Monster bangkit di Kastil Dreadmoor, dan kiriman obat untuk desa tak kunjung tiba."}
 
 
 static func scene(key: String) -> Array:
@@ -227,6 +275,8 @@ static func scene(key: String) -> Array:
 
 
 static func npc_visible(entry: Dictionary, flags: Dictionary) -> bool:
+	if entry.has("show_flag") and not flags.has(entry.show_flag):
+		return false
 	return not (entry.has("hide_flag") and flags.has(entry.hide_flag))
 
 
@@ -242,7 +292,24 @@ static func npc(npc_id: String) -> Dictionary:
 ## Keadaan permainan dikirim lewat parameter karena skrip ini tidak boleh bergantung pada autoload Game.
 static func talk(npc_id: String, flags: Dictionary, gold: int) -> Array:
 	# Dialog side quest (kalau NPC ini pemberi quest) diselipkan sebelum dialog biasanya.
-	return Quests.steps_for(npc_id, npc(npc_id).get("name", ""), flags) + _talk_base(npc_id, flags, gold)
+	var steps: Array = Quests.steps_for(npc_id, npc(npc_id).get("name", ""), flags) + _talk_base(npc_id, flags, gold)
+	if flags.has("mira_joined") and not flags.has("talk_inn"):
+		steps = _with_inn_talk(steps)
+	return steps
+
+
+## Selipkan percakapan party "inn_talk" setelah langkah menginap (kalau dialog ini punya pilihan menginap).
+## Mengembalikan salinan, supaya data dialog aslinya tidak berubah.
+static func _with_inn_talk(steps: Array) -> Array:
+	var out: Array = steps.duplicate(true)
+	for step: Dictionary in out:
+		for option: Dictionary in step.get("choice", []):
+			var rests := false
+			for inner: Dictionary in option.steps:
+				rests = rests or inner.get("do", "") == "rest"
+			if rests:
+				option.steps = (option.steps as Array) + (SCENES["inn_talk"] as Array)
+	return out
 
 
 static func _talk_base(npc_id: String, flags: Dictionary, gold: int) -> Array:
@@ -251,22 +318,25 @@ static func _talk_base(npc_id: String, flags: Dictionary, gold: int) -> Array:
 			if flags.has("ogre"):
 				return [
 					{"who": "Tetua Bram", "text": "Kalian mengalahkan Ogre Penjaga! Seluruh desa berutang budi pada kalian."},
+					{"who": "Tetua Bram", "text": "Kepingan berlambang di leher Ogre itu... Dulu tiap permukiman menyimpan satu, dan para Penjaga Jalan memakainya untuk memanggil bantuan dari kastil."},
+					{"who": "Tetua Bram", "text": "Generasiku membiarkan ikatan itu putus. Kini seseorang di kastil memakainya untuk memerintah, bukan menolong. Hanya itu yang berani kukatakan sekarang."},
 					{"who": "Tetua Bram", "text": "Di seberang gerbang timur terbentang Hutan Mistwood. Konon seorang penyihir bernama Selene tinggal di sana."},
 				]
 			if flags.has("mira_joined"):
 				return [
-					{"who": "Tetua Bram", "text": "Syukurlah Mira selamat. Berdua, kalian punya harapan."},
+					{"who": "Tetua Bram", "text": "Syukurlah kalian selamat dan obatnya sampai. Berdua, kalian punya harapan."},
+					{"who": "Tetua Bram", "text": "Lingkaran bersayap di peti itu? ...Itu lambang Penjaga Jalan, yang dulu menghubungkan desa-desa dengan kastil. Sudah lama tak ada yang memakainya."},
 					{"who": "Tetua Bram", "text": "Ogre Penjaga bersarang di ujung jalan utara. Selama dia hidup, gerbang timur tetap tertutup."},
 					{"who": "Tetua Bram", "text": "Jangan terburu-buru. Berlatihlah dulu di padang, dan beristirahatlah di penginapan Marla."},
 					{"who": "Tetua Bram", "text": "Dan jangan menghadapinya dengan tangan kosong. Garrick, pandai besi di sisi timur desa, bisa membuatkan senjata dan zirah untuk kalian berdua."},
 				]
 			if flags.has("quest_mira"):
-				return [{"who": "Tetua Bram", "text": "Mira pergi ke tepi hutan di utara. Keluar dari desa, lalu ikuti padang ke arah utara."}]
+				return [{"who": "Tetua Bram", "text": "Mira menyusuri tepi hutan di utara mencari Corin. Keluar dari desa, lalu ikuti padang ke arah utara."}]
 			return [
-				{"who": "Tetua Bram", "text": "Arlen. Jadi hari ini kau berangkat."},
-				{"who": "Tetua Bram", "text": "Gerbang timur dijaga Ogre, anak buah Raja Monster. Sendirian, kau tak akan sanggup melawannya."},
-				{"who": "Tetua Bram", "text": "Mira, pendeta desa kita, pergi mencari daun penawar ke tepi hutan utara dan belum kembali. Aku cemas."},
-				{"who": "Tetua Bram", "text": "Tolong cari dia. Jalan tanah aman dari monster; padang dan hutan tidak."},
+				{"who": "Tetua Bram", "text": "Arlen. Terima kasih sudah datang."},
+				{"who": "Tetua Bram", "text": "Corin, kurir kita, menyelinap melewati gerbang timur sebelum Ogre menutupnya, membawa peti obat dari Dusun Dewfall. Seharusnya ia tiba tiga hari lalu."},
+				{"who": "Tetua Bram", "text": "Mira, pendeta desa kita, tidak sabar menunggu dan pergi mencarinya ke tepi hutan utara pagi tadi. Ia juga belum kembali."},
+				{"who": "Tetua Bram", "text": "Kau ingin membuktikan dirimu sebagai ksatria, bukan? Susul mereka. Jalan tanah aman dari monster; padang dan hutan tidak."},
 				{"do": "flag", "flag": "quest_mira"},
 			]
 		"sari":
@@ -288,6 +358,11 @@ static func _talk_base(npc_id: String, flags: Dictionary, gold: int) -> Array:
 				]},
 			]
 		"dimas":
+			if flags.has("ogre"):
+				return [
+					{"who": "Finn", "text": "Kak Arlen! Gerobak dari timur datang lagi! Ada garam, kain, dan permen madu!"},
+					{"who": "Finn", "text": "Kata Corin, Ogre itu sebesar rumah. Benar, ya?"},
+				]
 			if flags.has("mira_joined"):
 				return [{"who": "Finn", "text": "Kak Mira hebat, ya! Lukaku waktu jatuh dulu langsung sembuh."}]
 			return [
@@ -326,13 +401,84 @@ static func _talk_base(npc_id: String, flags: Dictionary, gold: int) -> Array:
 				{"who": "Varek", "text": "Kalau ketemu kura-kura magma, jangan lari. Cangkangnya bahan tempa langka."},
 			]
 		"mira":
+			if flags.has("kurir_met"):
+				return [{"who": "Mira", "text": "Peti obatnya di sebelah timur sini, Arlen. Aku tidak bisa meninggalkan Corin."}]
 			return [
-				{"who": "Mira", "text": "Arlen! Syukurlah kau datang. Aku sedang mencari daun penawar, tapi..."},
-				{"who": "Mira", "text": "Awas, di belakangmu! Serigala!"},
+				{"who": "Mira", "text": "Arlen! Pelan-pelan, jangan menginjak balutannya."},
+				{"who": "Mira", "text": "Ini Corin. Serigala menyergapnya di jalan, dan pergelangan kakinya terkilir parah. Aku belum bisa meninggalkannya."},
+				{"who": "Corin", "text": "Peti obatnya terseret ke semak di sebelah timur waktu aku jatuh. Tolong, isinya untuk seluruh desa."},
+				{"who": "Arlen", "text": "Serigalanya lari ke mana? Biar kukejar."},
+				{"who": "Mira", "text": "Obatnya dulu, Arlen. Ambil petinya; aku menjaga Corin di sini."},
+				{"do": "flag", "flag": "kurir_met"},
+			]
+		"kurir":
+			if flags.has("mira_joined"):
+				return [{"who": "Corin", "text": "Serigala-serigala itu masih mengitari petinya! Hati-hati!"}]
+			if flags.has("kurir_met"):
+				return [{"who": "Corin", "text": "Petinya di semak sebelah timur. Segel lilinnya masih utuh waktu terakhir kulihat."}]
+			return [{"who": "Corin", "text": "Aduh... kakiku. Bicaralah dengan pendeta itu, ia yang menolongku."}]
+		"peti_obat":
+			if flags.has("mira_joined"):  # kalah dari serigala sebelumnya: Mira sudah di party, pertarungannya diulang
+				return [
+					{"text": "Kawanan serigala itu kembali mengendus-endus peti obat."},
+					{"do": "battle", "ids": ["serigala", "kelelawar"], "backdrop": "hutan", "after": "mira_after"},
+				]
+			if not flags.has("kurir_met"):
+				return [{"text": "Sebuah peti kayu bersegel lilin tergeletak di semak. Ada bekas cakaran di sekelilingnya."}]
+			return [
+				{"text": "Peti kayu bersegel lilin. Di tutupnya tercap lingkaran bersayap."},
+				{"who": "Arlen", "text": "Lambang ini... sama dengan ukiran di pusaka desa."},
+				{"who": "Mira", "text": "Arlen, di belakangmu! Mereka kembali!"},
 				{"do": "join", "id": "mira"},
 				{"do": "flag", "flag": "mira_joined"},
 				{"text": "Mira bergabung dengan party!"},
 				{"do": "battle", "ids": ["serigala", "kelelawar"], "backdrop": "hutan", "after": "mira_after"},
+			]
+		"kurir_desa":
+			if flags.has("ogre"):
+				return [
+					{"who": "Corin", "text": "Gerbangnya terbuka! Besok aku berangkat lagi ke Dusun Dewfall, kali ini lewat jalan yang benar."},
+					{"who": "Corin", "text": "Soal cap di peti itu: yang menyegelnya Tetua Elowen sendiri. Kalau kalian sampai di Dewfall, tanyakan padanya."},
+				]
+			return [{"who": "Corin", "text": "Obatnya sudah di tangan Marla. Kakiku? Masih nyeri, tapi kata Mira seminggu lagi bisa berlari."}]
+		"peti_kiriman", "peti_kiriman2":
+			return [{"text": "Peti-peti kiriman dari timur: garam, kain, dan obat. Sebagian bercap lingkaran bersayap."}]
+		"gerobak":
+			if flags.has("q_perampok_got") or flags.has("goblin_kepala"):
+				return [{"text": "Gerobak rampasan yang ditinggalkan. Tidak ada lagi yang berguna di sini."}]
+			if flags.has("q_perampok_bait"):
+				return [{"text": "Gerobak rampasan. Tong madunya sudah kalian bawa."}]
+			return [
+				{"text": "Gerobak pedagang yang dirampas goblin. Di antara karung kosong ada satu tong madu yang masih penuh."},
+				{"who": "Mira", "text": "Goblin tergila-gila pada madu. Kalau tong ini ada di tempat lain, mereka pasti meninggalkan sarangnya."},
+				{"choice": [
+					{"text": "Bawa tong madunya", "steps": [
+						{"do": "flag", "flag": "q_perampok_bait"},
+						{"text": "Kalian membawa tong madu itu. Sekarang tinggal cara memanggil para goblin menjauh dari sarang. Di sebelah barat sarang ada gong penjaga."},
+					]},
+					{"text": "Biarkan saja", "steps": []},
+				]},
+			]
+		"kentungan":
+			if flags.has("q_perampok_got") or flags.has("goblin_kepala"):
+				return [{"text": "Gong penjaga itu kini diam."}]
+			if flags.has("q_perampok_sneak"):
+				return [{"text": "Para goblin masih berebut madu di sekitar gong. Sarangnya di timur sedang lengang."}]
+			if not flags.has("q_perampok_bait"):
+				return [
+					{"text": "Gong penjaga gerombolan goblin. Kalau dipukul, seisi sarang akan berlari ke sini."},
+					{"who": "Arlen", "text": "Memanggil mereka saja tidak cukup. Harus ada yang menahan mereka di sini. Mungkin ada sesuatu di gerobak rampasan di tepi jalan timur."},
+				]
+			return [
+				{"text": "Gong penjaga gerombolan goblin. Kalau dipukul, seisi sarang akan berlari ke sini."},
+				{"choice": [
+					{"text": "Taruh tong madu, lalu pukul gongnya", "steps": [
+						{"do": "flag", "flag": "q_perampok_sneak"},
+						{"text": "Gong berdentang. Kalian bersembunyi, dan gerombolan goblin berhamburan keluar lalu berebut tong madu."},
+						{"who": "Mira", "text": "Sekarang! Sarangnya di timur, selagi mereka sibuk."},
+					]},
+					{"text": "Jangan dulu", "steps": []},
+				]},
 			]
 		"laras":
 			if flags.has("ratu"):

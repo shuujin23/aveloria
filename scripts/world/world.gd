@@ -576,6 +576,11 @@ func _run_steps(steps: Array) -> bool:
 					await _run_steps([{"text": note}])
 				"reward_gear":  # hadiah perlengkapan untuk satu anggota party pilihan pemain
 					await _reward_gear(step)
+				"xp":  # XP penyelesaian tanpa bertarung, untuk tiap anggota yang masih berdiri
+					var gained: Array = [Loc.t("Party mendapat %d XP.") % int(step.amount)] + Game.grant_xp(int(step.amount))
+					Audio.sfx("save")
+					_update_hud()
+					await _run_steps([{"text": "\n".join(gained)}])
 				"rest":  # menginap: pulih, jadi titik kembali, dan menyimpan permainan
 					Game.rest_at_inn()
 					Game.save_game()
@@ -641,7 +646,10 @@ func _quest_spot(id: String) -> void:
 	var q: Dictionary = Quests.LIST[id]
 	match Quests.state(id, Game.flags):
 		"active":
-			_start_battle(Db.BOSSES[q.boss], q.backdrop, "q_%s_won" % id)
+			if Game.flags.has("q_%s_sneak" % id):  # penjaganya teralihkan: pemain memilih menyelinap atau tetap bertarung
+				_run_scene(Story.scene("q_%s_sneak" % id))
+			else:
+				_start_battle(Db.BOSSES[q.boss], q.backdrop, "q_%s_won" % id)
 		"won", "done":
 			_show_message(Loc.t("Tidak ada apa-apa lagi di sini."))
 		_:
@@ -1151,7 +1159,10 @@ func _build_objects() -> void:
 				sprite.position = _iso(t)
 				_objects.add_child(sprite)
 	for npc: Dictionary in Story.NPCS.get(Game.map_id, []):
-		var sprite := _sprite("%s_front_stand" % npc.sprite, PERSON_ANCHOR)
+		# Benda yang bisa diperiksa (prop) memakai sprite-nya sendiri; orang memakai gambar berdiri tampak depan.
+		var sprite := _sprite(npc.prop, CHEST_ANCHOR) if npc.has("prop") else _sprite("%s_front_stand" % npc.sprite, PERSON_ANCHOR)
+		if npc.has("tint"):
+			sprite.modulate = npc.tint
 		sprite.position = _iso(npc.tile)
 		_objects.add_child(sprite)
 		_npc_sprites[npc.id] = sprite

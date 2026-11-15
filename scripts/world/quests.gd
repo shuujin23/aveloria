@@ -5,6 +5,8 @@ extends RefCounted
 ## Tiap quest punya pemberi (NPC), satu tempat di peta wilayah yang dijaga monster elite, dan hadiah.
 ## Jalannya: bicara dengan pemberi (quest diterima) -> kalahkan penjaga di tempat itu -> kembali ke pemberi.
 ## Penanda di Game.flags:  q_<id> = diterima,  <boss> = penjaganya kalah,  q_<id>_done = hadiah sudah diambil.
+## Quest yang punya jalur tanpa bertarung memakai q_<id>_got (barangnya didapat) alih-alih penanda penjaga kalah;
+## adegannya ada di Story.SCENES["q_<id>_sneak"] dan dipicu penanda q_<id>_sneak (lihat Palu Warisan).
 ##
 ##   need     penanda cerita yang harus ada sebelum quest ditawarkan
 ##   giver    id NPC pemberi (lihat Story.NPCS); dialog quest diselipkan sebelum dialog biasanya
@@ -20,7 +22,7 @@ const LIST := {
 	"perampok": {
 		"name": "Palu Warisan", "need": "mira_joined", "giver": "gatot", "boss": "goblin_kepala", "backdrop": "hutan",
 		"place": "Sarang Perampok",
-		"goal": "Cari sarang perampok di hutan barat daya Lembah Verdane dan kalahkan pemimpinnya.",
+		"goal": "Rebut palu dari sarang perampok di hutan barat daya Lembah Verdane: kalahkan pemimpinnya, atau cari cara memancing gerombolannya keluar.",
 		"back": "Kembalikan palu itu kepada Garrick di Desa Willowmere.",
 		"offer": [
 			"Sebelum kalian pergi... Gerombolan goblin mencuri palu tempa warisan ayahku dan membawanya ke sarang mereka di hutan barat daya.",
@@ -143,7 +145,8 @@ static func state(id: String, flags: Dictionary) -> String:
 	if flags.has("q_%s_done" % id):
 		return "done"
 	if flags.has("q_" + id):
-		return "won" if flags.has(q.boss) else "active"
+		# Tujuan quest tercapai kalau penjaganya kalah, atau barangnya didapat tanpa bertarung (q_<id>_got).
+		return "won" if flags.has(q.boss) or flags.has("q_%s_got" % id) else "active"
 	return "available" if flags.has(q.need) else "locked"
 
 

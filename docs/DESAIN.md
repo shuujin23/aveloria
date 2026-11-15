@@ -259,3 +259,35 @@ Tempat side quest (Sarang Perampok, Altar Tua, Kapel Runtuh, dan lainnya) masih 
 - Layar battle: banner memperingatkan "akhir ronde depan" lalu "akhir ronde ini", dan arena berguncang saat hantaman lepas.
 - Keadaan pola (`round_no`, `_pattern_step`) milik instance `BattleEngine`, jadi pertarungan baru dan Coba lagi selalu mulai dari awal pola.
 - AI simulasi bertahan di ronde hantaman. Dengan itu Ogre terlalu mudah (94%), jadi diperkuat ke HP 312 dan ATK 32; hasil dengan perlengkapan wajar: Ogre 83%, Ratu 81%, Lahar 75%, Raja 78%.
+## M1b dari rencana pengembangan
+
+Belum dimainkan dengan tangan; diverifikasi lewat tes otomatis (dua bahasa) dan tangkapan layar.
+
+### Benda dan NPC bersyarat
+
+- Entri `Story.NPCS` kini boleh punya `show_flag` (baru muncul setelah penanda itu), `prop` (benda yang bisa diperiksa; nama sprite-nya), dan `tint`. Benda diperlakukan seperti NPC: diperiksa dengan cara yang sama, dialognya di `Story._talk_base`.
+- Sprite baru di `tools/gen_sprites.gd`: `crate_medicine`, `crate_stack`, `cart`, `gong`. Corin memakai sprite `npc_sabar` yang diwarnai (sementara).
+
+### A01: pembuka dengan kurir
+
+- Alur: Bram (`quest_mira`) -> Mira menjaga Corin di tepi hutan utara (`kurir_met`, tanpa pertarungan) -> periksa peti obat di sebelah timurnya (Mira bergabung, `mira_joined`, serigala menyerang) -> menang (`kurir_safe`; Corin dan peti pindah ke desa).
+- Kalah dari serigala: Mira tetap di party, peti masih di tempat, dan memeriksanya mengulang pertarungan (tanpa bergabung dua kali).
+- Lambang lingkaran bersayap di peti = lambang Penjaga Jalan (Waykeepers). Bram hanya membuka sebagian ceritanya.
+- Jurnal: dua tahap baru (ambil peti obat; usir serigala), total 14 tujuan utama.
+- `SAVE_VERSION` 4. Simpanan versi 1-3 dengan `mira_joined` otomatis mendapat `kurir_met` dan `kurir_safe`.
+
+### A03: percakapan party sekali jalan
+
+- Setelah kurir aman: di adegan `mira_after` (Arlen ingin mengejar serigala, Mira mendahulukan obat dan Corin).
+- Menginap pertama bersama Mira: adegan `inn_talk`, diselipkan `Story.talk()` setelah langkah `rest` di ketiga penginapan; penandanya `talk_inn`. Pemulihan dan penyimpanan terjadi lebih dulu.
+- Setelah Ogre kalah: `ogre_defeated` diperpanjang dengan kepingan berlambang di leher Ogre.
+
+### A06: desa setelah Ogre
+
+- Peti kiriman muncul di dua tempat di Desa Willowmere (`show_flag: ogre`), dialog Finn dan Corin berubah, dan Bram menambah sepotong sejarah lambang. Corin menunjuk Tetua Elowen sebagai penyegel peti (kait untuk M2).
+
+### A04: Palu Warisan tanpa bertarung
+
+- Selama quest berjalan muncul Gerobak Rampasan (timur sarang, tepi jalan) dan Gong Penjaga (barat sarang). Bawa tong madu (`q_perampok_bait`), taruh dan pukul gong (`q_perampok_sneak`), lalu injak sarang: pilih menyelinap, bertarung, atau mundur.
+- Menyelinap mencatat `q_perampok_got` dan memberi 45 XP (sama dengan XP Goblin Kepala) lewat langkah `{"do": "xp"}` / `Game.grant_xp()`; tanpa emas dan bahan dari monster. Penanda `goblin_kepala` tidak dipalsukan: gambar sarang tetap "berpenghuni".
+- `Quests.state()` menganggap tujuan tercapai kalau penjaga kalah **atau** `q_<id>_got` ada. Hadiah Garrick tetap satu kali (`q_perampok_done`), dan simpanan lama yang bosnya sudah kalah tetap bisa menagih.

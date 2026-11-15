@@ -96,6 +96,90 @@ func _initialize() -> void:
 		_expect(WorldMap.find_in(spot[0], spot[1]).x >= 0 and WorldMap.TILES[spot[1]].quest == spot[2]
 			and WorldMap.TILES[spot[1]].zone == Quests.LIST[spot[2]].place, "tempat quest %s ada di peta %s" % [spot[2], spot[0]])
 
+	# --- Palu Warisan tanpa bertarung: penanda tujuan (q_perampok_got) terpisah dari penanda penjaga kalah ---
+	flags = {"mira_joined": true, "kurir_safe": true}
+	_expect(not Story.npc_visible(Story.npc("gerobak"), flags) and not Story.npc_visible(Story.npc("kentungan"), flags), "gerobak dan gong belum ada sebelum quest diterima")
+	flags["q_perampok"] = true
+	_expect(Story.npc_visible(Story.npc("gerobak"), flags) and Story.npc_visible(Story.npc("kentungan"), flags), "gerobak dan gong muncul selama quest berjalan")
+	_expect(_flags_in(Story.talk("gerobak", flags, 0)).has("q_perampok_bait"), "gerobak: tong madu bisa dibawa")
+	_expect(_flags_in(Story.talk("kentungan", flags, 0)).is_empty() and Story.talk("kentungan", flags, 0).size() == 2, "gong tanpa umpan: hanya petunjuk ke gerobak")
+	flags["q_perampok_bait"] = true
+	_expect(_flags_in(Story.talk("gerobak", flags, 0)).is_empty(), "tong madu hanya bisa dibawa sekali")
+	_expect(_flags_in(Story.talk("kentungan", flags, 0)) == ["q_perampok_sneak"], "gong dengan umpan: gerombolan goblin bisa dipancing keluar")
+	var sneak: Array = Story.scene("q_perampok_sneak")[1].choice
+	_expect(_flags_in(sneak[0].steps) == ["q_perampok_got"] and (sneak[0].steps as Array).any(func(step: Dictionary) -> bool: return step.get("do", "") == "xp" and int(step.amount) == int(Db.ENEMIES["goblin_kepala"].xp)),
+		"menyelinap: palu didapat dan XP-nya setara mengalahkan penjaganya, tanpa penanda penjaga kalah")
+	_expect((sneak[1].steps as Array).any(func(step: Dictionary) -> bool: return step.get("do", "") == "battle" and step.ids == ["goblin_kepala"] and step.after == "q_perampok_won"),
+		"di sarang yang lengang pemain tetap boleh memilih bertarung")
+	flags["q_perampok_sneak"] = true
+	_expect(Quests.state("perampok", flags) == "active", "memancing goblin keluar saja belum menyelesaikan tujuan")
+	flags["q_perampok_got"] = true
+	thanks = Quests.steps_for("gatot", "Garrick", flags)
+	_expect(Quests.state("perampok", flags) == "won" and not flags.has("goblin_kepala")
+		and thanks.filter(func(step: Dictionary) -> bool: return step.get("do", "") == "reward_gear").size() == 1, "palu didapat tanpa bertarung: Garrick memberi hadiah yang sama, sekali")
+	_expect(_flags_in(Story.talk("gerobak", flags, 0)).is_empty() and _flags_in(Story.talk("kentungan", flags, 0)).is_empty(), "setelah palu didapat, gerobak dan gong tidak memberi apa-apa lagi")
+	flags["goblin_kepala"] = true  # kedua jalur ditempuh sekaligus: tetap satu hadiah
+	flags["q_perampok_done"] = true
+	_expect(Quests.state("perampok", flags) == "done" and Quests.steps_for("gatot", "Garrick", flags).is_empty()
+		and not Story.npc_visible(Story.npc("gerobak"), flags), "setelah hadiah diambil tidak ada hadiah kedua, dan bendanya hilang dari peta")
+	game.new_game()
+	game.party = [Battler.from_character("arlen", 5), Battler.from_character("mira", 5)]
+	(game.party[1] as Battler).hp = 0
+	var xp_lines: Array = game.grant_xp(10)
+	_expect((game.party[0] as Battler).xp == 10 and (game.party[1] as Battler).xp == 0 and xp_lines.is_empty(), "XP penyelesaian hanya untuk anggota yang masih berdiri")
+
+	# --- pembuka: Mira menjaga kurir, peti obat, dan percakapan party ---
+	flags = {"quest_mira": true}
+	var meet := Story.talk("mira", flags, 0)
+	_expect(_flags_in(meet) == ["kurir_met"] and not meet.any(func(step: Dictionary) -> bool: return step.has("do") and step.do != "flag"),
+		"bertemu Mira: ia menjaga kurir; belum bergabung dan belum ada pertarungan")
+	_expect(Story.talk("peti_obat", flags, 0).size() == 1, "peti obat sebelum bertemu Mira: hanya keterangan")
+	flags["kurir_met"] = true
+	var crate := Story.talk("peti_obat", flags, 0)
+	_expect(_flags_in(crate) == ["mira_joined"] and crate.any(func(step: Dictionary) -> bool: return step.get("do", "") == "join")
+		and crate.any(func(step: Dictionary) -> bool: return step.get("do", "") == "battle" and step.after == "mira_after"), "memeriksa peti obat: Mira bergabung dan serigala menyerang")
+	flags["mira_joined"] = true
+	var again := Story.talk("peti_obat", flags, 0)
+	_expect(not again.any(func(step: Dictionary) -> bool: return step.get("do", "") == "join") and again.any(func(step: Dictionary) -> bool: return step.get("do", "") == "battle"),
+		"kalah dari serigala: pertarungannya bisa diulang tanpa Mira bergabung dua kali")
+	_expect(Story.npc_visible(Story.npc("kurir"), flags) and not Story.npc_visible(Story.npc("kurir_desa"), flags)
+		and Story.main_objective(flags).goal.begins_with("Usir serigala"), "sebelum serigala terusir, kurir masih di tepi hutan")
+	_expect(_flags_in(Story.scene("mira_after")) == ["kurir_safe"], "menang melawan serigala: kurir aman")
+	flags["kurir_safe"] = true
+	_expect(not Story.npc_visible(Story.npc("kurir"), flags) and not Story.npc_visible(Story.npc("peti_obat"), flags)
+		and Story.npc_visible(Story.npc("kurir_desa"), flags), "kurir dan petinya pindah ke desa")
+	_expect(not Story.npc_visible(Story.npc("peti_kiriman"), flags) and Story.npc_visible(Story.npc("peti_kiriman"), {"ogre": true}), "peti kiriman baru terlihat di desa setelah Ogre kalah")
+	_expect(Story.talk("kurir_desa", flags, 0) != Story.talk("kurir_desa", {"ogre": true}, 0) and Story.talk("dimas", flags, 0) != Story.talk("dimas", {"ogre": true}, 0),
+		"dialog Corin dan Finn berubah setelah Ogre kalah")
+	for inn: String in ["sari", "wiryo", "ningsih"]:
+		var first_night := _flags_in(Story.talk(inn, flags, 999))
+		var poor_night := _flags_in(Story.talk(inn, flags, 0))
+		var alone := _flags_in(Story.talk(inn, {}, 999))
+		var later := _flags_in(Story.talk(inn, {"mira_joined": true, "talk_inn": true}, 999))
+		_expect(first_night == ["talk_inn"] and poor_night == ["talk_inn"] and alone.is_empty() and later.is_empty()
+			and _flags_in(Story.talk(inn, flags, 999)) == ["talk_inn"],
+			"penginapan %s: percakapan party hanya saat pertama menginap bersama Mira" % inn)
+	var night_steps: Array = Story.talk("sari", flags, 999)[1].choice[0].steps
+	var rest_at := -1
+	var talk_at := -1
+	for i in night_steps.size():
+		if night_steps[i].get("do", "") == "rest":
+			rest_at = i
+		if night_steps[i].get("flag", "") == "talk_inn":
+			talk_at = i
+	_expect(rest_at >= 0 and talk_at > rest_at, "percakapan penginapan dimainkan setelah party pulih dan permainan disimpan")
+
+	# --- simpanan lama (versi 3): Mira sudah bergabung berarti kurir sudah aman ---
+	file = FileAccess.open(game.save_path, FileAccess.WRITE)
+	file.store_string(JSON.stringify({"version": 3, "party": [{"id": "arlen", "level": 3, "xp": 0, "hp": 20, "mp": 5}, {"id": "mira", "level": 3, "xp": 0, "hp": 20, "mp": 5}],
+		"gold": 0, "wins": 0, "flags": ["quest_mira", "mira_joined"], "items": {}, "bag_slots": 6, "map": "desa", "tile": [7, 10], "respawn_map": "desa", "respawn_tile": [7, 10]}))
+	file.close()
+	_expect(game.load_game() and game.flags.has("kurir_safe") and game.flags.has("kurir_met") and game.party.size() == 2, "simpanan versi 3 dengan Mira: kurir dianggap sudah aman")
+	game.flags.erase("kurir_safe")
+	game.save_game()
+	_expect(game.load_game() and not game.flags.has("kurir_safe") and game.party.size() == 2, "simpanan versi baru di tengah penyelamatan dimuat apa adanya, Mira tidak berganda")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.save_path))
+
 	# --- quest sulit dan senjata Legend ---
 	flags = {"mira_joined": true, "selene_joined": true, "kael_joined": true}
 	_expect(Quests.state("pedang_fajar", flags) == "locked" and Quests.state("naga_purba", flags) == "locked", "quest sulit belum terbuka sebelum Raksasa Lahar kalah")
@@ -164,6 +248,17 @@ func _initialize() -> void:
 	_expect(float(boosted) / normal > 1.25, "Tongkat Cahaya Abadi: penyembuhan lebih kuat (%.2fx)" % (float(boosted) / normal))
 	print("HASIL: %s" % ("ADA YANG GAGAL" if _failed else "SEMUA LOLOS"))
 	quit(1 if _failed else 0)
+
+
+## Semua penanda yang bisa dicatat sebuah dialog, termasuk yang ada di dalam pilihan.
+func _flags_in(steps: Array) -> Array:
+	var found: Array = []
+	for step: Dictionary in steps:
+		if step.get("do", "") == "flag":
+			found.append(step.flag)
+		for option: Dictionary in step.get("choice", []):
+			found.append_array(_flags_in(option.steps))
+	return found
 
 
 func _expect(ok: bool, what: String) -> void:

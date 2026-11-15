@@ -38,6 +38,10 @@ func _initialize() -> void:
 	_altar()
 	_chest("chest_closed", false)
 	_chest("chest_open", true)
+	_crate("crate_medicine", false)
+	_crate("crate_stack", true)
+	_cart()
+	_gong()
 
 	var green := ["8fd06a", "5fae4e", "3d8a40", "2a6a38", "1c4a2e"]
 	var teal := ["7cc4b0", "4e9c8c", "33766e", "235a58", "173f42"]
@@ -1722,6 +1726,68 @@ func _chest(sprite_name: String, open: bool) -> void:
 	_outline(img, Color("2a1808"))
 	_shadow(img, 14, 24, 10, 3)
 	_save(img, sprite_name)
+
+
+## Benda cerita yang bisa diperiksa (28x28, jangkar 14,24 seperti peti harta).
+## Peti kayu: stacked = tumpukan peti kiriman; kalau tidak, satu peti obat bercap lingkaran bersayap.
+func _crate(sprite_name: String, stacked: bool) -> void:
+	var img := _new(28, 28)
+	if stacked:
+		_rect(img, 9, 4, 20, 11, Color("a8763c"))
+		_rect(img, 16, 4, 20, 11, Color("86592a"))
+		_rect(img, 9, 7, 20, 8, Color("6a4220"))
+	_rect(img, 5, 12, 22, 23, Color("b98548"))
+	_rect(img, 17, 12, 22, 23, Color("946632"))
+	_rect(img, 5, 12, 22, 13, Color("7a5226"))
+	_rect(img, 5, 22, 22, 23, Color("7a5226"))
+	var mark := Color("f6ecc8")
+	for p: Vector2i in [Vector2i(11, 16), Vector2i(12, 16), Vector2i(10, 17), Vector2i(13, 17), Vector2i(10, 18), Vector2i(13, 18),
+			Vector2i(11, 19), Vector2i(12, 19)]:  # lingkaran
+		_px(img, p.x, p.y, mark)
+	if not stacked:
+		for p: Vector2i in [Vector2i(6, 16), Vector2i(7, 17), Vector2i(8, 17), Vector2i(9, 18),
+				Vector2i(17, 16), Vector2i(16, 17), Vector2i(15, 17), Vector2i(14, 18)]:  # sayap
+			_px(img, p.x, p.y, mark)
+	_outline(img, Color("2a1808"))
+	_shadow(img, 14, 24, 10, 3)
+	_save(img, sprite_name)
+
+
+## Gerobak rampasan: bak kayu beroda dengan karung dan satu tong madu.
+func _cart() -> void:
+	var img := _new(28, 28)
+	_rect(img, 6, 6, 10, 10, Color("d8c48e"))  # karung
+	_rect(img, 13, 4, 18, 10, Color("8a5a2c"))  # tong madu
+	_rect(img, 13, 6, 18, 6, Color("e0a83a"))
+	_rect(img, 13, 9, 18, 9, Color("e0a83a"))
+	_rect(img, 3, 11, 21, 17, Color("9a6b38"))  # bak
+	_rect(img, 3, 11, 21, 12, Color("c08a4a"))
+	_rect(img, 16, 13, 21, 17, Color("7c5228"))
+	_rect(img, 22, 14, 26, 15, Color("7c5228"))  # gagang
+	for wheel_x: int in [5, 15]:
+		_rect(img, wheel_x, 17, wheel_x + 5, 22, Color("3e2a1a"))
+		_rect(img, wheel_x + 1, 18, wheel_x + 4, 21, Color("8a6a48"))
+		_rect(img, wheel_x + 2, 19, wheel_x + 3, 20, Color("3e2a1a"))
+	_outline(img, Color("2a1808"))
+	_shadow(img, 14, 24, 11, 3)
+	_save(img, "cart")
+
+
+## Gong penjaga: cakram kuningan tergantung di rangka kayu.
+func _gong() -> void:
+	var img := _new(28, 28)
+	_rect(img, 5, 4, 6, 23, Color("6a4220"))
+	_rect(img, 21, 4, 22, 23, Color("553418"))
+	_rect(img, 4, 3, 23, 4, Color("8a5a2c"))
+	_rect(img, 13, 5, 14, 7, Color("c9b27a"))  # tali
+	for y in range(8, 20):
+		for x in range(8, 20):
+			var d := Vector2(x - 13.5, y - 13.5).length()
+			if d <= 5.6:
+				_px(img, x, y, Color("b5822e") if d > 4.4 else (Color("f2c45a") if d < 1.6 else Color("d9a441")))
+	_outline(img, Color("2a1808"))
+	_shadow(img, 14, 24, 10, 3)
+	_save(img, "gong")
 
 
 ## Altar Lumen: tumpuan batu dengan kristal biru bercahaya (32x34, jangkar 16,30).

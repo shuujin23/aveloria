@@ -3,7 +3,7 @@ extends SceneTree
 ##   Godot_console.exe --headless --path . -s res://scripts/tests/loc_test.gd
 
 ## Nama diri yang sama di kedua bahasa, jadi tidak perlu ada di kamus.
-const SAME := ["", "Legend", "Meteor", "Arlen", "Mira", "Selene", "Kael", "Marla", "Finn", "Doran", "Garrick", "Osric", "Nessa",
+const SAME := ["", "Legend", "Meteor", "Arlen", "Mira", "Selene", "Kael", "Corin", "Marla", "Finn", "Doran", "Garrick", "Osric", "Nessa",
 	"Halvard", "Brenna", "Tobin", "Varek", "Aveloria", "Gargoyle", "Common", "Rare", "Super Rare", "Ultra Rare"]
 const SOURCES := ["battle/battle_engine.gd", "battle/battler.gd", "battle/battle_scene.gd", "world/world.gd", "game.gd",
 	"title.gd", "ending.gd", "db.gd", "world/quests.gd", "ui/bag_view.gd", "ui/stats_view.gd", "ui/quest_view.gd", "ui/skill_view.gd", "ui/forge_view.gd", "ui/gear_view.gd", "ui/shop_view.gd"]
@@ -69,6 +69,10 @@ func _initialize() -> void:
 	var stages: Array = [{}]
 	for flag: String in ["quest_mira", "mira_joined", "ogre", "quest_selene", "selene_joined", "ratu", "quest_kael", "kael_joined", "lahar"]:
 		stages.append({flag: true})
+	# Tahap pembuka (kurir) dan jalur tanpa bertarung Palu Warisan punya dialog tersendiri.
+	stages.append_array([{"kurir_met": true}, {"kurir_met": true, "mira_joined": true}, {"mira_joined": true, "kurir_safe": true},
+		{"mira_joined": true, "talk_inn": true}, {"q_perampok": true}, {"q_perampok": true, "q_perampok_bait": true},
+		{"q_perampok": true, "q_perampok_bait": true, "q_perampok_sneak": true}, {"q_perampok": true, "q_perampok_got": true}])
 	for map_id: String in Story.NPCS:
 		for npc: Dictionary in Story.NPCS[map_id]:
 			_need(npc.name, "npc")
@@ -86,14 +90,14 @@ func _initialize() -> void:
 	# --- tujuan utama di jurnal, di tiap tahap cerita ---
 	var story_flags := {}
 	var seen_goals := {}
-	for flag: String in ["", "quest_mira", "mira_joined", "ogre", "quest_selene", "selene_joined", "ratu", "quest_kael", "kael_joined", "lahar", "raja", "q_naga_purba_done"]:
+	for flag: String in ["", "quest_mira", "kurir_met", "mira_joined", "kurir_safe", "ogre", "quest_selene", "selene_joined", "ratu", "quest_kael", "kael_joined", "lahar", "raja", "q_naga_purba_done"]:
 		if flag != "":
 			story_flags[flag] = true
 		var objective := Story.main_objective(story_flags)
 		_need(objective.goal, "tujuan utama")
 		_need(objective.recap, "tujuan utama")
 		seen_goals[objective.goal] = true
-	_expect(seen_goals.size() == 12, "tujuan utama berubah di tiap tahap cerita (%d tujuan berbeda)" % seen_goals.size())
+	_expect(seen_goals.size() == 14, "tujuan utama berubah di tiap tahap cerita (%d tujuan berbeda)" % seen_goals.size())
 
 	# --- side quest ---
 	for id: String in Quests.LIST:

@@ -8,7 +8,7 @@ const BATTLE_SCENE := "res://scenes/battle.tscn"
 const ENDING_SCENE := "res://scenes/ending.tscn"
 const START_MAP := "desa"
 const START_TILE := Vector2i(7, 10)  # di depan penginapan; juga titik kembali setelah kalah
-const SAVE_VERSION := 3  # versi 1 (sebelum perlengkapan) dan 2 (sebelum peta wilayah diperbesar) tetap bisa dimuat
+const SAVE_VERSION := 4  # versi 1 (sebelum perlengkapan), 2 (sebelum peta wilayah diperbesar), dan 3 (sebelum pembuka dengan kurir) tetap bisa dimuat
 ## Peta yang bentuknya berubah di versi simpanan 3: posisi lama di peta ini tidak berlaku lagi.
 const RESIZED_MAPS := ["dunia", "abu"]
 
@@ -85,6 +85,16 @@ func join(char_id: String) -> void:
 		if m.id == char_id:
 			return
 	party.append(Battler.from_character(char_id, (party[0] as Battler).level))
+
+
+## XP di luar pertarungan (mis. menyelesaikan quest tanpa bertarung) untuk tiap anggota yang masih berdiri.
+## Mengembalikan baris pemberitahuan naik level.
+func grant_xp(amount: int) -> Array:
+	var lines: Array = []
+	for m: Battler in party:
+		if m.is_alive():
+			lines.append_array(m.gain_xp(amount))
+	return lines
 
 
 func start_battle(enemy_ids: Array, battle_backdrop: String = "lembah", after_scene: String = "") -> void:
@@ -518,6 +528,10 @@ func load_game() -> bool:
 	flags = {}
 	for flag: Variant in data.get("flags", []):
 		flags[String(flag)] = true
+	# Simpanan sebelum pembuka baru (versi < 4): Mira sudah bergabung berarti kurir dan obatnya sudah aman.
+	if int(data.get("version", 0)) < 4 and flags.has("mira_joined"):
+		flags["kurir_met"] = true
+		flags["kurir_safe"] = true
 	bag_slots = clampi(int(data.get("bag_slots", Db.BAG_START)), Db.BAG_START, Db.BAG_MAX)
 	items = {}
 	var saved_items: Variant = data.get("items", {})
@@ -568,6 +582,6 @@ func _read_save() -> Dictionary:
 	if json.parse(FileAccess.get_file_as_string(save_path)) != OK:
 		return {}
 	var parsed: Variant = json.data
-	if not (parsed is Dictionary) or not (int(parsed.get("version", 0)) in [1, 2, SAVE_VERSION]):
+	if not (parsed is Dictionary) or not (int(parsed.get("version", 0)) in [1, 2, 3, SAVE_VERSION]):
 		return {}
 	return parsed
